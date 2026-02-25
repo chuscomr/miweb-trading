@@ -1,7 +1,12 @@
 import yfinance as yf
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_caching import Cache
-from MiWeb.controlador import ejecutar_contexto, procesar_post, blindar_contexto
+
+import matplotlib
+matplotlib.use('Agg')  # ← CRÍTICO para servidor
+import matplotlib.pyplot as plt
+
+from controlador import ejecutar_contexto, procesar_post, blindar_contexto
 import base64
 from datetime import datetime
 from MiWeb import cartera_db
@@ -36,7 +41,7 @@ print(">>> APP.PY CARGANDO... <<<")
 # 1️⃣ CREAR LA APLICACIÓN FLASK PRIMERO
 # ════════════════════════════════════════════════════════════════
 application = Flask(__name__)
-application.secret_key = "chusco"
+application.secret_key = os.environ.get('SECRET_KEY', 'dev-key-temporal')
 
 # ════════════════════════════════════════════════════════════════
 # 2️⃣ CONFIGURAR CACHE
@@ -595,4 +600,5 @@ if __name__ == "__main__":
     print("   • http://localhost:5000/api/backtest/ejecutar")
     print("\n" + "="*70 + "\n")
     
-    application.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    application.run(host='0.0.0.0', port=port, debug=False)
