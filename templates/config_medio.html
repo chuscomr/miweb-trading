@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Sistema Medio Plazo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .config-section {
+            margin-bottom: 30px;
+        }
+        
+        .config-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .config-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .config-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .config-item value {
+            display: block;
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .info-box {
+            padding: 20px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #424242;
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+        
+        .estrategia-box {
+            padding: 20px;
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .estrategia-box h4 {
+            color: #7b1fa2;
+            margin-bottom: 10px;
+        }
+        
+        .estrategia-box ul {
+            margin-left: 20px;
+            color: #424242;
+        }
+        
+        .estrategia-box li {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configuración del Sistema</h1>
+            <p>Parámetros y estrategia de medio plazo</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest</a>
+            <a href="/medio/escaner">🔍 Escáner IBEX</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Parámetros del Sistema</h2>
+            
+            <div class="config-section">
+                <h3>📊 Información General</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Timeframe</label>
+                        <value>{{ config.timeframe }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Estrategia</label>
+                        <value>{{ config.estrategia }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Histórico Mínimo</label>
+                        <value>{{ config.min_semanas }} semanas</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Volatilidad Mínima</label>
+                        <value>{{ config.volatilidad_min }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>🎯 Parámetros de Entrada</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Pullback Mínimo</label>
+                        <value>{{ config.pullback_min }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Pullback Máximo</label>
+                        <value>{{ config.pullback_max }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Riesgo Mínimo</label>
+                        <value>{{ config.riesgo_min }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Riesgo Máximo</label>
+                        <value>{{ config.riesgo_max }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>🛡️ Gestión de Salidas</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Protección Breakeven</label>
+                        <value>{{ config.r_proteger }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Trailing Stop</label>
+                        <value>{{ config.r_trailing }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>💰 Gestión de Capital</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Capital Inicial</label>
+                        <value>{{ config.capital_inicial }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Riesgo por Trade</label>
+                        <value>{{ config.riesgo_trade }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="estrategia-box">
+                <h4>📚 Filosofía de la Estrategia</h4>
+                <ul>
+                    <li><strong>Timeframe Semanal:</strong> Reduce ruido del mercado, permite stops más amplios y operaciones más selectivas</li>
+                    <li><strong>Pullback en Tendencia:</strong> Compramos retrocesos en valores que mantienen tendencia alcista</li>
+                    <li><strong>Confirmación de Giro:</strong> Esperamos señal de vuelta alcista antes de entrar</li>
+                    <li><strong>Gestión Progresiva:</strong> Sistema de 3 fases (Inicial → Protegido → Trailing)</li>
+                    <li><strong>Riesgo Controlado:</strong> Stop siempre definido antes de entrar, riesgo 1.5-4%</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>🎯 Condiciones de Entrada</h4>
+                <p><strong>1. Tendencia Alcista:</strong> Precio > MM20 semanal con pendiente positiva</p>
+                <p><strong>2. Pullback Válido:</strong> Retroceso 3-12% desde máximo reciente (10 semanas)</p>
+                <p><strong>3. Giro Semanal:</strong> Precio cierra por encima del cierre de semana anterior</p>
+                <p><strong>4. Riesgo Controlado:</strong> Stop por estructura + ATR, riesgo 1.5-4%</p>
+            </div>
+            
+            <div class="info-box">
+                <h4>🛡️ Sistema de Gestión (3 Fases)</h4>
+                <p><strong>Fase 1 - INICIAL:</strong> Stop inicial por estructura + ATR (2x). Si llega a +2R → Fase 2</p>
+                <p><strong>Fase 2 - PROTEGIDO:</strong> Stop sube a -0.25R (pequeña pérdida). Si llega a +4R → Fase 3</p>
+                <p><strong>Fase 3 - TRAILING:</strong> Stop sigue el mínimo de últimas 3 semanas. Solo sube, nunca baja</p>
+            </div>
+            
+            <div class="info-box">
+                <h4>📊 Diferencias con Sistema Swing</h4>
+                <p><strong>Swing:</strong> 1-3 semanas, datos diarios, breakouts/momentum</p>
+                <p><strong>Medio Plazo:</strong> 4-24 semanas, datos semanales, pullbacks/mean reversion</p>
+                <p><strong>Ventaja:</strong> Menos operaciones, más selectivas, mayor holding period</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

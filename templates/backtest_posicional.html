@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Backtest Sistema</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e3c72; margin-bottom: 15px; font-size: 1.4em; }
+        .actions { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #1e3c72; color: white; }
+        .btn-primary:hover { background: #2a5298; }
+        .btn-primary:disabled { background: #ccc; }
+        .btn-secondary { background: white; color: #1e3c72; border: 2px solid #1e3c72; }
+        .btn-secondary:hover { background: #f8f9fa; }
+        .loading { text-align: center; padding: 25px; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+            margin: 12px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 12px 6px;
+            border-left: 3px solid #1e3c72;
+            text-align: center;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.7em;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .stat-value { font-size: 1.2em; font-weight: bold; color: #1e3c72; }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .section { margin-top: 18px; }
+        .section h2 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 1.1em;
+        }
+        .top-list { display: grid; gap: 6px; margin-top: 10px; }
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #1e3c72;
+        }
+        .top-item strong { color: #1e3c72; font-size: 0.9em; }
+        .top-item-metrics { text-align: right; color: #666; font-size: 0.8em; }
+        .alert { padding: 10px; border-radius: 6px; margin: 12px 0; font-size: 0.9em; }
+        .alert-success { background: #d4edda; border-left: 3px solid #28a745; color: #155724; }
+        .alert-error { background: #fee; border-left: 3px solid #c33; color: #c33; }
+        .alert-info { background: #d1ecf1; border-left: 3px solid #17a2b8; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/posicional" class="back-link">← Volver</a>
+        
+        <div class="card">
+            <h1>📊 Backtest Sistema</h1>
+            
+            <div class="actions">
+                <button class="btn btn-primary" id="btnEjecutar" onclick="ejecutarBacktest()">🚀 Ejecutar</button>
+                <button class="btn btn-secondary" id="btnCargar" onclick="cargarUltimo()">📂 Cargar Último</button>
+            </div>
+            
+            <div id="resultado"></div>
+        </div>
+    </div>
+    
+    <script>
+        function ejecutarBacktest() {
+            const btn = document.getElementById('btnEjecutar');
+            const resultado = document.getElementById('resultado');
+            
+            btn.disabled = true;
+            resultado.innerHTML = '<div class="loading"><div class="spinner"></div><p>Ejecutando backtest IBEX 35...</p><p style="color: #666; font-size: 0.8em;">Esto puede tardar 2-3 minutos</p></div>';
+            
+            fetch('/posicional/api/backtest/ejecutar')
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    if (!data.success) {
+                        resultado.innerHTML = '<div class="alert alert-error">❌ ' + data.error + '</div>';
+                        return;
+                    }
+                    resultado.innerHTML = '<div class="alert alert-success">✅ Backtest completado</div>';
+                    mostrarResultados(data.resultado);
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    resultado.innerHTML = '<div class="alert alert-error">❌ Error: ' + error.message + '</div>';
+                });
+        }
+        
+        function cargarUltimo() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<div class="alert alert-info">📂 Cargando...</div>';
+            
+            fetch('/posicional/api/backtest/ultimo')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        resultado.innerHTML = '<div class="alert alert-error">❌ ' + data.error + '</div>';
+                        return;
+                    }
+                    mostrarResultados(data.resultado);
+                })
+                .catch(error => {
+                    resultado.innerHTML = '<div class="alert alert-error">❌ Error: ' + error.message + '</div>';
+                });
+        }
+        
+        function mostrarResultados(resultado) {
+            const div = document.getElementById('resultado');
+            const m = resultado.metricas_globales;
+            const u = resultado.universo;
+            const top = resultado.top_performers;
+            
+            let html = '<div class="section"><h2>🎯 Universo</h2><div class="stats-grid">';
+            html += '<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">' + u.total_tickers + '</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Analizados</div><div class="stat-value">' + u.analizados + '</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Con Trades</div><div class="stat-value">' + u.analizados + '</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Errores</div><div class="stat-value">' + u.con_error + '</div></div>';
+            html += '</div></div>';
+            
+            html += '<div class="section"><h2>📈 Métricas Globales</h2><div class="stats-grid">';
+            html += '<div class="stat-card"><div class="stat-label">Trades</div><div class="stat-value">' + m.total_trades + '</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Expectancy</div><div class="stat-value ' + (m.expectancy_R > 0 ? 'positive' : 'negative') + '">' + (m.expectancy_R > 0 ? '+' : '') + m.expectancy_R + 'R</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Winrate</div><div class="stat-value">' + m.winrate + '%</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">PF</div><div class="stat-value">' + m.profit_factor + '</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Equity</div><div class="stat-value ' + (m.equity_final_R > 0 ? 'positive' : 'negative') + '">' + (m.equity_final_R > 0 ? '+' : '') + m.equity_final_R + 'R</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Mejor</div><div class="stat-value positive">+' + m.mejor_trade + 'R</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Peor</div><div class="stat-value negative">' + m.peor_trade + 'R</div></div>';
+            html += '<div class="stat-card"><div class="stat-label">Rentables</div><div class="stat-value">' + m.tickers_rentables + '</div></div>';
+            html += '</div></div>';
+            
+            if (top.mejores && top.mejores.length > 0) {
+                html += '<div class="section"><h2>🏆 Top 5 Mejores</h2><div class="top-list">';
+                top.mejores.forEach((t, i) => {
+                    html += '<div class="top-item"><div><strong>' + (i+1) + '. ' + t.ticker + '</strong><div style="color: #666; font-size: 0.8em;">' + (t.empresa || t.ticker.replace('.MC', '')) + '</div></div>';
+                    html += '<div class="top-item-metrics"><div class="positive" style="font-size: 1em; font-weight: bold;">+' + t.expectancy_R + 'R</div><div>' + t.total_trades + ' trades · ' + t.winrate + '% WR</div></div></div>';
+                });
+                html += '</div></div>';
+            }
+            
+            let evaluacion = '';
+            if (m.expectancy_R >= 2.0) {
+                evaluacion = '<div class="alert alert-success">✅ EXCELENTE - Sistema muy rentable</div>';
+            } else if (m.expectancy_R >= 1.0) {
+                evaluacion = '<div class="alert alert-success">✅ BUENO - Sistema rentable</div>';
+            } else if (m.expectancy_R > 0) {
+                evaluacion = '<div class="alert alert-info">⚠️ MARGINAL - Rentable pero ajustado</div>';
+            } else {
+                evaluacion = '<div class="alert alert-error">❌ NO RENTABLE</div>';
+            }
+            
+            html += evaluacion;
+            div.innerHTML = html;
+        }
+        
+        window.addEventListener('load', () => cargarUltimo());
+    </script>
+</body>
+</html>

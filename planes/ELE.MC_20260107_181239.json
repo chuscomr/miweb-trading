@@ -1,0 +1,12 @@
+{
+    "fecha": "2026-01-07 18:12",
+    "ticker": "ELE.MC",
+    "precio": 31.75,
+    "entrada": 31.78,
+    "stop": 30.04,
+    "objetivo": 35.26,
+    "riesgo_por_accion": 1.74,
+    "rr": 2.0,
+    "tamaño_posicion": 57,
+    "capital_invertido": 1809.75
+}

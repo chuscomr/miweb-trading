@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Técnico</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #0f172a;
+        }
+        
+        /* TOOLBAR */
+        .toolbar {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        select {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #1e293b;
+        }
+        #ticker { min-width: 250px; }
+        #tf { min-width: 100px; }
+        
+        .chart-type {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 6px;
+        }
+        .chart-type button {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-type button.active {
+            background: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .indicators {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        /* SELECTOR DESPLEGABLE MULTI-SELECT */
+        .indicadores-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .indicadores-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 38px;
+        }
+        
+        .indicadores-display:hover {
+            border-color: #2563eb;
+            background: white;
+        }
+        
+        .indicadores-display.open {
+            border-color: #2563eb;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            background: white;
+        }
+        
+        .indicadores-selected {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .indicadores-placeholder {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        
+        .indicador-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #2563eb;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .indicador-tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .indicador-tag-remove:hover {
+            opacity: 1;
+        }
+        
+        .indicadores-arrow {
+            margin-left: 8px;
+            font-size: 10px;
+            transition: transform 0.2s;
+            color: #64748b;
+        }
+        
+        .indicadores-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .indicadores-count {
+            font-size: 11px;
+            color: #64748b;
+            margin-left: 4px;
+            font-weight: 500;
+        }
+        
+        .indicadores-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2563eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .indicadores-dropdown.open {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .indicadores-actions {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+        
+        .indicadores-action-btn {
+            font-size: 11px;
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .indicadores-action-btn:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        
+        .indicador-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .indicador-option:last-child {
+            border-bottom: none;
+        }
+        
+        .indicador-option:hover {
+            background: #f8fafc;
+        }
+        
+        .indicador-option.selected {
+            background: #eff6ff;
+        }
+        
+        .indicador-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        
+        .indicador-option.selected .indicador-checkbox {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .indicador-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .indicador-option.selected .indicador-checkbox::after {
+            opacity: 1;
+        }
+        
+        .indicador-name {
+            font-weight: 500;
+            color: #334155;
+            font-size: 12px;
+            flex: 1;
+        }
+        
+        .indicator-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #475569;
+            cursor: pointer;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 16px;
+            transition: background 0.2s;
+        }
+        .indicator-label:hover {
+            background: #e2e8f0;
+        }
+        .indicator-label input {
+            width: 13px;
+            height: 13px;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-fullscreen {
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+        }
+        .btn-fullscreen svg {
+            display: block;
+        }
+        
+        /* LAYOUT PRINCIPAL */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* GRÁFICO */
+        .chart-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        #grafico {
+            width: 100%;
+            height: 800px;
+        }
+        
+        /* PANEL LATERAL */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .info-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .info-card h3 {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-content {
+            font-size: 13px;
+        }
+        .info-content p {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            color: #334155;
+        }
+        .info-content p span:first-child {
+            color: #64748b;
+        }
+        .info-content p strong {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        
+        /* NIVELES S/R */
+        .nivel-precio {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 4px 0;
+            font-size: 12px;
+            border-radius: 4px;
+            background: #f8fafc;
+        }
+        .nivel-precio.soporte {
+            border-left: 3px solid #22c55e;
+            background: #f0fdf4;
+        }
+        .nivel-precio.resistencia {
+            border-left: 3px solid #ef4444;
+            background: #fef2f2;
+        }
+        .nivel-precio .precio {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .nivel-precio .fuerza {
+            color: #64748b;
+            font-size: 11px;
+        }
+        
+        /* PATRONES */
+        .patron-vela {
+            padding: 8px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .patron-alcista { 
+            background: #f0fdf4; 
+            border-left-color: #22c55e;
+            color: #166534;
+        }
+        .patron-bajista { 
+            background: #fef2f2; 
+            border-left-color: #ef4444;
+            color: #991b1b;
+        }
+        .patron-neutral { 
+            background: #fefce8; 
+            border-left-color: #eab308;
+            color: #854d0e;
+        }
+        
+        /* LOADING STATE */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        /* Ocultar paneles en pantalla completa */
+        .container:fullscreen .resumen-tecnico-panel,
+        .container:fullscreen .desglose-panel {
+            display: none;
+        }
+        
+        /* Compatibilidad con otros navegadores */
+        .container:-webkit-full-screen .resumen-tecnico-panel,
+        .container:-webkit-full-screen .desglose-panel,
+        .container:-moz-full-screen .resumen-tecnico-panel,
+        .container:-moz-full-screen .desglose-panel {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📊 Análisis Técnico Completo</h1>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <select id="ticker">
+            <optgroup label="🇪🇸 IBEX 35">
+                <option value="ANA.MC">Acciona (ANA.MC)</option>
+                <option value="ANE.MC">Acciona Energías (ANE.MC)</option>
+                <option value="ACX.MC">Acerinox (ACX.MC)</option>
+                <option value="ACS.MC">ACS (ACS.MC)</option>
+                <option value="AENA.MC">Aena (AENA.MC)</option>
+                <option value="AMS.MC">Amadeus (AMS.MC)</option>
+                <option value="MTS.MC">ArcelorMittal (MTS.MC)</option>
+                <option value="SAB.MC">Banco Sabadell (SAB.MC)</option>
+                <option value="SAN.MC">Banco Santander (SAN.MC)</option>
+                <option value="BKT.MC">Bankinter (BKT.MC)</option>
+                <option value="BBVA.MC">BBVA (BBVA.MC)</option>
+                <option value="CABK.MC">Caixabank (CABK.MC)</option>
+                <option value="CLNX.MC">Cellnex (CLNX.MC)</option>
+                <option value="ENG.MC" selected>Enagás (ENG.MC)</option>
+                <option value="ELE.MC">Endesa (ELE.MC)</option>
+                <option value="FER.MC">Ferrovial (FER.MC)</option>
+                <option value="FDR.MC">Fluidra (FDR.MC)</option>
+                <option value="GRF.MC">Grifols A (GRF.MC)</option>
+                <option value="IAG.MC">IAG (Iberia) (IAG.MC)</option>
+                <option value="IBE.MC">Iberdrola (IBE.MC)</option>
+                <option value="COL.MC">Inmobiliaria Colonial (COL.MC)</option>
+                <option value="ITX.MC">Inditex (ITX.MC)</option>
+                <option value="IDR.MC">Indra (IDR.MC)</option>
+                <option value="ROVI.MC">Laboratorios Rovi (ROVI.MC)</option>
+                <option value="LOG.MC">Logista (LOG.MC)</option>
+                <option value="MAP.MC">Mapfre (MAP.MC)</option>
+                <option value="MRL.MC">MERLIN Properties (MRL.MC)</option>
+                <option value="NTGY.MC">Naturgy (NTGY.MC)</option>
+                <option value="PUIG.MC">Puig Brands B (PUIG.MC)</option>
+                <option value="RED.MC">Redeia (RED.MC)</option>
+                <option value="REP.MC">Repsol (REP.MC)</option>
+                <option value="SCYR.MC">Sacyr (SCYR.MC)</option>
+                <option value="SLR.MC">Solaria (SLR.MC)</option>
+                <option value="TEF.MC">Telefónica (TEF.MC)</option>
+                <option value="UNI.MC">Unicaja (UNI.MC)</option>
+            </optgroup>
+            
+            <optgroup label="📈 Mercado Continuo">
+                <option value="AEDAS.MC">AEDAS Inmobiliaria (AEDAS.MC)</option>
+                <option value="AMP.MC">Amper (AMP.MC)</option>
+                <option value="APAM.MC">Applus (APAM.MC)</option>
+                <option value="A3M.MC">Atresmedia (A3M.MC)</option>
+                <option value="ATRY.MC">Atrys Health (ATRY.MC)</option>
+                <option value="ADX.MC">Audax Renovables (ADX.MC)</option>
+                <option value="CAF.MC">CAF (CAF.MC)</option>
+                <option value="CASH.MC">Cash Converters (CASH.MC)</option>
+                <option value="CIE.MC">CIE Automotive (CIE.MC)</option>
+                <option value="CIRSA.MC">CIRSA (CIRSA.MC)</option>
+                <option value="DIA.MC">DIA (DIA.MC)</option>
+                <option value="EBROM.MC">Ebro Motor (EBROM.MC)</option>
+                <option value="ECR.MC">Ercros (ECR.MC)</option>
+                <option value="ENO.MC">Elecnor (ENO.MC)</option>
+                <option value="ENC.MC">ENCE (ENC.MC)</option>
+                <option value="FAE.MC">Faes Farma (FAE.MC)</option>
+                <option value="GEST.MC">Gestamp (GEST.MC)</option>
+                <option value="DOM.MC">Global Dominion (DOM.MC)</option>
+                <option value="GRE.MC">Grenergy (GRE.MC)</option>
+                <option value="HBX.MC">HBX Group (HBX.MC)</option>
+                <option value="IMC.MC">Inmocentro (IMC.MC)</option>
+                <option value="IZER.MC">Izertis (IZER.MC)</option>
+                <option value="LIB.MC">Libertas (LIB.MC)</option>
+                <option value="LDA.MC">Linea Directa (LDA.MC)</option>
+                <option value="MEL.MC">Meliá (MEL.MC)</option>
+                <option value="MVC.MC">Metrovacesa (MVC.MC)</option>
+                <option value="NEA.MC">Naturhouse (NEA.MC)</option>
+                <option value="HOME.MC">Neinor Homes (HOME.MC)</option>
+                <option value="NHH.MC">NH Hotel Group (NHH.MC)</option>
+                <option value="OHLA.MC">OHLA (OHLA.MC)</option>
+                <option value="PHM.MC">PharmaMar (PHM.MC)</option>
+                <option value="PSG.MC">Prosegur (PSG.MC)</option>
+                <option value="RLIA.MC">Realia Business (RLIA.MC)</option>
+                <option value="R4.MC">Renta 4 (R4.MC)</option>
+                <option value="TRE.MC">Técnicas Reunidas (TRE.MC)</option>
+                <option value="TUB.MC">Tubacex (TUB.MC)</option>
+                <option value="VID.MC">Vidrala (VID.MC)</option>
+                <option value="VIS.MC">Viscofan (VIS.MC)</option>
+            </optgroup>
+        </select>
+        
+        <select id="tf">
+            <option value="1d">Diario</option>
+            <option value="1wk">Semanal</option>
+            <option value="1mo">Mensual</option>
+        </select>
+
+        <div class="chart-type">
+            <button id="btn-velas" class="active">Velas</button>
+            <button id="btn-linea">Línea</button>
+        </div>
+
+        <div class="indicators">
+            <div class="indicadores-select-wrapper">
+                <div class="indicadores-display" id="indicadores-display">
+                    <div class="indicadores-selected" id="indicadores-selected">
+                        <span class="indicadores-placeholder">Seleccionar indicadores...</span>
+                    </div>
+                    <span class="indicadores-count" id="indicadores-count">(0)</span>
+                    <span class="indicadores-arrow" id="indicadores-arrow">▼</span>
+                </div>
+                
+                <div class="indicadores-dropdown" id="indicadores-dropdown">
+                    <div class="indicadores-actions">
+                        <span class="indicadores-action-btn" id="btn-select-all">✓ Seleccionar todos</span>
+                        <span class="indicadores-action-btn" id="btn-deselect-all">✗ Limpiar</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: TENDENCIA -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                        📈 TENDENCIA
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM20">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM20 - Media Móvil 20</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM50">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM50 - Media Móvil 50</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM200">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM200 - Media Móvil 200</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA9">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA9 - Media Exponencial 9 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA21">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA21 - Media Exponencial 21 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA50">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA50 - Media Exponencial 50 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ADX">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">ADX - Fuerza Tendencia ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PSAR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Parabolic SAR - Stops Dinámicos ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ICHIMOKU">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Ichimoku Cloud ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: MOMENTUM -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        ⚡ MOMENTUM
+                    </div>
+                    
+                    <div class="indicador-option" data-value="RSI">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">RSI - Índice Fuerza Relativa</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MACD">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MACD - Convergencia/Divergencia</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="STOCH">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Stochastic - Sobrecompra/Sobreventa ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MFI">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MFI - RSI con Volumen ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: VOLUMEN -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📊 VOLUMEN
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VOLUMEN">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Volumen - Barras</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="OBV">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">OBV - On Balance Volume</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VWAP">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">VWAP - Precio Institucional ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VOLPROFILE">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Volume Profile - POC ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: VOLATILIDAD -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📉 VOLATILIDAD
+                    </div>
+                    
+                    <div class="indicador-option" data-value="BB">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Bollinger Bands</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ATR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">ATR - Average True Range</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="KELTNER">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Keltner Channels ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: NIVELES -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        🎯 NIVELES
+                    </div>
+                    
+                    <div class="indicador-option" data-value="SR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Soportes/Resistencias</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="FIBO">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Fibonacci - Retrocesos</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PIVOT">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Pivot Points - S/R Diarios ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: PATRONES -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📐 PATRONES
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PATRONES">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Patrones Chartistas</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="DIVERGENCIAS">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Divergencias</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Checkboxes ocultos para compatibilidad con código existente -->
+            <div style="display: none;">
+                <label class="indicator-label"><input type="checkbox" value="MM20"> MM20</label>
+                <label class="indicator-label"><input type="checkbox" value="MM50"> MM50</label>
+                <label class="indicator-label"><input type="checkbox" value="MM200"> MM200</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA9"> EMA9</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA21"> EMA21</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA50"> EMA50</label>
+                <label class="indicator-label"><input type="checkbox" value="ADX"> ADX</label>
+                <label class="indicator-label"><input type="checkbox" value="PSAR"> PSAR</label>
+                <label class="indicator-label"><input type="checkbox" value="ICHIMOKU"> ICHIMOKU</label>
+                <label class="indicator-label"><input type="checkbox" value="RSI" checked> RSI</label>
+                <label class="indicator-label"><input type="checkbox" value="MACD" checked> MACD</label>
+                <label class="indicator-label"><input type="checkbox" value="STOCH"> STOCH</label>
+                <label class="indicator-label"><input type="checkbox" value="MFI"> MFI</label>
+                <label class="indicator-label"><input type="checkbox" value="BB"> BB</label>
+                <label class="indicator-label"><input type="checkbox" value="ATR"> ATR</label>
+                <label class="indicator-label"><input type="checkbox" value="KELTNER"> KELTNER</label>
+                <label class="indicator-label"><input type="checkbox" value="SR" checked> SR</label>
+                <label class="indicator-label"><input type="checkbox" value="FIBO"> FIBO</label>
+                <label class="indicator-label"><input type="checkbox" value="PIVOT"> PIVOT</label>
+                <label class="indicator-label"><input type="checkbox" value="PATRONES" checked> PATRONES</label>
+                <label class="indicator-label"><input type="checkbox" value="DIVERGENCIAS"> DIVERGENCIAS</label>
+                <label class="indicator-label"><input type="checkbox" value="VOLUMEN" checked> VOLUMEN</label>
+                <label class="indicator-label"><input type="checkbox" value="OBV" checked> OBV</label>
+                <label class="indicator-label"><input type="checkbox" value="VWAP"> VWAP</label>
+                <label class="indicator-label"><input type="checkbox" value="VOLPROFILE"> VOLPROFILE</label>
+            </div>
+        </div>
+
+
+        </div>
+
+        <button class="btn" id="btn-actualizar">Actualizar</button>
+        <button class="btn btn-fullscreen" id="btn-fullscreen" title="Pantalla completa">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+        </button>
+        <button class="btn btn-fullscreen" id="btn-limpiar-lineas" title="Limpiar líneas dibujadas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="main-layout">
+        <!-- GRÁFICO -->
+        <div class="chart-container">
+            <div id="grafico"></div>
+        </div>
+
+        <!-- PANEL LATERAL -->
+        <div class="sidebar">
+            <!-- ÚLTIMA VELA -->
+            <div class="info-card">
+                <h3>📊 Última Vela</h3>
+                <div class="info-content" id="ultima-vela">
+                    <p><span>Apertura:</span> <strong>--</strong></p>
+                    <p><span>Máximo:</span> <strong>--</strong></p>
+                    <p><span>Mínimo:</span> <strong>--</strong></p>
+                    <p><span>Cierre:</span> <strong>--</strong></p>
+                    <p><span>Volumen:</span> <strong>--</strong></p>
+                </div>
+            </div>
+
+            <!-- SOPORTES -->
+            <div class="info-card">
+                <h3>🟢 Soportes</h3>
+                <div class="info-content" id="soportes">
+                    <p style="color: #94a3b8;">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- RESISTENCIAS -->
+            <div class="info-card">
+                <h3>🔴 Resistencias</h3>
+                <div class="info-content" id="resistencias">
+                    <p style="color: #94a3b8;">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- PATRONES DE VELAS -->
+            <div class="info-card">
+                <h3>🕯️ Patrones</h3>
+                <div class="info-content" id="patrones">
+                    <p style="color: #94a3b8;">No implementado aún</p>
+                </div>
+            </div>
+
+            <!-- DIVERGENCIAS -->
+            <div class="info-card">
+                <h3>🔀 Divergencias</h3>
+                <div class="info-content" id="divergencias">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- FIBONACCI -->
+            <div class="info-card">
+                <h3>📐 Fibonacci</h3>
+                <div class="info-content" id="fibonacci">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Activa el checkbox Fibonacci</p>
+                </div>
+            </div>
+
+            <!-- PATRONES CHARTISTAS -->
+            <div class="info-card">
+                <h3>📊 Patrones Chartistas</h3>
+                <div class="info-content" id="patrones_chartistas">
+                    <p style="color: #94a3b8; font-size: 0.85em;">No detectados en ventana de 100 velas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- NUEVO PANEL DE RESUMEN TÉCNICO -->
+<!-- Añadir esto DESPUÉS del </div> que cierra .main-layout y ANTES del cierre de .container -->
+
+<div class="resumen-tecnico-panel">
+    <h2>📊 Resumen Técnico</h2>
+    
+    <div class="resumen-grid">
+        <!-- INDICADORES TÉCNICOS -->
+        <div class="resumen-card">
+            <h3>Indicadores técnicos</h3>
+            <div class="gauge-container">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-indicadores">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label" id="label-indicadores">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="señales-detalle" id="detalle-indicadores">
+                <span class="compra">0 Compra</span>
+                <span class="venta">0 Venta</span>
+                <span class="neutral">0 Neutral</span>
+            </div>
+        </div>
+
+        <!-- RESUMEN GENERAL -->
+        <div class="resumen-card resumen-principal">
+            <h3>Resumen</h3>
+            <div class="gauge-container gauge-grande">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-resumen">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label gauge-label-grande" id="label-resumen">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="recomendacion-final" id="recomendacion-final">
+                <strong>Resumen:</strong> <span class="recomendacion-badge">Neutral</span>
+            </div>
+        </div>
+
+        <!-- MEDIAS MÓVILES -->
+        <div class="resumen-card">
+            <h3>Medias móviles</h3>
+            <div class="gauge-container">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-medias">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label" id="label-medias">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="señales-detalle" id="detalle-medias">
+                <span class="compra">0 Compra</span>
+                <span class="venta">0 Venta</span>
+                <span class="neutral">0 Neutral</span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- PANEL DE DESGLOSE DE SEÑALES -->
+<!-- Añadir esto DESPUÉS del cierre del resumen-tecnico-panel -->
+
+<div class="desglose-panel">
+    <div class="desglose-header" onclick="toggleDesglose()">
+        <h3>📋 Desglose de Señales</h3>
+        <span class="toggle-icon" id="desglose-toggle">▼</span>
+    </div>
+    
+    <div class="desglose-content" id="desglose-content">
+        <div class="desglose-grid">
+            <!-- INDICADORES TÉCNICOS -->
+            <div class="desglose-section">
+                <h4>Indicadores Técnicos</h4>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header compra-header">
+                        <span class="icono">✅</span>
+                        <span class="titulo">COMPRA (<span id="ind-compra-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-compra-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header venta-header">
+                        <span class="icono">❌</span>
+                        <span class="titulo">VENTA (<span id="ind-venta-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-venta-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header neutral-header">
+                        <span class="icono">⚪</span>
+                        <span class="titulo">NEUTRAL (<span id="ind-neutral-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-neutral-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- MEDIAS MÓVILES -->
+            <div class="desglose-section">
+                <h4>Medias Móviles</h4>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header compra-header">
+                        <span class="icono">✅</span>
+                        <span class="titulo">COMPRA (<span id="mm-compra-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-compra-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header venta-header">
+                        <span class="icono">❌</span>
+                        <span class="titulo">VENTA (<span id="mm-venta-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-venta-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header neutral-header">
+                        <span class="icono">⚪</span>
+                        <span class="titulo">NEUTRAL (<span id="mm-neutral-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-neutral-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS CSS PARA EL PANEL DE DESGLOSE -->
+<style>
+.desglose-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.desglose-header {
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 8px 8px 0 0;
+    transition: background 0.2s;
+}
+
+.desglose-header:hover {
+    background: #f1f5f9;
+}
+
+.desglose-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.toggle-icon {
+    font-size: 1.2rem;
+    color: #64748b;
+    transition: transform 0.3s;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.desglose-content {
+    padding: 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.desglose-content.open {
+    max-height: 2000px;
+}
+
+.desglose-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.desglose-section h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.señales-grupo {
+    margin-bottom: 20px;
+}
+
+.señales-grupo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.compra-header {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.venta-header {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.neutral-header {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.señales-grupo-header .icono {
+    font-size: 1rem;
+}
+
+.señales-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.señales-lista li {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #334155;
+    border-left: 3px solid transparent;
+}
+
+.señales-lista li.compra-item {
+    border-left-color: #22c55e;
+}
+
+.señales-lista li.venta-item {
+    border-left-color: #ef4444;
+}
+
+.señales-lista li.neutral-item {
+    border-left-color: #94a3b8;
+}
+
+.señales-lista li strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.señales-lista li.vacio {
+    font-style: italic;
+    color: #94a3b8;
+    border-left: none;
+}
+
+@media (max-width: 1200px) {
+    .desglose-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<!-- ESTILOS CSS PARA EL PANEL DE RESUMEN -->
+<style>
+.resumen-tecnico-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.resumen-tecnico-panel h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #0f172a;
+}
+
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.resumen-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.resumen-principal {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 2px solid #2563eb;
+}
+
+.resumen-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.gauge-container {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto 15px;
+}
+
+.gauge-grande {
+    max-width: 240px;
+}
+
+.gauge {
+    width: 100%;
+    height: auto;
+}
+
+.gauge-label {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.gauge-label-grande {
+    bottom: 15px;
+}
+
+.gauge-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.gauge-label-grande .gauge-value {
+    font-size: 2rem;
+}
+
+.gauge-text {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.gauge-label-grande .gauge-text {
+    font-size: 0.875rem;
+}
+
+.señales-detalle {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.75rem;
+}
+
+.señales-detalle .compra {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.señales-detalle .venta {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.señales-detalle .neutral {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.recomendacion-final {
+    text-align: center;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+}
+
+.recomendacion-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-left: 8px;
+}
+
+.recomendacion-badge.compra-fuerte {
+    background: #22c55e;
+    color: white;
+}
+
+.recomendacion-badge.compra {
+    background: #86efac;
+    color: #166534;
+}
+
+.recomendacion-badge.neutral {
+    background: #cbd5e1;
+    color: #475569;
+}
+
+.recomendacion-badge.venta {
+    background: #fca5a5;
+    color: #991b1b;
+}
+
+.recomendacion-badge.venta-fuerte {
+    background: #ef4444;
+    color: white;
+}
+
+@media (max-width: 1200px) {
+    .resumen-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SELECTOR DESPLEGABLE DE INDICADORES
+    // ═══════════════════════════════════════════════════════════════
+    (function() {
+        const display = document.getElementById('indicadores-display');
+        const dropdown = document.getElementById('indicadores-dropdown');
+        const arrow = document.getElementById('indicadores-arrow');
+        const selectedContainer = document.getElementById('indicadores-selected');
+        const countEl = document.getElementById('indicadores-count');
+        const options = document.querySelectorAll('.indicador-option');
+        const btnSelectAll = document.getElementById('btn-select-all');
+        const btnDeselectAll = document.getElementById('btn-deselect-all');
+        
+        let selectedIndicadores = [];
+        
+        // Toggle dropdown
+        display.addEventListener('click', function(e) {
+            if (e.target.classList.contains('indicador-tag-remove')) {
+                return;
+            }
+            dropdown.classList.toggle('open');
+            display.classList.toggle('open');
+            arrow.classList.toggle('open');
+        });
+        
+        // Cerrar al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const wrapper = document.querySelector('.indicadores-select-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                dropdown.classList.remove('open');
+                display.classList.remove('open');
+                arrow.classList.remove('open');
+            }
+        });
+        
+        // Seleccionar/deseleccionar indicador
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                
+                if (selectedIndicadores.includes(value)) {
+                    selectedIndicadores = selectedIndicadores.filter(v => v !== value);
+                    this.classList.remove('selected');
+                } else {
+                    selectedIndicadores.push(value);
+                    this.classList.add('selected');
+                }
+                
+                updateDisplay();
+                updateChart(); // Actualizar gráfico
+            });
+        });
+        
+        // Seleccionar todos
+        btnSelectAll.addEventListener('click', function() {
+            selectedIndicadores = [];
+            options.forEach(option => {
+                const value = option.getAttribute('data-value');
+                selectedIndicadores.push(value);
+                option.classList.add('selected');
+            });
+            updateDisplay();
+            updateChart();
+        });
+        
+        // Deseleccionar todos
+        btnDeselectAll.addEventListener('click', function() {
+            selectedIndicadores = [];
+            options.forEach(option => {
+                option.classList.remove('selected');
+            });
+            updateDisplay();
+            updateChart();
+        });
+        
+        // Actualizar display
+        function updateDisplay() {
+            selectedContainer.innerHTML = '';
+            
+            if (selectedIndicadores.length === 0) {
+                selectedContainer.innerHTML = '<span class="indicadores-placeholder">Seleccionar indicadores...</span>';
+            } else {
+                selectedIndicadores.forEach(value => {
+                    const tag = document.createElement('span');
+                    tag.className = 'indicador-tag';
+                    tag.innerHTML = `${value} <span class="indicador-tag-remove" data-value="${value}">×</span>`;
+                    selectedContainer.appendChild(tag);
+                    
+                    tag.querySelector('.indicador-tag-remove').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const val = this.getAttribute('data-value');
+                        selectedIndicadores = selectedIndicadores.filter(v => v !== val);
+                        
+                        options.forEach(opt => {
+                            if (opt.getAttribute('data-value') === val) {
+                                opt.classList.remove('selected');
+                            }
+                        });
+                        
+                        updateDisplay();
+                        updateChart();
+                    });
+                });
+            }
+            
+            countEl.textContent = `(${selectedIndicadores.length})`;
+        }
+        
+        // Actualizar gráfico (función que ya existe en tu código)
+        function updateChart() {
+            // Obtener checkboxes (para compatibilidad con código existente)
+            const checkboxes = document.querySelectorAll('.indicator-label input[type="checkbox"]');
+            
+            // Desmarcar todos
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Marcar solo los seleccionados
+            selectedIndicadores.forEach(value => {
+                checkboxes.forEach(cb => {
+                    if (cb.value === value) {
+                        cb.checked = true;
+                    }
+                });
+            });
+            
+            // Disparar actualización del gráfico (si existe la función)
+            if (typeof actualizarGrafico === 'function') {
+                actualizarGrafico();
+            }
+        }
+        
+        // Inicializar con valores por defecto (los que estaban checked)
+        const defaultIndicators = ['RSI', 'MACD', 'SR', 'PATRONES', 'VOLUMEN', 'OBV'];
+        defaultIndicators.forEach(value => {
+            selectedIndicadores.push(value);
+            options.forEach(opt => {
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        });
+        updateDisplay();
+        
+        // Hacer disponible globalmente para otras funciones
+        window.getSelectedIndicadores = function() {
+            return selectedIndicadores;
+        };
+    })();
+    </script>
+    
+    <script src="{{ url_for('indicadores.static', filename='js/grafico.js') }}"></script>
+</div>
+</body>
+</html>

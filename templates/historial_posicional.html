@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial Posicional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e3c72; margin-bottom: 15px; font-size: 1.4em; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px 6px;
+            border-left: 3px solid #1e3c72;
+            text-align: center;
+        }
+        .stat-label { color: #666; font-size: 0.7em; margin-bottom: 3px; }
+        .stat-value { font-size: 1.2em; font-weight: bold; color: #1e3c72; }
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        .trades-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8em;
+        }
+        .trades-table td {
+            padding: 7px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.8em;
+        }
+        .trades-table tr:hover { background: #f8f9fa; }
+        .positive { color: #28a745; font-weight: 600; }
+        .negative { color: #dc3545; font-weight: 600; }
+        .winner { background-color: #f0fff0 !important; }
+        .loser { background-color: #fff5f5 !important; }
+        .empty-state { text-align: center; padding: 35px; color: #666; }
+        .empty-state h3 { margin-bottom: 6px; color: #999; font-size: 1.1em; }
+        .alert { padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9em; }
+        .alert-error { background: #fee; border-left: 3px solid #c33; color: #c33; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/posicional" class="back-link">← Volver</a>
+        
+        <div class="card">
+            <h1>📜 Historial</h1>
+            
+            {% if error %}
+            <div class="alert alert-error">❌ {{ error }}</div>
+            {% endif %}
+            
+            {% if historial and historial.trades %}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value">{{ historial.trades|length }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Winners</div>
+                    <div class="stat-value positive">{{ historial.trades|selectattr('R', 'gt', 0)|list|length }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Losers</div>
+                    <div class="stat-value negative">{{ historial.trades|selectattr('R', 'le', 0)|list|length }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Winrate</div>
+                    <div class="stat-value">
+                        {% set winners = historial.trades|selectattr('R', 'gt', 0)|list|length %}
+                        {{ "{:.1f}".format((winners / historial.trades|length * 100) if historial.trades|length > 0 else 0) }}%
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Expectancy</div>
+                    <div class="stat-value">
+                        {% set total_r = historial.trades|sum(attribute='R') %}
+                        {{ "{:+.2f}".format(total_r / historial.trades|length) }}R
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Equity</div>
+                    <div class="stat-value {% if historial.trades|sum(attribute='R') > 0 %}positive{% else %}negative{% endif %}">
+                        {{ "{:+.2f}".format(historial.trades|sum(attribute='R')) }}R
+                    </div>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 16px; color: #1e3c72; font-size: 1.1em;">📊 Trades</h2>
+            <table class="trades-table">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>R</th>
+                        <th>Sem</th>
+                        <th>F. Entrada</th>
+                        <th>F. Salida</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in historial.trades|reverse %}
+                    <tr class="{% if trade.R > 0 %}winner{% else %}loser{% endif %}">
+                        <td><strong>{{ trade.ticker }}</strong></td>
+                        <td>{{ "{:.2f}".format(trade.entrada) }}€</td>
+                        <td>{{ "{:.2f}".format(trade.salida) }}€</td>
+                        <td class="{% if trade.R > 0 %}positive{% else %}negative{% endif %}">
+                            {{ "{:+.2f}".format(trade.R) }}R
+                        </td>
+                        <td>{{ trade.semanas }}</td>
+                        <td>{{ trade.fecha_entrada[:10] if trade.fecha_entrada is string else trade.fecha_entrada.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ trade.fecha_salida[:10] if trade.fecha_salida is string else trade.fecha_salida.strftime('%Y-%m-%d') }}</td>
+                        <td style="font-size: 0.75em; color: #666;">{{ trade.motivo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h3>📭 No hay trades cerrados</h3>
+                <p>El historial se poblará cuando cierres posiciones</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

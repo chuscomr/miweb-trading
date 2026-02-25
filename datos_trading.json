@@ -1,0 +1,1815 @@
+{
+    "ACS.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 65.6"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.5%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Volumen insuficiente (0.69x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (5.7 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 96.4,
+        "hora": "18:00",
+        "mm20": 94.08,
+        "max_reciente": 96.4,
+        "volatilidad": 5.7
+    },
+    "AMS.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 54.1,
+        "hora": "18:00",
+        "mm20": 59.49,
+        "max_reciente": 64.73,
+        "volatilidad": 19.65
+    },
+    "ANA.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 182.1,
+        "hora": "18:00",
+        "mm20": 184.37,
+        "max_reciente": 196.6,
+        "volatilidad": 11.9
+    },
+    "BBVA.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 69.7"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 4.8%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.95x)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (10.9 %)"
+            }
+        ],
+        "precio": 22.03,
+        "hora": "18:00",
+        "mm20": 21.02,
+        "max_reciente": 22.03,
+        "volatilidad": 10.87
+    },
+    "CABK.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 69.1"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 6.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.1%"
+            },
+            {
+                "ok": true,
+                "texto": "✅ Volumen fuerte (1.28x)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (10.5 %)"
+            }
+        ],
+        "precio": 11.4,
+        "hora": "18:00",
+        "mm20": 10.72,
+        "max_reciente": 11.41,
+        "volatilidad": 10.45
+    },
+    "ELE.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 58.2"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.7%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (1.06x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (4.3 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (3/5)"
+            }
+        ],
+        "precio": 31.25,
+        "hora": "18:00",
+        "mm20": 30.72,
+        "max_reciente": 31.25,
+        "volatilidad": 4.31
+    },
+    "FER.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 58.0"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.2%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.7%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.92x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (3.9 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (3/5)"
+            }
+        ],
+        "precio": 58.14,
+        "hora": "18:00",
+        "mm20": 57.45,
+        "max_reciente": 58.56,
+        "volatilidad": 3.87
+    },
+    "GRF.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 10.93,
+        "hora": "18:00",
+        "mm20": 10.99,
+        "max_reciente": 11.68,
+        "volatilidad": 12.69
+    },
+    "IBE.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 68.8"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.1%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.77x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (4.1 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (3/5)"
+            }
+        ],
+        "precio": 19.0,
+        "hora": "18:00",
+        "mm20": 18.6,
+        "max_reciente": 19.0,
+        "volatilidad": 4.08
+    },
+    "IAG.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 61.9"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 4.0%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🔥 Volumen explosivo (1.53x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (7.4 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada IMPULSO: setup fuerte (5/5)"
+            }
+        ],
+        "precio": 5.02,
+        "hora": "18:00",
+        "mm20": 4.82,
+        "max_reciente": 5.02,
+        "volatilidad": 7.38
+    },
+    "IDR.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 49.62,
+        "hora": "18:00",
+        "mm20": 55.82,
+        "max_reciente": 58.9,
+        "volatilidad": 18.7
+    },
+    "ITX.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 54.76,
+        "hora": "18:00",
+        "mm20": 55.6,
+        "max_reciente": 57.22,
+        "volatilidad": 5.77
+    },
+    "MAP.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 3.92,
+        "hora": "18:00",
+        "mm20": 4.04,
+        "max_reciente": 4.28,
+        "volatilidad": 11.97
+    },
+    "MEL.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 7.52,
+        "hora": "18:00",
+        "mm20": 7.67,
+        "max_reciente": 8.1,
+        "volatilidad": 10.05
+    },
+    "MRL.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 61.5"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 3.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (5.6 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (4/5)"
+            }
+        ],
+        "precio": 12.9,
+        "hora": "18:00",
+        "mm20": 12.49,
+        "max_reciente": 12.9,
+        "volatilidad": 5.56
+    },
+    "NTGY.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 62.7"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Volumen insuficiente (0.70x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (4.5 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 26.5,
+        "hora": "18:00",
+        "mm20": 25.9,
+        "max_reciente": 26.5,
+        "volatilidad": 4.5
+    },
+    "RED.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 14.64,
+        "hora": "18:00",
+        "mm20": 14.76,
+        "max_reciente": 15.43,
+        "volatilidad": 7.53
+    },
+    "REP.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 57.8"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.4%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 2.1%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (1.00x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (6.8 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 16.41,
+        "hora": "18:00",
+        "mm20": 16.03,
+        "max_reciente": 16.75,
+        "volatilidad": 6.82
+    },
+    "ROVI.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 67.3"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.2%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 1.6%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Volumen insuficiente (0.71x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (9.6 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 72.85,
+        "hora": "18:00",
+        "mm20": 71.3,
+        "max_reciente": 74.0,
+        "volatilidad": 9.63
+    },
+    "SAB.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 3.4,
+        "hora": "18:00",
+        "mm20": 3.27,
+        "max_reciente": 3.4,
+        "volatilidad": 7.59
+    },
+    "SAN.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 71.7"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 5.2%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "✅ Volumen fuerte (1.31x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (9.4 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 11.09,
+        "hora": "18:00",
+        "mm20": 10.54,
+        "max_reciente": 11.09,
+        "volatilidad": 9.44
+    },
+    "SCYR.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 60.6"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.5%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.9%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.79x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (4.2 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (4/5)"
+            }
+        ],
+        "precio": 4.04,
+        "hora": "18:00",
+        "mm20": 3.98,
+        "max_reciente": 4.08,
+        "volatilidad": 4.24
+    },
+    "SLR.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 54.3"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.5%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 2.6%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (1.06x)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (11.2 %)"
+            }
+        ],
+        "precio": 18.17,
+        "hora": "18:00",
+        "mm20": 17.9,
+        "max_reciente": 18.65,
+        "volatilidad": 11.21
+    },
+    "TEF.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 3.47,
+        "hora": "18:00",
+        "mm20": 3.38,
+        "max_reciente": 3.49,
+        "volatilidad": 7.73
+    },
+    "UNI.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 52.1"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 0.4%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 4.9%"
+            },
+            {
+                "ok": true,
+                "texto": "🔥 Volumen explosivo (1.73x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (9.7 %)"
+            },
+            {
+                "ok": false,
+                "texto": "Precio demasiado alejado del máximo"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 2.83,
+        "hora": "18:00",
+        "mm20": 2.82,
+        "max_reciente": 2.97,
+        "volatilidad": 9.66
+    },
+    "CLNX.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 26.01,
+        "hora": "18:00",
+        "mm20": 26.04,
+        "max_reciente": 27.3,
+        "volatilidad": 8.51
+    },
+    "LOG.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 62.5"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.1%"
+            },
+            {
+                "ok": true,
+                "texto": "📊 Volumen normal en crecimiento"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (3.2 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (5/5)"
+            }
+        ],
+        "precio": 31.38,
+        "hora": "18:00",
+        "mm20": 30.96,
+        "max_reciente": 31.42,
+        "volatilidad": 3.15
+    },
+    "ACX.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 12.85,
+        "hora": "18:00",
+        "mm20": 12.88,
+        "max_reciente": 13.43,
+        "volatilidad": 8.57
+    },
+    "BKT.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 61.3"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 3.2%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (6.4 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (4/5)"
+            }
+        ],
+        "precio": 14.72,
+        "hora": "18:00",
+        "mm20": 14.25,
+        "max_reciente": 14.72,
+        "volatilidad": 6.4
+    },
+    "COL.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 5.24,
+        "hora": "18:00",
+        "mm20": 5.21,
+        "max_reciente": 5.47,
+        "volatilidad": 8.54
+    },
+    "CIE.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 28.65,
+        "hora": "18:00",
+        "mm20": 29.33,
+        "max_reciente": 30.15,
+        "volatilidad": 5.24
+    },
+    "ENG.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 63.7"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.6%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🔥 Volumen explosivo (1.61x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (3.7 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (5/5)"
+            }
+        ],
+        "precio": 14.01,
+        "hora": "18:00",
+        "mm20": 13.78,
+        "max_reciente": 14.01,
+        "volatilidad": 3.66
+    },
+    "FCC.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 11.18,
+        "hora": "18:00",
+        "mm20": 11.07,
+        "max_reciente": 11.24,
+        "volatilidad": 3.5
+    },
+    "PUIG.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 65.9"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 3.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.5%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.83x)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (14.4 %)"
+            }
+        ],
+        "precio": 16.78,
+        "hora": "18:00",
+        "mm20": 16.25,
+        "max_reciente": 16.87,
+        "volatilidad": 14.37
+    },
+    "VID.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 87.2,
+        "hora": "18:00",
+        "mm20": 90.19,
+        "max_reciente": 92.1,
+        "volatilidad": 6.11
+    },
+    "TUB.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 3.47,
+        "hora": "18:00",
+        "mm20": 3.43,
+        "max_reciente": 3.62,
+        "volatilidad": 10.53
+    },
+    "TRE.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 68.7"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 6.8%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (13.0 %)"
+            }
+        ],
+        "precio": 32.64,
+        "hora": "18:00",
+        "mm20": 30.57,
+        "max_reciente": 32.64,
+        "volatilidad": 13.02
+    },
+    "CAF.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 57.1,
+        "hora": "18:00",
+        "mm20": 58.18,
+        "max_reciente": 61.7,
+        "volatilidad": 9.59
+    },
+    "GEST.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 3.03,
+        "hora": "18:00",
+        "mm20": 3.08,
+        "max_reciente": 3.14,
+        "volatilidad": 4.04
+    },
+    "APAM.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 60.8"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 3.8%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Liquidez insuficiente (1,761/día)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (7.5 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 37.2,
+        "hora": "18:00",
+        "mm20": 35.83,
+        "max_reciente": 37.2,
+        "volatilidad": 7.45
+    },
+    "PHM.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 77.6,
+        "hora": "18:00",
+        "mm20": 79.86,
+        "max_reciente": 82.65,
+        "volatilidad": 7.9
+    },
+    "OHLA.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 0.36,
+        "hora": "18:00",
+        "mm20": 0.36,
+        "max_reciente": 0.38,
+        "volatilidad": 7.11
+    },
+    "DOM.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 53.9"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 0.9%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 3.4%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (10.5 %)"
+            }
+        ],
+        "precio": 3.41,
+        "hora": "18:00",
+        "mm20": 3.38,
+        "max_reciente": 3.53,
+        "volatilidad": 10.49
+    },
+    "ENC.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 2.21,
+        "hora": "18:00",
+        "mm20": 2.28,
+        "max_reciente": 2.42,
+        "volatilidad": 9.41
+    },
+    "GRE.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 62.4"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 2.8%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 3.1%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Liquidez insuficiente (39,296/día)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (15.5 %)"
+            }
+        ],
+        "precio": 94.5,
+        "hora": "18:00",
+        "mm20": 91.95,
+        "max_reciente": 97.5,
+        "volatilidad": 15.52
+    },
+    "ANE.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 21.54,
+        "hora": "18:00",
+        "mm20": 21.76,
+        "max_reciente": 23.74,
+        "volatilidad": 14.69
+    },
+    "HOME.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 77.4"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 6.4%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🔥 Volumen explosivo (2.49x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (8.9 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 20.75,
+        "hora": "18:00",
+        "mm20": 19.51,
+        "max_reciente": 20.75,
+        "volatilidad": 8.87
+    },
+    "VIS.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 56.5"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 0.3%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 1.8%"
+            },
+            {
+                "ok": true,
+                "texto": "🔥 Volumen explosivo (1.61x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (5.2 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (4/5)"
+            }
+        ],
+        "precio": 55.7,
+        "hora": "18:00",
+        "mm20": 55.52,
+        "max_reciente": 56.7,
+        "volatilidad": 5.19
+    },
+    "ECR.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 3.42,
+        "hora": "18:00",
+        "mm20": 3.42,
+        "max_reciente": 3.43,
+        "volatilidad": 0.29
+    },
+    "A3M.MC": {
+        "decision": "COMPRA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 64.1"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 3.2%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (6.8 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": true,
+                "texto": "Entrada NORMAL: setup sólido (4/5)"
+            }
+        ],
+        "precio": 5.26,
+        "hora": "18:00",
+        "mm20": 5.1,
+        "max_reciente": 5.26,
+        "volatilidad": 6.8
+    },
+    "ATRY.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 2.97,
+        "hora": "18:00",
+        "mm20": 3.01,
+        "max_reciente": 3.07,
+        "volatilidad": 5.14
+    },
+    "R4.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": false,
+                "texto": "MM20 sin pendiente positiva"
+            }
+        ],
+        "precio": 19.3,
+        "hora": "18:00",
+        "mm20": 18.88,
+        "max_reciente": 19.6,
+        "volatilidad": 8.29
+    },
+    "GCO.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": false,
+                "texto": "❌ RSI no calculable (datos insuficientes o erróneos)"
+            }
+        ],
+        "precio": 45.0,
+        "hora": "18:00",
+        "mm20": 44.88,
+        "max_reciente": 45.0,
+        "volatilidad": 1.18
+    },
+    "HBX.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 7.76,
+        "hora": "18:00",
+        "mm20": 8.13,
+        "max_reciente": 8.6,
+        "volatilidad": 10.97
+    },
+    "CASH.MC": {
+        "decision": "VIGILANCIA",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 53.0"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.0%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.9%"
+            },
+            {
+                "ok": false,
+                "texto": "❌ Volumen insuficiente (0.67x)"
+            },
+            {
+                "ok": true,
+                "texto": "Volatilidad controlada (4.7 %)"
+            },
+            {
+                "ok": true,
+                "texto": "Precio cercano a ruptura"
+            },
+            {
+                "ok": false,
+                "texto": "Tendencia válida pero sin setup óptimo (NORMAL / IMPULSO)"
+            }
+        ],
+        "precio": 0.64,
+        "hora": "18:00",
+        "mm20": 0.63,
+        "max_reciente": 0.65,
+        "volatilidad": 4.7
+    },
+    "NEA.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 9.54,
+        "hora": "18:00",
+        "mm20": 9.62,
+        "max_reciente": 10.2,
+        "volatilidad": 12.09
+    },
+    "PSG.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 55.6"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 1.6%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 3.0%"
+            },
+            {
+                "ok": true,
+                "texto": "⚠️ Volumen aceptable (0.80x)"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (10.1 %)"
+            }
+        ],
+        "precio": 2.76,
+        "hora": "18:00",
+        "mm20": 2.72,
+        "max_reciente": 2.85,
+        "volatilidad": 10.06
+    },
+    "AMP.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": false,
+                "texto": "Precio por debajo de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            }
+        ],
+        "precio": 0.18,
+        "hora": "18:00",
+        "mm20": 0.19,
+        "max_reciente": 0.2,
+        "volatilidad": 10.12
+    },
+    "MTS.MC": {
+        "decision": "NO OPERAR",
+        "motivos": [
+            {
+                "ok": true,
+                "texto": "Precio por encima de MM20"
+            },
+            {
+                "ok": true,
+                "texto": "MM20 con pendiente positiva"
+            },
+            {
+                "ok": true,
+                "texto": "RSI actual: 77.9"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia a MM20: 11.1%"
+            },
+            {
+                "ok": true,
+                "texto": "Distancia al máximo 20: 0.0%"
+            },
+            {
+                "ok": true,
+                "texto": "🤫 Volumen seco saludable"
+            },
+            {
+                "ok": false,
+                "texto": "Volatilidad excesiva (21.0 %)"
+            }
+        ],
+        "precio": 48.7,
+        "hora": "18:00",
+        "mm20": 43.85,
+        "max_reciente": 48.7,
+        "volatilidad": 21.02
+    },
+    "__meta__": {
+        "fecha": "03/02/2026",
+        "hora": "18:15",
+        "timezone": "local",
+        "mercado_abierto": true,
+        "fuente": "generar_datos.py"
+    }
+}

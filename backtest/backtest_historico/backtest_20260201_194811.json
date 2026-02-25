@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-02-01T19:48:11.475109",
+  "estado": "✅ EXCELENTE",
+  "expectancy": 0.7,
+  "winrate": 37.5,
+  "max_dd": 14.07,
+  "total_trades": 72,
+  "tickers_aprobados": [
+    "SAN.MC",
+    "BBVA.MC",
+    "ACS.MC",
+    "CABK.MC",
+    "UNI.MC"
+  ],
+  "tickers_neutros": [
+    "REP.MC",
+    "FER.MC",
+    "MAP.MC",
+    "GRF.MC"
+  ],
+  "tickers_rechazados": [
+    "SAB.MC"
+  ],
+  "tickers_excluidos": [
+    "IBE.MC",
+    "ITX.MC",
+    "ENG.MC",
+    "COL.MC",
+    "NTGY.MC",
+    "TEF.MC",
+    "RED.MC",
+    "CLNX.MC"
+  ],
+  "config": {
+    "target": 3,
+    "breakeven": 1,
+    "riesgo_pct": 0.01,
+    "min_volatilidad": 12.0
+  }
+}

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest Sistema - Medio Plazo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+        
+        .evaluacion {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .evaluacion.excelente {
+            background: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745;
+        }
+        
+        .evaluacion.bueno {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 6px solid #17a2b8;
+        }
+        
+        .evaluacion.marginal {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 6px solid #ffc107;
+        }
+        
+        .evaluacion.no-rentable {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545;
+        }
+        
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metrica {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metrica label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .metrica value {
+            display: block;
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .metrica value.positivo {
+            color: #28a745;
+        }
+        
+        .metrica value.negativo {
+            color: #dc3545;
+        }
+        
+        .top-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .top-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .top-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .top-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .top-table .ticker {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .section-title {
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 1.3em;
+        }
+        
+        .info-box {
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            color: #424242;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Backtest Sistema Completo</h1>
+            <p>Análisis multi-ticker del sistema medio plazo</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest Individual</a>
+            <a href="/medio/backtest-sistema">🚀 Backtest Sistema</a>
+            <a href="/medio/escaner">🔍 Escáner IBEX</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Ejecutar Backtest del Sistema</h2>
+            
+            <form method="POST" id="backtestForm">
+                <div style="margin-bottom: 20px;">
+                    <label>
+                        <input type="checkbox" name="usar_continuo" value="1">
+                        Incluir Mercado Continuo (adicional al IBEX 35)
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn" id="btnEjecutar">
+                    🚀 Ejecutar Backtest Completo
+                </button>
+            </form>
+            
+            <div class="info-box" style="margin-top: 20px;">
+                <p><strong>ℹ️ Información:</strong></p>
+                <p>• Solo IBEX 35: ~35 valores, tiempo estimado: 2-3 minutos</p>
+                <p>• IBEX 35 + Continuo: ~71 valores, tiempo estimado: 5-7 minutos</p>
+                <p>• El backtest analiza datos semanales de los últimos 10 años</p>
+            </div>
+        </div>
+        
+        {% if resultado %}
+        <div class="card">
+            <h2>📊 Resultados del Sistema</h2>
+            
+            {% set metricas = resultado.metricas_globales %}
+            {% set universo = resultado.universo %}
+            
+            <!-- EVALUACIÓN -->
+            {% if metricas.expectancy_R >= 0.40 %}
+            <div class="evaluacion excelente">
+                ✅ SISTEMA EXCELENTE ({{ metricas.expectancy_R }}R)
+            </div>
+            {% elif metricas.expectancy_R >= 0.20 %}
+            <div class="evaluacion bueno">
+                ✅ SISTEMA RENTABLE ({{ metricas.expectancy_R }}R)
+            </div>
+            {% elif metricas.expectancy_R > 0 %}
+            <div class="evaluacion marginal">
+                ⚠️ SISTEMA MARGINAL ({{ metricas.expectancy_R }}R)
+            </div>
+            {% else %}
+            <div class="evaluacion no-rentable">
+                ❌ SISTEMA NO RENTABLE ({{ metricas.expectancy_R }}R)
+            </div>
+            {% endif %}
+            
+            <!-- MÉTRICAS PRINCIPALES -->
+            <h3 class="section-title">📈 Métricas Globales</h3>
+            <div class="metricas-grid">
+                <div class="metrica">
+                    <label>Valores Analizados</label>
+                    <value>{{ universo.analizados }} / {{ universo.total_tickers }}</value>
+                </div>
+                <div class="metrica">
+                    <label>Total Operaciones</label>
+                    <value>{{ metricas.total_trades }}</value>
+                </div>
+                <div class="metrica">
+                    <label>Expectativa por operación</label>
+                    <value class="{% if metricas.expectancy_R > 0 %}positivo{% else %}negativo{% endif %}">
+                        {{ metricas.expectancy_R }}R
+                    </value>
+                </div>
+                <div class="metrica">
+                    <label>Porcentaje acierto</label>
+                    <value>{{ metricas.winrate }}%</value>
+                </div>
+            </div>
+            
+            <div class="metricas-grid">
+                <div class="metrica">
+                    <label>Capital Final</label>
+                    <value class="{% if metricas.equity_final_R > 0 %}positivo{% else %}negativo{% endif %}">
+                        {{ metricas.equity_final_R }}R
+                    </value>
+                </div>
+                <div class="metrica">
+                    <label>Factor Beneficio</label>
+                    <value>{{ metricas.profit_factor }}</value>
+                </div>
+                <div class="metrica">
+                    <label>Mejor operación</label>
+                    <value class="positivo">{{ metricas.mejor_trade }}R</value>
+                </div>
+                <div class="metrica">
+                    <label>Riesgo máximo</label>
+                    <value class="negativo">{{ metricas.max_drawdown_R }}R</value>
+                </div>
+            </div>
+            
+            <!-- ANÁLISIS POR TICKER -->
+            <h3 class="section-title">📊 Análisis por Ticker</h3>
+            <div class="metricas-grid">
+                <div class="metrica">
+                    <label>Rentabilidad promedio</label>
+                    <value class="{% if metricas.expectancy_promedio_ticker > 0 %}positivo{% else %}negativo{% endif %}">
+                        {{ metricas.expectancy_promedio_ticker }}R
+                    </value>
+                </div>
+                <div class="metrica">
+                    <label>Tickers Rentables</label>
+                    <value class="positivo">{{ metricas.tickers_rentables }}</value>
+                </div>
+                <div class="metrica">
+                    <label>Tickers No Rentables</label>
+                    <value class="negativo">{{ metricas.tickers_no_rentables }}</value>
+                </div>
+                <div class="metrica">
+                    <label>% Rentabilidad</label>
+                    <value>
+                        {{ ((metricas.tickers_rentables / (metricas.tickers_rentables + metricas.tickers_no_rentables)) * 100) | round(1) }}%
+                    </value>
+                </div>
+            </div>
+            
+            <!-- TOP PERFORMERS -->
+            {% if resultado.top_performers.mejores %}
+            <h3 class="section-title">🏆 Top 5 Mejores Valores</h3>
+            <table class="top-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Ticker</th>
+                        <th>Empresa (Ticker)</th>
+                        <th>Trades</th>
+                        <th>Expectancy</th>
+                        <th>Winrate</th>
+                        <th>Equity Final</th>
+                        <th>Profit Factor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticker in resultado.top_performers.mejores %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="ticker">{{ ticker.empresa }} ({{ ticker.ticker.replace('.MC','') }})</td>
+                        <td>{{ ticker.total_trades }}</td>
+                        <td style="color: #28a745; font-weight: bold;">{{ ticker.expectancy_R }}R</td>
+                        <td>{{ ticker.winrate }}%</td>
+                        <td style="color: {% if ticker.equity_final_R > 0 %}#28a745{% else %}#dc3545{% endif %}">
+                            {{ ticker.equity_final_R }}R
+                        </td>
+                        <td>{{ ticker.profit_factor }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            
+            <!-- BOTTOM PERFORMERS -->
+            {% if resultado.top_performers.peores %}
+            <h3 class="section-title">💀 Top 5 Peores Valores</h3>
+            <table class="top-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Ticker</th>
+                        <th>Trades</th>
+                        <th>Expectancy</th>
+                        <th>Winrate</th>
+                        <th>Equity Final</th>
+                        <th>Profit Factor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticker in resultado.top_performers.peores %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="ticker">{{ ticker.empresa }} ({{ ticker.ticker.replace('.MC','') }})</td>
+                        <td>{{ ticker.total_trades }}</td>
+                        <td style="color: #dc3545; font-weight: bold;">{{ ticker.expectancy_R }}R</td>
+                        <td>{{ ticker.winrate }}%</td>
+                        <td style="color: {% if ticker.equity_final_R > 0 %}#28a745{% else %}#dc3545{% endif %}">
+                            {{ ticker.equity_final_R }}R
+                        </td>
+                        <td>{{ ticker.profit_factor }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            
+            <!-- TODOS LOS TICKERS -->
+            <h3 class="section-title">📋 Todos los Valores (ordenados por Expectancy)</h3>
+            <table class="top-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empresa (Ticker)</th>
+                        <th>Trades</th>
+                        <th>Expectancy</th>
+                        <th>Winrate</th>
+                        <th>Equity Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticker in resultado.resultados_por_ticker | sort(attribute='expectancy_R', reverse=True) %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="ticker">{{ ticker.empresa }} ({{ ticker.ticker.replace('.MC','') }})</td>
+                        <td>{{ ticker.total_trades }}</td>
+                        <td style="color: {% if ticker.expectancy_R > 0 %}#28a745{% else %}#dc3545{% endif %}; font-weight: bold;">
+                            {{ ticker.expectancy_R }}R
+                        </td>
+                        <td>{{ ticker.winrate }}%</td>
+                        <td style="color: {% if ticker.equity_final_R > 0 %}#28a745{% else %}#dc3545{% endif %}">
+                            {{ ticker.equity_final_R }}R
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- INFO ADICIONAL -->
+            <div class="info-box" style="margin-top: 30px;">
+                <p><strong>📅 Fecha de ejecución:</strong> {{ resultado.fecha_ejecucion }}</p>
+                <p><strong>📊 Valores sin datos:</strong> {{ universo.sin_datos }}</p>
+                <p><strong>❌ Valores con error:</strong> {{ universo.con_error }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        document.getElementById('backtestForm').addEventListener('submit', function() {
+            const btn = document.getElementById('btnEjecutar');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Ejecutando backtest... (esto puede tardar varios minutos)';
+        });
+    </script>
+</body>
+</html>

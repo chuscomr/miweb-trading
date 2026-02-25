@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✏️ Editar Posición - Sistema de Trading</title>
+    
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .contenedor {
+            max-width: 800px;
+            margin: auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-volver {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-guardar {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-eliminar {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .calculos-auto {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .calculos-auto h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .calc-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .calc-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .calc-valor {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .mensaje-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .mensaje-error ul {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+        }
+        
+        .botones-form {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        
+        .alerta-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    
+    <div class="header">
+        <h1>✏️ Editar Posición</h1>
+        <a href="/cartera" class="btn btn-volver">← Volver</a>
+    </div>
+    
+    <div class="alerta-info">
+        <strong>ℹ️ Editando posición de {{ posicion.ticker }}</strong>
+        <br>Puedes modificar cualquier campo. Los cálculos se actualizarán automáticamente.
+    </div>
+    
+    {% if errores %}
+    <div class="mensaje-error">
+        <strong>❌ Error al guardar:</strong>
+        <ul>
+            {% for error in errores %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div class="form-container">
+        <form method="POST" action="/cartera/editar/{{ posicion.id }}" id="formEditar">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ticker">Ticker *</label>
+                    <input type="text" id="ticker" name="ticker" 
+                           placeholder="Ej: SAN.MC" required
+                           value="{{ posicion.ticker }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" 
+                           placeholder="Ej: Santander"
+                           value="{{ posicion.nombre or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fecha_entrada">Fecha entrada *</label>
+                    <input type="date" id="fecha_entrada" name="fecha_entrada" required
+                           value="{{ posicion.fecha_entrada }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="precio_entrada">Precio entrada (€) *</label>
+                    <input type="number" id="precio_entrada" name="precio_entrada" 
+                           step="0.01" min="0.01" required
+                           value="{{ posicion.precio_entrada }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stop_loss">Stop loss (€) *</label>
+                    <input type="number" id="stop_loss" name="stop_loss" 
+                           step="0.01" min="0.01" required
+                           value="{{ posicion.stop_loss }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="objetivo">Objetivo (€) *</label>
+                    <input type="number" id="objetivo" name="objetivo" 
+                           step="0.01" min="0.01" required
+                           value="{{ posicion.objetivo }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="acciones">Acciones *</label>
+                    <input type="number" id="acciones" name="acciones" 
+                           min="1" required
+                           value="{{ posicion.acciones }}"
+                           onchange="calcularAutomatico()">
+                </div>
+            </div>
+            
+            <div class="calculos-auto" id="calculos">
+                <h4>📊 CÁLCULOS AUTOMÁTICOS</h4>
+                <div class="calc-grid">
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo por acción</span>
+                        <span class="calc-valor" id="calc-riesgo">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo %</span>
+                        <span class="calc-valor" id="calc-riesgo-pct">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">R/R</span>
+                        <span class="calc-valor" id="calc-rr">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Capital invertido</span>
+                        <span class="calc-valor" id="calc-capital">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo máximo</span>
+                        <span class="calc-valor" id="calc-riesgo-max">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NIVELES DE GESTIÓN POR R -->
+            <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #2196f3;">
+                <h4 style="margin: 0 0 15px 0; color: #1976d2;">
+                    📊 NIVELES DE GESTIÓN POR R
+                </h4>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                    Niveles calculados desde el stop ORIGINAL 
+                    ({{ "%.2f"|format(posicion.stop_original if posicion.stop_original else posicion.stop_loss) }}€). 
+                    Usa estos valores como referencia para gestionar tu posición:
+                </p>
+                <div class="calc-grid" id="nivelesR">
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo (R)</span>
+                        <span class="calc-valor" id="calc-r" style="color: #dc3545;">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">🟢 +1R (BE)</span>
+                        <span class="calc-valor" id="calc-1r" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">🟡 +2R (+1R seg.)</span>
+                        <span class="calc-valor" id="calc-2r" style="color: #ffc107;">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">🟢 +3R (trailing)</span>
+                        <span class="calc-valor" id="calc-3r" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">⭐ +4R</span>
+                        <span class="calc-valor" id="calc-4r" style="color: #9c27b0;">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">⭐ +5R</span>
+                        <span class="calc-valor" id="calc-5r" style="color: #9c27b0;">-</span>
+                    </div>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 10px; font-style: italic;">
+                    💡 Sugerencia: Copia el valor del nivel que quieras aplicar y pégalo en "Stop loss" arriba.
+                </p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="setup_score">Setup Score</label>
+                    <select id="setup_score" name="setup_score">
+                        <option value="" {% if not posicion.setup_score %}selected{% endif %}>Sin puntuar</option>
+                        <option value="1" {% if posicion.setup_score == 1 %}selected{% endif %}>⭐ 1/5</option>
+                        <option value="2" {% if posicion.setup_score == 2 %}selected{% endif %}>⭐⭐ 2/5</option>
+                        <option value="3" {% if posicion.setup_score == 3 %}selected{% endif %}>⭐⭐⭐ 3/5</option>
+                        <option value="4" {% if posicion.setup_score == 4 %}selected{% endif %}>⭐⭐⭐⭐ 4/5</option>
+                        <option value="5" {% if posicion.setup_score == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ 5/5</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contexto_ibex">Contexto IBEX</label>
+                    <select id="contexto_ibex" name="contexto_ibex">
+                        <option value="" {% if not posicion.contexto_ibex %}selected{% endif %}>Sin especificar</option>
+                        <option value="RIESGO BAJO" {% if posicion.contexto_ibex == "RIESGO BAJO" %}selected{% endif %}>🟢 RIESGO BAJO</option>
+                        <option value="RIESGO MEDIO" {% if posicion.contexto_ibex == "RIESGO MEDIO" %}selected{% endif %}>🟡 RIESGO MEDIO</option>
+                        <option value="RIESGO ALTO" {% if posicion.contexto_ibex == "RIESGO ALTO" %}selected{% endif %}>🔴 RIESGO ALTO</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notas">Notas (opcional)</label>
+                <textarea id="notas" name="notas" 
+                          placeholder="Motivos de la operación, análisis técnico, etc.">{{ posicion.notas or '' }}</textarea>
+            </div>
+            
+            <div class="botones-form">
+                <form method="POST" action="/cartera/eliminar/{{ posicion.id }}" style="display: inline;"
+                      onsubmit="return confirm('¿Estás seguro de eliminar esta posición? Esta acción no se puede deshacer.');">
+                    <button type="submit" class="btn btn-eliminar">🗑️ Eliminar</button>
+                </form>
+                
+                <div style="display: flex; gap: 10px;">
+                    <a href="/cartera" class="btn btn-volver">Cancelar</a>
+                    <button type="submit" class="btn btn-guardar">💾 Guardar Cambios</button>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+    
+</div>
+
+<script>
+// Guardar el stop original al cargar la página (desde la BD)
+const stopOriginal = parseFloat({{ posicion.stop_original if posicion.stop_original else posicion.stop_loss }});
+const precioEntradaOriginal = parseFloat({{ posicion.precio_entrada }});
+
+function calcularAutomatico() {
+    const entrada = parseFloat(document.getElementById('precio_entrada').value);
+    const stop = parseFloat(document.getElementById('stop_loss').value);
+    const objetivo = parseFloat(document.getElementById('objetivo').value);
+    const acciones = parseInt(document.getElementById('acciones').value);
+    
+    if (!entrada || !objetivo || !acciones) return;
+    
+    // Cálculos básicos (con stop actual)
+    if (stop && stop < entrada) {
+        const riesgo = entrada - stop;
+        const beneficio = objetivo - entrada;
+        const rr = beneficio / riesgo;
+        const riesgoPct = (riesgo / entrada) * 100;
+        const capitalInvertido = entrada * acciones;
+        const riesgoMax = riesgo * acciones;
+        
+        document.getElementById('calc-riesgo').textContent = riesgo.toFixed(2) + '€';
+        document.getElementById('calc-riesgo-pct').textContent = riesgoPct.toFixed(1) + '%';
+        document.getElementById('calc-rr').textContent = rr.toFixed(2);
+        document.getElementById('calc-capital').textContent = capitalInvertido.toFixed(2) + '€';
+        document.getElementById('calc-riesgo-max').textContent = riesgoMax.toFixed(2) + '€';
+    } else {
+        document.getElementById('calc-riesgo').textContent = 'N/A (stop en BE o superior)';
+        document.getElementById('calc-riesgo-pct').textContent = 'N/A';
+        document.getElementById('calc-rr').textContent = 'N/A';
+        const capitalInvertido = entrada * acciones;
+        document.getElementById('calc-capital').textContent = capitalInvertido.toFixed(2) + '€';
+        document.getElementById('calc-riesgo-max').textContent = 'Protegido';
+    }
+    
+    // Niveles de gestión por R (SIEMPRE desde el stop ORIGINAL de la BD)
+    const rOriginal = precioEntradaOriginal - stopOriginal;
+    
+    if (rOriginal > 0) {
+        document.getElementById('calc-r').textContent = rOriginal.toFixed(2) + '€';
+        document.getElementById('calc-1r').textContent = (precioEntradaOriginal + rOriginal * 1).toFixed(2) + '€';
+        document.getElementById('calc-2r').textContent = (precioEntradaOriginal + rOriginal * 2).toFixed(2) + '€';
+        document.getElementById('calc-3r').textContent = (precioEntradaOriginal + rOriginal * 3).toFixed(2) + '€';
+        document.getElementById('calc-4r').textContent = (precioEntradaOriginal + rOriginal * 4).toFixed(2) + '€';
+        document.getElementById('calc-5r').textContent = (precioEntradaOriginal + rOriginal * 5).toFixed(2) + '€';
+    }
+}
+
+// Calcular al cargar la página
+window.onload = function() {
+    calcularAutomatico();
+};
+</script>
+
+</body>
+</html>

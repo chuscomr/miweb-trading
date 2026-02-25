@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Analizar - Posicional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e3c72; margin-bottom: 15px; font-size: 1.4em; }
+        
+        /* DOS SELECTORES */
+        .selector-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: #333; 
+            font-size: 0.85em; 
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        select:focus { 
+            outline: none; 
+            border-color: #1e3c72; 
+        }
+        
+        select:disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #2a5298; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .loading { text-align: center; padding: 25px; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 12px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .result-section { margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px; }
+        .result-section h3 { color: #1e3c72; margin-bottom: 10px; font-size: 1em; }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .result-item { padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #1e3c72; }
+        .result-label { font-size: 0.75em; color: #666; margin-bottom: 3px; }
+        .result-value { font-size: 1em; font-weight: bold; color: #1e3c72; }
+        .signal {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .signal-compra { background: #d4edda; color: #155724; border: 2px solid #28a745; }
+        .signal-espera { background: #fff3cd; color: #856404; border: 2px solid #ffc107; }
+        .alert { padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.9em; }
+        .alert-error { background: #fee; border-left: 3px solid #c33; color: #c33; }
+        .alert-info { background: #e7f3ff; border-left: 3px solid #0066cc; color: #0066cc; }
+        
+        @media (max-width: 768px) {
+            .selector-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/posicional" class="back-link">← Volver</a>
+        
+        <div class="card">
+            <h1>🔍 Analizar Valor</h1>
+            
+            <div class="alert alert-info">
+                💡 Selecciona un ticker de IBEX 35 o Mercado Continuo
+            </div>
+            
+            <div class="selector-group">
+                <!-- Selector IBEX 35 -->
+                <div class="selector-item">
+                    <label for="ticker-ibex">📊 IBEX 35:</label>
+                    <select id="ticker-ibex" onchange="seleccionarIbex()">
+                        <option value="">-- Selecciona IBEX --</option>
+                        {% for ticker in valores_ibex %}
+                        <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Selector Mercado Continuo -->
+                <div class="selector-item">
+                    <label for="ticker-continuo">📈 Mercado Continuo:</label>
+                    <select id="ticker-continuo" onchange="seleccionarContinuo()">
+                        <option value="">-- Selecciona Continuo --</option>
+                        {% for ticker in valores_continuo %}
+                        <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" id="btnAnalizar" onclick="analizar()">Analizar</button>
+            
+            <div id="resultado"></div>
+        </div>
+    </div>
+    
+    <script>
+        let tickerSeleccionado = null;
+        
+        // Cuando selecciona IBEX, deshabilita Continuo
+        function seleccionarIbex() {
+            const ibexSelect = document.getElementById('ticker-ibex');
+            const continuoSelect = document.getElementById('ticker-continuo');
+            
+            if (ibexSelect.value) {
+                tickerSeleccionado = ibexSelect.value;
+                continuoSelect.value = '';
+                continuoSelect.disabled = true;
+            } else {
+                tickerSeleccionado = null;
+                continuoSelect.disabled = false;
+            }
+        }
+        
+        // Cuando selecciona Continuo, deshabilita IBEX
+        function seleccionarContinuo() {
+            const ibexSelect = document.getElementById('ticker-ibex');
+            const continuoSelect = document.getElementById('ticker-continuo');
+            
+            if (continuoSelect.value) {
+                tickerSeleccionado = continuoSelect.value;
+                ibexSelect.value = '';
+                ibexSelect.disabled = true;
+            } else {
+                tickerSeleccionado = null;
+                ibexSelect.disabled = false;
+            }
+        }
+        
+        function analizar() {
+            const resultadoDiv = document.getElementById('resultado');
+            const btn = document.getElementById('btnAnalizar');
+            
+            if (!tickerSeleccionado) {
+                resultadoDiv.innerHTML = '<div class="alert alert-error">❌ Selecciona un valor de IBEX 35 o Mercado Continuo</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            resultadoDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analizando ' + tickerSeleccionado + '...</p></div>';
+            
+            fetch('/posicional/api/analizar/' + tickerSeleccionado)
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    if (!data.success) {
+                        resultadoDiv.innerHTML = '<div class="alert alert-error">❌ ' + data.error + '</div>';
+                        return;
+                    }
+                    mostrarResultado(data);
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    resultadoDiv.innerHTML = '<div class="alert alert-error">❌ Error: ' + error.message + '</div>';
+                });
+        }
+        
+        function mostrarResultado(data) {
+            const analisis = data.analisis;
+            const validacion = data.validacion;
+            
+            let html = '<div class="result-section"><h3>📊 Datos</h3><div class="result-grid">';
+            html += '<div class="result-item"><div class="result-label">Precio</div><div class="result-value">' + data.datos.precio_actual.toFixed(2) + '€</div></div>';
+            html += '<div class="result-item"><div class="result-label">Semanas</div><div class="result-value">' + data.datos.semanas + '</div></div>';
+            html += '<div class="result-item"><div class="result-label">Volatilidad</div><div class="result-value">' + validacion.volatilidad_anual + '%</div></div>';
+            html += '<div class="result-item"><div class="result-label">Volumen</div><div class="result-value">' + (validacion.volumen_medio_diario/1000000).toFixed(1) + 'M€</div></div>';
+            html += '</div></div>';
+            
+            let signalClass = analisis.decision === 'COMPRA' ? 'signal-compra' : 'signal-espera';
+            let signalText = analisis.decision === 'COMPRA' ? '✅ SEÑAL DE COMPRA' : '⏳ ESPERAR';
+            html += '<div class="signal ' + signalClass + '">' + signalText + '</div>';
+            
+            if (analisis.decision === 'COMPRA') {
+                html += '<div class="result-section"><h3>💰 Entrada</h3><div class="result-grid">';
+                html += '<div class="result-item"><div class="result-label">Entrada</div><div class="result-value">' + analisis.entrada.toFixed(2) + '€</div></div>';
+                html += '<div class="result-item"><div class="result-label">Stop</div><div class="result-value">' + analisis.stop.toFixed(2) + '€</div></div>';
+                html += '<div class="result-item"><div class="result-label">Riesgo</div><div class="result-value">' + analisis.riesgo_pct.toFixed(2) + '%</div></div>';
+                html += '</div></div>';
+            }
+            
+            html += '<div class="result-section"><p style="font-size: 0.85em;"><strong>Motivo:</strong> ' + analisis.motivo + '</p></div>';
+            
+            document.getElementById('resultado').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

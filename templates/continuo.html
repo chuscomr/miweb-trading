@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Escáner Mercado Continuo</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .contenedor {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+        .bloque {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .alerta-compra {
+            background-color: #e6f7e6;
+            border-left: 6px solid #2e8b57;
+            color: #1f5f3a;
+            font-weight: bold;
+        }
+        .alerta-vigilancia {
+            background-color: #fff3e0;
+            border-left: 6px solid #ff9800;
+            color: #a05a00;
+            font-weight: bold;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        li {
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+        }
+        /* ==================================================
+           AJUSTE CONTINUO:
+           quitar SOLO el relleno,
+           mantener el borde izquierdo (estilo IBEX)
+        ================================================== */
+
+        li.alerta-compra,
+        li.alerta-vigilancia {
+            background-color: transparent !important;
+        }
+    </style>
+</head>
+
+<body>
+<div class="contenedor">
+
+<h1>Escáner Mercado Continuo</h1>
+
+{% if escaneo_continuo %}
+<div class="bloque">
+    <p>
+        Analizados:
+        <strong>{{ escaneo_continuo.total_analizados }}</strong> valores —
+        <strong>{{ escaneo_continuo.total_compras }}</strong> COMPRA |
+        <strong>{{ escaneo_continuo.total_vigilancia }}</strong> VIGILANCIA
+    </p>
+
+    {% if escaneo_continuo.compras %}
+    <h3>🟢 Compras</h3>
+    <ul>
+        {% for r in escaneo_continuo.compras %}
+        <li class="alerta-compra">
+            {{ r.nombre }}
+            <span class="ticker">({{ r.ticker }})</span>
+            <strong>({{ r.setup_score }}/{{ r.setup_max }})</strong>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if escaneo_continuo.vigilancia %}
+    <h3>🟠 Vigilancia</h3>
+    <ul>
+        {% for r in escaneo_continuo.vigilancia %}
+        <li class="alerta-vigilancia">
+            {{ r.nombre }}
+            <span class="ticker">({{ r.ticker }})</span>
+            <strong>({{ r.setup_score }}/{{ r.setup_max }})</strong>
+            — {{ r.motivo }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% else %}
+<div class="bloque">
+    <p>No hay resultados para mostrar.</p>
+</div>
+{% endif %}
+
+</div>
+</body>
+</html>

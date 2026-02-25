@@ -1,0 +1,107 @@
+{
+  "fecha_ejecucion": "2026-02-10 18:32:23",
+  "universo": {
+    "total_tickers": 35,
+    "analizados": 35,
+    "sin_datos": 0,
+    "con_error": 0
+  },
+  "metricas_globales": {
+    "total_trades": 45,
+    "expectancy_R": 2.08,
+    "winrate": 42.2,
+    "profit_factor": 4.69,
+    "equity_final_R": 93.5,
+    "mejor_trade": 11.33,
+    "peor_trade": -1.0,
+    "max_drawdown_R": 0,
+    "tickers_rentables": 14,
+    "tickers_no_rentables": 21
+  },
+  "top_performers": {
+    "mejores": [
+      {
+        "ticker": "FER.MC",
+        "empresa": "FER",
+        "total_trades": 1,
+        "expectancy_R": 9.62,
+        "winrate": 100.0,
+        "equity_final_R": 9.62
+      },
+      {
+        "ticker": "MAP.MC",
+        "empresa": "MAP",
+        "total_trades": 1,
+        "expectancy_R": 7.67,
+        "winrate": 100.0,
+        "equity_final_R": 7.67
+      },
+      {
+        "ticker": "ACS.MC",
+        "empresa": "ACS",
+        "total_trades": 2,
+        "expectancy_R": 6.2,
+        "winrate": 100.0,
+        "equity_final_R": 12.4
+      },
+      {
+        "ticker": "MRL.MC",
+        "empresa": "MRL",
+        "total_trades": 1,
+        "expectancy_R": 5.42,
+        "winrate": 100.0,
+        "equity_final_R": 5.42
+      },
+      {
+        "ticker": "BKT.MC",
+        "empresa": "BKT",
+        "total_trades": 2,
+        "expectancy_R": 5.16,
+        "winrate": 50.0,
+        "equity_final_R": 10.33
+      }
+    ],
+    "peores": [
+      {
+        "ticker": "AMS.MC",
+        "empresa": "AMS",
+        "total_trades": 1,
+        "expectancy_R": -1.0,
+        "winrate": 0.0,
+        "equity_final_R": -1.0
+      },
+      {
+        "ticker": "IBE.MC",
+        "empresa": "IBE",
+        "total_trades": 1,
+        "expectancy_R": -1.0,
+        "winrate": 0.0,
+        "equity_final_R": -1.0
+      },
+      {
+        "ticker": "REP.MC",
+        "empresa": "REP",
+        "total_trades": 1,
+        "expectancy_R": -1.0,
+        "winrate": 0.0,
+        "equity_final_R": -1.0
+      },
+      {
+        "ticker": "SAN.MC",
+        "empresa": "SAN",
+        "total_trades": 1,
+        "expectancy_R": -1.0,
+        "winrate": 0.0,
+        "equity_final_R": -1.0
+      },
+      {
+        "ticker": "SLR.MC",
+        "empresa": "SLR",
+        "total_trades": 1,
+        "expectancy_R": -1.0,
+        "winrate": 0.0,
+        "equity_final_R": -1.0
+      }
+    ]
+  }
+}
