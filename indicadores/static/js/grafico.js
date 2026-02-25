@@ -1020,28 +1020,33 @@ class GraficoIndicadores {
             editable: true
         };
 
-        Plotly.newPlot('grafico', traces, layout, config);
+        Plotly.newPlot('grafico', traces, layout, config).then(() => {
+            console.log('✅ Gráfico base creado, ahora añadiendo indicadores adicionales...');
+            
+            // CRÍTICO: Añadir S/R después de que el gráfico esté completamente renderizado
+            if (indicadores.includes('SR')) {
+                console.log('🎯 SR activado, llamando a anadirNivelesSR...');
+                console.log('  - Soportes recibidos:', data.soportes);
+                console.log('  - Resistencias recibidas:', data.resistencias);
+                this.anadirNivelesSR(data.soportes, data.resistencias);
+            } else {
+                console.log('⚠️ SR NO está en indicadores activos:', indicadores);
+            }
 
-        if (indicadores.includes('SR')) {
-            console.log('🎯 SR activado, llamando a anadirNivelesSR...');
-            console.log('  - Soportes recibidos:', data.soportes);
-            console.log('  - Resistencias recibidas:', data.resistencias);
-            this.anadirNivelesSR(data.soportes, data.resistencias);
-        } else {
-            console.log('⚠️ SR NO está en indicadores activos:', indicadores);
-        }
+            if (indicadores.includes('FIBO') && data.fibonacci) {
+                this.dibujarFibonacci(data.fibonacci);
+            }
 
-        if (indicadores.includes('FIBO') && data.fibonacci) {
-            this.dibujarFibonacci(data.fibonacci);
-        }
+            if (data.divergencias && data.divergencias.length > 0) {
+                this.dibujarDivergencias(data.divergencias, data.data, indicadores);
+            }
 
-        if (data.divergencias && data.divergencias.length > 0) {
-            this.dibujarDivergencias(data.divergencias, data.data, indicadores);
-        }
-
-        if (data.patrones_chartistas && data.patrones_chartistas.length > 0) {
-            this.dibujarPatronesChartistas(data.patrones_chartistas);
-        }
+            if (data.patrones_chartistas && data.patrones_chartistas.length > 0) {
+                this.dibujarPatronesChartistas(data.patrones_chartistas);
+            }
+        }).catch(error => {
+            console.error('❌ Error al crear el gráfico:', error);
+        });
     }
 
     /**
@@ -1363,132 +1368,135 @@ class GraficoIndicadores {
             return;
         }
 
-        const grafico = document.getElementById('grafico');
-        if (!grafico || !grafico.layout) {
-            console.warn('Gráfico no disponible para añadir S/R');
-            return;
-        }
+        // CRÍTICO: Pequeño delay para asegurar que Plotly terminó de renderizar
+        setTimeout(() => {
+            const grafico = document.getElementById('grafico');
+            if (!grafico || !grafico.layout) {
+                console.error('❌ Gráfico no disponible después del delay');
+                return;
+            }
 
-        // CRÍTICO: Obtener shapes existentes para NO borrarlas
-        const shapesExistentes = grafico.layout.shapes || [];
-        const annotationsExistentes = grafico.layout.annotations || [];
-        
-        const newShapes = [];
-        const newAnnotations = [];
-
-        // Añadir soportes (líneas verdes punteadas)
-        if (soportes && soportes.length > 0) {
-            console.log(`📗 Añadiendo ${soportes.length} soportes:`, soportes.map(s => s.precio));
+            // CRÍTICO: Obtener shapes existentes para NO borrarlas
+            const shapesExistentes = grafico.layout.shapes || [];
+            const annotationsExistentes = grafico.layout.annotations || [];
             
-            soportes.forEach((s, index) => {
-                // Línea horizontal de soporte
-                newShapes.push({
-                    type: 'line',
-                    xref: 'paper',
-                    yref: 'y',
-                    x0: 0,
-                    y0: s.precio,
-                    x1: 1,
-                    y1: s.precio,
-                    line: {
-                        color: '#22c55e',
-                        width: 2,
-                        dash: 'dot'
-                    },
-                    layer: 'below',
-                    name: 'soporte_' + s.precio,
-                    editable: false
-                });
+            const newShapes = [];
+            const newAnnotations = [];
+
+            // Añadir soportes (líneas verdes punteadas)
+            if (soportes && soportes.length > 0) {
+                console.log(`📗 Añadiendo ${soportes.length} soportes:`, soportes.map(s => s.precio));
                 
-                // Etiqueta del soporte
-                newAnnotations.push({
-                    x: 1,
-                    y: s.precio,
-                    xref: 'paper',
-                    yref: 'y',
-                    text: `S ${s.precio.toFixed(2)}€`,
-                    showarrow: false,
-                    xanchor: 'left',
-                    xshift: 5,
-                    font: { 
-                        size: 10, 
-                        color: '#22c55e',
-                        weight: 'bold'
-                    },
-                    bgcolor: 'rgba(34, 197, 94, 0.1)',
-                    bordercolor: '#22c55e',
-                    borderwidth: 1,
-                    borderpad: 2
+                soportes.forEach((s, index) => {
+                    // Línea horizontal de soporte
+                    newShapes.push({
+                        type: 'line',
+                        xref: 'paper',
+                        yref: 'y',
+                        x0: 0,
+                        y0: s.precio,
+                        x1: 1,
+                        y1: s.precio,
+                        line: {
+                            color: '#22c55e',
+                            width: 2,
+                            dash: 'dot'
+                        },
+                        layer: 'below',
+                        name: 'soporte_' + s.precio,
+                        editable: false
+                    });
+                    
+                    // Etiqueta del soporte
+                    newAnnotations.push({
+                        x: 1,
+                        y: s.precio,
+                        xref: 'paper',
+                        yref: 'y',
+                        text: `S ${s.precio.toFixed(2)}€`,
+                        showarrow: false,
+                        xanchor: 'left',
+                        xshift: 5,
+                        font: { 
+                            size: 10, 
+                            color: '#22c55e',
+                            weight: 'bold'
+                        },
+                        bgcolor: 'rgba(34, 197, 94, 0.1)',
+                        bordercolor: '#22c55e',
+                        borderwidth: 1,
+                        borderpad: 2
+                    });
                 });
-            });
-        }
+            }
 
-        // Añadir resistencias (líneas rojas punteadas)
-        if (resistencias && resistencias.length > 0) {
-            console.log(`📕 Añadiendo ${resistencias.length} resistencias:`, resistencias.map(r => r.precio));
-            
-            resistencias.forEach((r, index) => {
-                // Línea horizontal de resistencia
-                newShapes.push({
-                    type: 'line',
-                    xref: 'paper',
-                    yref: 'y',
-                    x0: 0,
-                    y0: r.precio,
-                    x1: 1,
-                    y1: r.precio,
-                    line: {
-                        color: '#ef4444',
-                        width: 2,
-                        dash: 'dot'
-                    },
-                    layer: 'below',
-                    name: 'resistencia_' + r.precio,
-                    editable: false
-                });
+            // Añadir resistencias (líneas rojas punteadas)
+            if (resistencias && resistencias.length > 0) {
+                console.log(`📕 Añadiendo ${resistencias.length} resistencias:`, resistencias.map(r => r.precio));
                 
-                // Etiqueta de la resistencia
-                newAnnotations.push({
-                    x: 1,
-                    y: r.precio,
-                    xref: 'paper',
-                    yref: 'y',
-                    text: `R ${r.precio.toFixed(2)}€`,
-                    showarrow: false,
-                    xanchor: 'left',
-                    xshift: 5,
-                    font: { 
-                        size: 10, 
-                        color: '#ef4444',
-                        weight: 'bold'
-                    },
-                    bgcolor: 'rgba(239, 68, 68, 0.1)',
-                    bordercolor: '#ef4444',
-                    borderwidth: 1,
-                    borderpad: 2
+                resistencias.forEach((r, index) => {
+                    // Línea horizontal de resistencia
+                    newShapes.push({
+                        type: 'line',
+                        xref: 'paper',
+                        yref: 'y',
+                        x0: 0,
+                        y0: r.precio,
+                        x1: 1,
+                        y1: r.precio,
+                        line: {
+                            color: '#ef4444',
+                            width: 2,
+                            dash: 'dot'
+                        },
+                        layer: 'below',
+                        name: 'resistencia_' + r.precio,
+                        editable: false
+                    });
+                    
+                    // Etiqueta de la resistencia
+                    newAnnotations.push({
+                        x: 1,
+                        y: r.precio,
+                        xref: 'paper',
+                        yref: 'y',
+                        text: `R ${r.precio.toFixed(2)}€`,
+                        showarrow: false,
+                        xanchor: 'left',
+                        xshift: 5,
+                        font: { 
+                            size: 10, 
+                            color: '#ef4444',
+                            weight: 'bold'
+                        },
+                        bgcolor: 'rgba(239, 68, 68, 0.1)',
+                        bordercolor: '#ef4444',
+                        borderwidth: 1,
+                        borderpad: 2
+                    });
                 });
-            });
-        }
+            }
 
-        // SOLUCIÓN: Combinar shapes y annotations existentes + nuevas S/R
-        if (newShapes.length > 0) {
-            const totalShapes = [...shapesExistentes, ...newShapes];
-            const totalAnnotations = [...annotationsExistentes, ...newAnnotations];
-            
-            console.log(`✅ Total shapes después de S/R: ${totalShapes.length}`);
-            console.log(`✅ Total annotations después de S/R: ${totalAnnotations.length}`);
-            
-            Plotly.relayout('grafico', { 
-                shapes: totalShapes,
-                annotations: totalAnnotations
-            }).then(() => {
-                console.log('✅ S/R dibujadas correctamente en el gráfico');
-            }).catch(err => {
-                console.error('❌ Error al dibujar S/R:', err);
-            });
-        } else {
-            console.warn('⚠️ No se generaron shapes para S/R');
-        }
+            // SOLUCIÓN: Combinar shapes y annotations existentes + nuevas S/R
+            if (newShapes.length > 0) {
+                const totalShapes = [...shapesExistentes, ...newShapes];
+                const totalAnnotations = [...annotationsExistentes, ...newAnnotations];
+                
+                console.log(`✅ Total shapes después de S/R: ${totalShapes.length}`);
+                console.log(`✅ Total annotations después de S/R: ${totalAnnotations.length}`);
+                
+                Plotly.relayout('grafico', { 
+                    shapes: totalShapes,
+                    annotations: totalAnnotations
+                }).then(() => {
+                    console.log('✅ S/R dibujadas correctamente en el gráfico');
+                }).catch(err => {
+                    console.error('❌ Error al dibujar S/R:', err);
+                });
+            } else {
+                console.warn('⚠️ No se generaron shapes para S/R');
+            }
+        }, 100); // Delay de 100ms para asegurar renderizado completo
     }
 
     /**
