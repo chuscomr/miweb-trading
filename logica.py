@@ -665,13 +665,9 @@ def escanear_ibex35(cache):
     precios_ibex, _, _, _ = obtener_precios("^IBEX", cache)
 
     if not precios_ibex or len(precios_ibex) < 50:
-        print("⚠️ IBEX sin datos suficientes para escáner")
-        return {
-            "compras": [],
-            "vigilancia": [],
-            "total_compras": 0,
-            "total_vigilancia": 0,
-        }
+        print("⚠️ IBEX sin datos, usando contexto RIESGO MEDIO por defecto")
+        precios_ibex = []
+        contexto = {"estado": "RIESGO MEDIO", "color": "orange", "texto": "Sin datos IBEX"}
 
     # ─────────────────────────────
     # ESCÁNER VALORES
@@ -735,13 +731,9 @@ def escanear_continuo(cache):
     precios_ibex, _, _, _ = obtener_precios("^IBEX", cache)
 
     if not precios_ibex or len(precios_ibex) < 50:
-        print("⚠️ IBEX sin datos suficientes para escáner")
-        return {
-            "compras": [],
-            "vigilancia": [],
-            "total_compras": 0,
-            "total_vigilancia": 0,
-        }
+        print("⚠️ IBEX sin datos, usando contexto RIESGO MEDIO por defecto")
+        precios_ibex = []
+    contexto = {"estado": "RIESGO MEDIO", "color": "orange", "texto": "Sin datos IBEX"}
 
     # ─────────────────────────────
     # ESCÁNER VALORES
