@@ -1230,7 +1230,7 @@
         <div class="card">
             <h2>Gráfico</h2>
             <div class="grafico-section">
-                <img src="{{ url_for('static', filename=grafico_file.replace('static/','')) }}" alt="Gráfico de {{ ticker }}">
+                {{ grafico_file | safe }}
             </div>
         </div>
         {% endif %}

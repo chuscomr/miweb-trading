@@ -1,12 +1,10 @@
 print(">>> logica.py CARGADO <<<")
 
-import matplotlib
-matplotlib.use("Agg")
+
 import time
 import random
 from datetime import datetime, timedelta
 import yfinance as yf
-import matplotlib.pyplot as plt
 import os
 import requests
 import pandas as pd
@@ -175,109 +173,90 @@ NOMBRES_CONTINUO = {
 # =============================
 
 def generar_grafico(precios, fechas, ticker, señal=None, entrada=None, stop=None):
-    
     print(f"\n{'='*60}")
-    print(f"[GENERAR_GRAFICO] INICIANDO")
+    print(f"[GENERAR_GRAFICO] INICIANDO con Plotly")
     print(f"Ticker: {ticker}")
-    print(f"Precios: {len(precios) if precios else 0}")
-    print(f"Fechas: {len(fechas) if fechas else 0}")
-    print(f"Señal: {señal}")
     print(f"{'='*60}\n")
-    
-    # ─────────────────────────────
-    # VALIDACIONES DEFENSIVAS
-    # ─────────────────────────────
+
     if not precios or not fechas or len(precios) != len(fechas):
         return None
 
-    # Serie de precios
-    serie = pd.Series(precios, index=pd.DatetimeIndex(fechas))
-    mm20 = serie.rolling(20).mean()
-
-    # ─────────────────────────────
-    # RSI (calculado de golpe con pandas)
-    # ─────────────────────────────
-    periodo = 14
-    delta = serie.diff()
-    ganancias = delta.clip(lower=0)
-    perdidas = -delta.clip(upper=0)
-    media_gan = ganancias.ewm(alpha=1/periodo, adjust=False).mean()
-    media_per = perdidas.ewm(alpha=1/periodo, adjust=False).mean()
-    rs = media_gan / media_per.replace(0, np.nan)
-    rsi = (100 - (100 / (1 + rs))).fillna(50)
-
-    # ─────────────────────────────
-    # FIGURA
-    # ─────────────────────────────
-    fig, (ax1, ax2) = plt.subplots(
-        2, 1,
-        figsize=(9, 5),
-        sharex=True,
-        gridspec_kw={"height_ratios": [3, 1]}
-    )
-
-    # ── PRECIO ───────────────────
-    ax1.plot(serie.index, serie.values, label="Precio", color="black")
-    ax1.plot(mm20.index, mm20.values, linestyle="--", color="blue", label="MM20")
-
-    if señal == "COMPRA":
-        ax1.set_title(f"{ticker} – COMPRA", color="green")
-    elif señal == "VIGILANCIA":
-        ax1.set_title(f"{ticker} – VIGILANCIA", color="orange")
-    else:
-        ax1.set_title(f"{ticker} – NO OPERAR", color="red")
-
-    if entrada is not None:
-        ax1.axhline(entrada, color="green", linestyle="--", linewidth=1.5, label="Entrada")
-
-    if stop is not None:
-        ax1.axhline(stop, color="red", linestyle="--", linewidth=1.5, label="Stop")
-
-    ax1.grid(True)
-    ax1.legend()
-
-    # ── RSI ──────────────────────
-    ax2.plot(rsi.index, rsi.values, color="orange", label="RSI")
-    ax2.axhline(70, color="red", linestyle="--")
-    ax2.axhline(30, color="green", linestyle="--")
-
-    ax2.set_ylim(0, 100)
-    ax2.set_ylabel("RSI")
-    ax2.grid(True)
-    ax2.legend()
-
-    # ─────────────────────────────
-    # GUARDADO SEGURO
-    # ─────────────────────────────
     try:
-        # Obtener ruta absoluta a la carpeta static
-        import sys
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        static_dir = os.path.join(base_dir, "static")
-        
-        os.makedirs(static_dir, exist_ok=True)
-        print(f"📁 [GENERAR_GRAFICO] Guardando en: {static_dir}")
-        
-        ticker_safe = ticker.replace("^", "").replace("/", "_")
-        nombre_archivo = f"grafico_{ticker_safe}.png"
-        ruta_completa = os.path.join(static_dir, nombre_archivo)
-        
-        print(f"💾 [GENERAR_GRAFICO] Archivo: {ruta_completa}")
-        
-        plt.tight_layout()
-        plt.savefig(ruta_completa, dpi=100, bbox_inches='tight')
-        plt.close(fig)
-        
-        if os.path.exists(ruta_completa):
-            tamaño = os.path.getsize(ruta_completa)
-            print(f"✅ [GENERAR_GRAFICO] Creado: {tamaño} bytes")
-        else:
-            print(f"❌ [GENERAR_GRAFICO] NO se creó")
-        
-        return nombre_archivo
-        
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+
+        serie = pd.Series(precios, index=pd.DatetimeIndex(fechas))
+        mm20 = serie.rolling(20).mean()
+
+        # RSI
+        rsi_valores = [np.nan] * len(precios)
+        for i in range(14, len(precios)):
+            rsi_calc = calcular_rsi_seguro(precios[:i+1])
+            if rsi_calc is not None:
+                rsi_valores[i] = rsi_calc
+        rsi = pd.Series(rsi_valores, index=serie.index)
+
+        # Color del título según señal
+        color_titulo = "green" if señal == "COMPRA" else "orange" if señal == "VIGILANCIA" else "red"
+        titulo = f"{ticker} – {señal or 'NO OPERAR'}"
+
+        fig = make_subplots(
+            rows=2, cols=1,
+            shared_xaxes=True,
+            row_heights=[0.7, 0.3],
+            vertical_spacing=0.05
+        )
+
+        # Precio
+        fig.add_trace(go.Scatter(
+            x=serie.index, y=serie.values,
+            name="Precio", line=dict(color="black", width=1.5)
+        ), row=1, col=1)
+
+        # MM20
+        fig.add_trace(go.Scatter(
+            x=mm20.index, y=mm20.values,
+            name="MM20", line=dict(color="blue", width=1, dash="dash")
+        ), row=1, col=1)
+
+        # Entrada
+        if entrada is not None:
+            fig.add_hline(y=entrada, line_color="green", line_dash="dash",
+                          line_width=1.5, annotation_text="Entrada",
+                          annotation_position="right", row=1, col=1)
+
+        # Stop
+        if stop is not None:
+            fig.add_hline(y=stop, line_color="red", line_dash="dash",
+                          line_width=1.5, annotation_text="Stop",
+                          annotation_position="right", row=1, col=1)
+
+        # RSI
+        fig.add_trace(go.Scatter(
+            x=rsi.index, y=rsi.values,
+            name="RSI", line=dict(color="orange", width=1.5)
+        ), row=2, col=1)
+
+        fig.add_hline(y=70, line_color="red", line_dash="dash", row=2, col=1)
+        fig.add_hline(y=30, line_color="green", line_dash="dash", row=2, col=1)
+
+        fig.update_layout(
+            title=dict(text=titulo, font=dict(color=color_titulo, size=14)),
+            height=450,
+            margin=dict(l=40, r=40, t=50, b=30),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+        )
+        fig.update_yaxes(range=[0, 100], row=2, col=1)
+        fig.update_xaxes(showgrid=True, gridcolor="lightgrey")
+        fig.update_yaxes(showgrid=True, gridcolor="lightgrey")
+
+        print(f"✅ [GENERAR_GRAFICO] Plotly OK")
+        return fig.to_html(full_html=False, include_plotlyjs="cdn")
+
     except Exception as e:
-        print(f"❌ [GENERAR_GRAFICO] ERROR: {e}")
+        print(f"❌ [GENERAR_GRAFICO] ERROR Plotly: {e}")
         import traceback
         traceback.print_exc()
         return None
