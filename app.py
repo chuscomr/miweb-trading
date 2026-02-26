@@ -1,3 +1,11 @@
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+import pandas as pd
 import yfinance as yf
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_caching import Cache
@@ -9,32 +17,26 @@ import matplotlib.pyplot as plt
 from controlador import ejecutar_contexto, procesar_post, blindar_contexto
 import base64
 from datetime import datetime
-from MiWeb import cartera_db
-from MiWeb import cartera_logica
-from .indicadores.routes import indicadores_bp
-from MiWeb.swing_trading.scanner_swing import (
+import cartera_db
+import cartera_logica
+from indicadores.routes import indicadores_bp
+from swing_trading.scanner_swing import (
     escanear_mercado,
     IBEX35_TICKERS,
     CONTINUO_LIQUIDO
 )
-import os
-import sys
-import pandas as pd
 
-from MiWeb.analisis_tecnico.soportes_resistencias import (
+from analisis_tecnico.soportes_resistencias import (
     detectar_soportes_resistencias,
     obtener_sr_mas_cercanos
 )
-from MiWeb.analisis_tecnico.patrones_velas import (
+from analisis_tecnico.patrones_velas import (
     detectar_patrones_velas,
     analizar_confluencia_velas_sr
 )
-from MiWeb.analisis_tecnico.grafico_avanzado import crear_grafico_analisis_tecnico
-from MiWeb.analisis_tecnico.confirmaciones_pullback import calcular_confirmaciones_pullback
+from analisis_tecnico.grafico_avanzado import crear_grafico_analisis_tecnico
+from analisis_tecnico.confirmaciones_pullback import calcular_confirmaciones_pullback
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
 print(">>> APP.PY CARGANDO... <<<")
 
 # ════════════════════════════════════════════════════════════════
