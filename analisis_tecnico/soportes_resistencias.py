@@ -5,7 +5,41 @@
 
 import numpy as np
 import pandas as pd
-from scipy.signal import argrelextrema
+
+
+def argrelextrema_np(arr, comparator, order=1):
+    """
+    Reemplazo de scipy.signal.argrelextrema para 1D arrays.
+    Devuelve una tupla con un np.array de índices, igual que scipy.
+    comparator: np.greater o np.less
+    """
+    x = np.asarray(arr)
+    n = x.size
+    if n == 0:
+        return (np.array([], dtype=int),)
+
+    order = int(order)
+    if order < 1 or n < 2 * order + 1:
+        return (np.array([], dtype=int),)
+
+    idx = []
+    for i in range(order, n - order):
+        center = x[i]
+        left = x[i - order:i]
+        right = x[i + 1:i + order + 1]
+
+        if comparator is np.greater:
+            if np.all(center > left) and np.all(center > right):
+                idx.append(i)
+        elif comparator is np.less:
+            if np.all(center < left) and np.all(center < right):
+                idx.append(i)
+        else:
+            # Por si algún día pasas una función distinta
+            if np.all(comparator(center, left)) and np.all(comparator(center, right)):
+                idx.append(i)
+
+    return (np.array(idx, dtype=int),)
 
 def detectar_soportes_resistencias(df, periodo=20, tolerancia_pct=2.0, min_toques=2):
     """
@@ -38,8 +72,8 @@ def detectar_soportes_resistencias(df, periodo=20, tolerancia_pct=2.0, min_toque
     closes = df['Close'].values
     
     # Índices de máximos/mínimos locales
-    maximos_idx = argrelextrema(highs, np.greater, order=periodo)[0]
-    minimos_idx = argrelextrema(lows, np.less, order=periodo)[0]
+    maximos_idx = argrelextrema_np(highs, np.greater, order=periodo)[0]
+    minimos_idx = argrelextrema_np(lows, np.less, order=periodo)[0]
     
     # Niveles de precio
     niveles_resistencia = highs[maximos_idx]
