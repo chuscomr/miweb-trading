@@ -62,6 +62,12 @@ def obtener_precios_eodhd(ticker, cache, periodo="1y"):
             return None, None, None, None
 
         symbol = ticker
+        
+        # Blindaje: ^IBEX no es válido en EODHD (es formato Yahoo)
+        if symbol.startswith("^"):
+            print(f"Ticker {symbol} no compatible con EODHD, ignorando")
+            return None, None, None, None
+
         cache_key = f"eod_{symbol}_{periodo}"
 
         @cache.cached(timeout=6 * 3600, key_prefix=cache_key)  # 6h
@@ -588,19 +594,12 @@ def calcular_objetivo_adaptativo(entrada, riesgo_por_accion, atr, setup_score):
 # =============================
 
 def contexto_ibex(cache):
-    """
-    Evalúa el contexto general del IBEX para gestión de riesgo.
-    """
-    precios, _, _, precio_actual = obtener_precios("^IBEX", cache)
-
+    ticker_ibex = "^IBEX" if dataprovider() != "eodhd" else None
+    if ticker_ibex is None:
+        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "Contexto IBEX no disponible (EODHD)"}
+    precios, _, _, precio_actual = obtener_precios(ticker_ibex, cache)
     if not precios or len(precios) < 210 or precio_actual is None:
-        return {
-            "estado": "RIESGO MEDIO",
-            "color": "grey",
-            "texto": "IBEX sin datos suficientes"
-        }
-
-    serie = pd.Series(precios, dtype=float).dropna()
+        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "IBEX sin datos suficientes"}    serie = pd.Series(precios, dtype=float).dropna()
 
     if len(serie) < 210:
         return {
