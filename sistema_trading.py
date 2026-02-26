@@ -186,7 +186,7 @@ def sistema_trading(precios, volumenes, fechas=None, precio_actual=None):
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 🚨 FILTRO CRÍTICO: MERCADO ALCISTA
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    
+    """
     try:
         import yfinance as yf
         datos_ibex = yf.download("^IBEX", period="1y", progress=False)
@@ -208,7 +208,7 @@ def sistema_trading(precios, volumenes, fechas=None, precio_actual=None):
     except Exception as e:
         # Si falla la descarga, continuar (no bloquear por error técnico)
         print(f"⚠️ Error verificando mercado: {e}")
-
+    """
     # ─────────────────────────
     #  1️⃣VALIDACIÓN DE DATOS
     # ─────────────────────────
