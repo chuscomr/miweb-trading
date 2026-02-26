@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np  # ✅ AÑADIDO
 MODO_SCAN = "SCAN"
 MODO_TRADE = "TRADE"
-from sistema_trading import sistema_trading
+from sistema_trading import sistema_trading, calcular_rsi_seguro
 
 def _data_provider():
     return (os.getenv("DATA_PROVIDER", "yfinance") or "yfinance").strip().lower()
