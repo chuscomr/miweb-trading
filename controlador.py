@@ -30,7 +30,7 @@ def procesar_post(request, session):
 # ─────────────────────────────
 def ejecutar_contexto(modo, datos, cache):
 
-    from MiWeb.logica import ejecutar_app
+    from logica import ejecutar_app
 
     fake_request = type("Req", (), {})()
     fake_request.method = "POST"
