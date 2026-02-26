@@ -11,6 +11,8 @@ import os
 import requests
 import pandas as pd
 import numpy as np  # ✅ AÑADIDO
+MODO_SCAN = "SCAN"
+MODO_TRADE = "TRADE"
 
 def _data_provider():
     return (os.getenv("DATA_PROVIDER", "yfinance") or "yfinance").strip().lower()
