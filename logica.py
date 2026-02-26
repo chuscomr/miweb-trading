@@ -2,7 +2,8 @@ print(">>> logica.py CARGADO <<<")
 
 import matplotlib
 matplotlib.use("Agg")
-
+import time
+import random
 from datetime import datetime, timedelta
 import yfinance as yf
 import matplotlib.pyplot as plt
@@ -31,13 +32,41 @@ def obtener_precios(ticker, cache, periodo="1y"):
     try:
         cache_key = f"precios_{ticker}_{periodo}"
 
-        @cache.cached(timeout=600, key_prefix=cache_key)
-        def _descargar():
-            print(f"📥 Descargando datos de {ticker}...")
-            datos = yf.download(ticker, period=periodo, progress=False)
-            return datos
+        # Cache más largo para índices/contexto (reduce llamadas y rate-limit)
+        timeout = 3600 if str(ticker).startswith("^") else 600
 
-        datos = _descargar()
+        @cache.cached(timeout=timeout, key_prefix=cache_key)
+        def descargar():
+            last_exc = None
+
+            for intento in range(3):
+                try:
+                    print(f"Descargando datos de {ticker} (intento {intento+1}/3)...")
+
+                    datos = yf.download(
+                        ticker,
+                        period=periodo,
+                        progress=False,
+                        threads=False,   # más estable en servidores
+                    )
+
+                    # Si Yahoo/yfinance devuelve vacío, reintentamos
+                    if datos is not None and not datos.empty:
+                        return datos
+
+                except Exception as e:
+                    last_exc = e
+
+                # Backoff + jitter
+                time.sleep(1.5 * (intento + 1) + random.random())
+
+            # Si tras reintentos sigue mal, levantamos para que lo capture el try externo
+            if last_exc is not None:
+                raise last_exc
+
+            return None
+
+        datos = descargar()
 
         if datos is None or datos.empty:
             return None, None, None, None
@@ -45,7 +74,7 @@ def obtener_precios(ticker, cache, periodo="1y"):
         close = datos["Close"]
         volume = datos["Volume"]
 
-        # 🔧 Yahoo puede devolver DataFrame o Series
+        # Yahoo puede devolver DataFrame o Series
         if isinstance(close, pd.DataFrame):
             close = close.iloc[:, 0]
         if isinstance(volume, pd.DataFrame):
@@ -54,6 +83,7 @@ def obtener_precios(ticker, cache, periodo="1y"):
         precios = close.dropna().tolist()
         volumenes = volume.dropna().tolist()
         fechas = close.index.to_pydatetime().tolist()
+
         precio_actual = precios[-1] if precios else None
 
         if len(precios) < 50:
@@ -62,7 +92,7 @@ def obtener_precios(ticker, cache, periodo="1y"):
         return precios, volumenes, fechas, precio_actual
 
     except Exception as e:
-        print(f"❌ Error descargando {ticker}: {e}")
+        print("Error descargando:", ticker, e)
         return None, None, None, None
 
 
