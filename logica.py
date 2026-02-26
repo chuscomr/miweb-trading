@@ -195,16 +195,16 @@ def generar_grafico(precios, fechas, ticker, señal=None, entrada=None, stop=Non
     mm20 = serie.rolling(20).mean()
 
     # ─────────────────────────────
-    # RSI (una sola pasada, seguro)
+    # RSI (calculado de golpe con pandas)
     # ─────────────────────────────
-    rsi_valores = [np.nan] * len(precios)
-
-    for i in range(14, len(precios)):
-        rsi_calc = calcular_rsi_seguro(precios[:i+1])
-        if rsi_calc is not None:
-            rsi_valores[i] = rsi_calc
-
-    rsi = pd.Series(rsi_valores, index=serie.index)
+    periodo = 14
+    delta = serie.diff()
+    ganancias = delta.clip(lower=0)
+    perdidas = -delta.clip(upper=0)
+    media_gan = ganancias.ewm(alpha=1/periodo, adjust=False).mean()
+    media_per = perdidas.ewm(alpha=1/periodo, adjust=False).mean()
+    rs = media_gan / media_per.replace(0, np.nan)
+    rsi = (100 - (100 / (1 + rs))).fillna(50)
 
     # ─────────────────────────────
     # FIGURA
