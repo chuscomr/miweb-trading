@@ -599,7 +599,8 @@ def contexto_ibex(cache):
         return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "Contexto IBEX no disponible (EODHD)"}
     precios, _, _, precio_actual = obtener_precios(ticker_ibex, cache)
     if not precios or len(precios) < 210 or precio_actual is None:
-        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "IBEX sin datos suficientes"}    serie = pd.Series(precios, dtype=float).dropna()
+        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "IBEX sin datos suficientes"}
+    serie = pd.Series(precios, dtype=float).dropna()
 
     if len(serie) < 210:
         return {
