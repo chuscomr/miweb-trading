@@ -145,6 +145,7 @@ class GraficoIndicadores {
             console.log('  - Soportes:', data.soportes);
             console.log('  - Resistencias:', data.resistencias);
 
+            data.resumenTecnico = this.normalizarResumen(data.resumenTecnico);
             this.ultimosDatos = data;
             this.dibujar(data, indicadores);
             this.actualizarPaneles(data, indicadores);
@@ -1630,9 +1631,9 @@ class GraficoIndicadores {
             }
         }
 
-        if (data.resumen_tecnico) {
-            actualizarResumenTecnico(data.resumen_tecnico);
-            actualizarDesglose(data.resumen_tecnico);
+        if (data.resumenTecnico) {
+            actualizarResumenTecnico(data.resumenTecnico);
+            actualizarDesglose(data.resumenTecnico);
         }
 
         const panelDivergencias = document.getElementById('divergencias');
@@ -1795,6 +1796,36 @@ class GraficoIndicadores {
         return `${(valor / 1000000).toFixed(2)}M`;
     }
 }
+
+    normalizarResumen(r) {
+        if (!r) return r;
+        const mm = r.medias_moviles || r.mediasmoviles;
+        return {
+            ...r,
+            medias_moviles: mm,
+            puntuacion_global: r.puntuacion_global ?? r.puntuacionglobal,
+            contexto_mm200: r.contexto_mm200 || r.contextomm200,
+            contexto_favorable: r.contexto_favorable ?? r.contextofavorable,
+            nivel_confianza: r.nivel_confianza || r.nivelconfianza,
+            puntos_compra: r.puntos_compra ?? r.puntoscompra,
+            puntos_venta: r.puntos_venta ?? r.puntosventa,
+            ratio_volumen: r.ratio_volumen ?? r.ratiovolumen,
+            gauge_volumen: r.gauge_volumen ?? r.gaugevolumen,
+            gauge_momentum: r.gauge_momentum ?? r.gaugemomentum,
+            indicadores: r.indicadores ? {
+                ...r.indicadores,
+                desglose_compra: r.indicadores.desglose_compra || r.indicadores.desglosecompra || [],
+                desglose_venta: r.indicadores.desglose_venta || r.indicadores.desgloseventa || [],
+                desglose_neutral: r.indicadores.desglose_neutral || r.indicadores.desgloseneutral || []
+            } : r.indicadores,
+            medias_moviles: mm ? {
+                ...mm,
+                desglose_compra: mm.desglose_compra || mm.desglosecompra || [],
+                desglose_venta: mm.desglose_venta || mm.desgloseventa || [],
+                desglose_neutral: mm.desglose_neutral || mm.desgloseneutral || []
+            } : undefined
+        };
+    }
 
 // ============================================================================
 // FIN DE LA CLASE - FUNCIONES GLOBALES
