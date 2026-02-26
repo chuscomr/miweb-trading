@@ -1,4 +1,4 @@
-from MiWeb.logica import evaluar_valor
+from logica import evaluar_valor
 import pandas as pd
 
 

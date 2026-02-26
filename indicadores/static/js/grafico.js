@@ -644,6 +644,7 @@ class GraficoIndicadores {
         const tieneOBV = indicadores.includes('OBV');
         const tieneMFI = indicadores.includes('MFI');
         const tieneADX = indicadores.includes('ADX');
+        const tieneATR = indicadores.includes('ATR');
 
         const GAP = 0.01;
         const pVolumen = tieneVolumen ? 0.16 : 0;
@@ -652,20 +653,24 @@ class GraficoIndicadores {
         const pRSI = tieneRSI ? 0.11 : 0;
         const pMFI = tieneMFI ? 0.11 : 0;
         const pADX = tieneADX ? 0.11 : 0;
+        const pATR = tieneATR ? 0.11 : 0;
 
-        const pPrecio = 1 - pVolumen - pOBV - pMACD - pRSI - pMFI - pADX
-            - (tieneVolumen && (tieneOBV || tieneMACD || tieneRSI || tieneMFI || tieneADX) ? GAP : 0)
+        const pPrecio = 1 - pVolumen - pOBV - pMACD - pRSI - pMFI - pADX - pATR
+            - (tieneVolumen && (tieneOBV || tieneMACD || tieneRSI || tieneMFI || tieneADX || tieneATR) ? GAP : 0)
             - (tieneOBV ? GAP : 0)
             - (tieneMACD ? GAP : 0)
             - (tieneRSI ? GAP : 0)
             - (tieneMFI ? GAP : 0)
-            - (tieneADX ? GAP : 0);
+            - (tieneADX ? GAP : 0)
+            - (tieneATR ? GAP : 0);
 
         let cursor = 0.03;
         const domVolumen = tieneVolumen ? [cursor, cursor += pVolumen] : null;
         if (tieneVolumen) cursor += GAP;
         const domOBV = tieneOBV ? [cursor, cursor += pOBV] : null;
         if (tieneOBV) cursor += GAP;
+        const domATR = tieneATR ? [cursor, cursor += pATR] : null;
+        if (tieneATR) cursor += GAP;
         const domMACD = tieneMACD ? [cursor, cursor += pMACD] : null;
         if (tieneMACD) cursor += GAP;
         const domRSI = tieneRSI ? [cursor, cursor += pRSI] : null;
@@ -840,6 +845,25 @@ class GraficoIndicadores {
             });
         }
 
+        // ===========================
+        // ATR (Average True Range)
+        // ===========================
+        if (indicadores.includes('ATR') && data.data[0].ATR !== undefined) {
+            let yaxisName = 'y7';  // Panel dedicado para ATR
+            
+            traces.push({
+                x: fechas,
+                y: data.data.map(d => d.ATR),
+                type: 'scatter',
+                mode: 'lines',
+                name: 'ATR',
+                line: { color: '#8b5cf6', width: 2 },
+                xaxis: 'x',
+                yaxis: yaxisName,
+                hovertemplate: '<b>ATR</b><br>%{y:.4f}<extra></extra>'
+            });
+        }
+
         // VOLUMEN
         if (indicadores.includes('VOLUMEN')) {
             traces.push({
@@ -957,6 +981,19 @@ class GraficoIndicadores {
                 showgrid: true,
                 tickfont: { size: 9 },
                 hoverformat: ',.0f'
+            };
+        }
+
+        // Panel ATR
+        if (tieneATR) {
+            layout.yaxis7 = {
+                domain: domATR,
+                gridcolor: '#cbd5e1',
+                linecolor: '#94a3b8',
+                title: { text: 'ATR', font: { size: 11 } },
+                showgrid: true,
+                tickfont: { size: 9 },
+                hoverformat: '.4f'
             };
         }
 
