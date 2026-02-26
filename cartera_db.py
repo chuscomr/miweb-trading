@@ -8,8 +8,11 @@ from datetime import datetime
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_PATH = os.path.join(BASE_DIR, "cartera.db")
-
+# En Render existe la variable RENDER, en local no
+if os.getenv('RENDER'):
+    DATABASE_PATH = '/tmp/cartera.db'
+else:
+    DATABASE_PATH = os.path.join(BASE_DIR, 'cartera.db')
 
 def init_db():
     """

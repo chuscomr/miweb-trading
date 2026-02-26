@@ -112,6 +112,10 @@ def obtener_precios(ticker, cache, periodo="1y"):
     provider = _data_provider()
     print("USANDO PROVIDER =", provider, "ticker=", ticker, "periodo=", periodo)
 
+    # ^IBEX siempre con yfinance, EODHD no lo soporta
+    if ticker == "^IBEX":
+        return obtener_precios_yfinance(ticker, cache, periodo)
+
     if provider == "eodhd":
         return obtener_precios_eodhd(ticker, cache, periodo)
 
