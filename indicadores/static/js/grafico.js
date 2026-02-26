@@ -1795,7 +1795,7 @@ class GraficoIndicadores {
         if (valor === null || valor === undefined) return '--';
         return `${(valor / 1000000).toFixed(2)}M`;
     }
-}
+
 
     normalizarResumen(r) {
         if (!r) return r;
@@ -1826,7 +1826,7 @@ class GraficoIndicadores {
             } : undefined
         };
     }
-
+}
 // ============================================================================
 // FIN DE LA CLASE - FUNCIONES GLOBALES
 // ============================================================================
