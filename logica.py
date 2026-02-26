@@ -596,7 +596,7 @@ def calcular_objetivo_adaptativo(entrada, riesgo_por_accion, atr, setup_score):
 # =============================
 
 def contexto_ibex(cache):
-    ticker_ibex = "^IBEX" if dataprovider() != "eodhd" else None
+    ticker_ibex = "^IBEX" if _data_provider() != "eodhd" else None
     if ticker_ibex is None:
         return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "Contexto IBEX no disponible (EODHD)"}
     precios, _, _, precio_actual = obtener_precios(ticker_ibex, cache)
