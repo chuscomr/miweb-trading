@@ -25,11 +25,13 @@ def _descargar_datos(ticker, timeframe):
                 df = pd.DataFrame(data)
                 df["Date"] = pd.to_datetime(df["date"])
                 df = df.set_index("Date")
+                factor = df["adjusted_close"].astype(float) / df["close"].astype(float)
                 df["Close"] = df["adjusted_close"].astype(float)
-                df["Open"] = df["open"].astype(float)
-                df["High"] = df["high"].astype(float)
-                df["Low"] = df["low"].astype(float)
+                df["Open"] = df["open"].astype(float) * factor
+                df["High"] = df["high"].astype(float) * factor
+                df["Low"] = df["low"].astype(float) * factor
                 df["Volume"] = df["volume"].astype(float)
+
                 return df[["Open", "High", "Low", "Close", "Volume"]]
         except Exception as e:
             print(f"EODHD falló para {ticker}: {e}, probando yfinance...")
