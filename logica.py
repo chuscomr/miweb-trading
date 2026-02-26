@@ -8,66 +8,25 @@ from datetime import datetime, timedelta
 import yfinance as yf
 import matplotlib.pyplot as plt
 import os
+import requests
 import pandas as pd
 import numpy as np  # ✅ AÑADIDO
 
-# =============================
-# 🔁 MODOS DE EJECUCIÓN
-# =============================
+def _data_provider():
+    return (os.getenv("DATA_PROVIDER", "yfinance") or "yfinance").strip().lower()
 
-MODO_SCAN = "SCAN"    # Escáner exploratorio
-MODO_TRADE = "TRADE"  # Ejecución estricta
 
-from sistema_trading import (
-    sistema_trading,
-    calcular_rsi_seguro,  # ✅ CAMBIADO
-    calcular_entrada_adaptativa
-)
-
-# =============================
-# 📊 OBTENCIÓN DE DATOS
-# =============================
-
-def obtener_precios(ticker, cache, periodo="1y"):
+def obtener_precios_yfinance(ticker, cache, periodo="1y"):
     try:
         cache_key = f"precios_{ticker}_{periodo}"
 
-        # Cache más largo para índices/contexto (reduce llamadas y rate-limit)
-        timeout = 3600 if str(ticker).startswith("^") else 600
-
-        @cache.cached(timeout=timeout, key_prefix=cache_key)
+        @cache.cached(timeout=600, key_prefix=cache_key)
         def descargar():
-            last_exc = None
-
-            for intento in range(3):
-                try:
-                    print(f"Descargando datos de {ticker} (intento {intento+1}/3)...")
-
-                    datos = yf.download(
-                        ticker,
-                        period=periodo,
-                        progress=False,
-                        threads=False,   # más estable en servidores
-                    )
-
-                    # Si Yahoo/yfinance devuelve vacío, reintentamos
-                    if datos is not None and not datos.empty:
-                        return datos
-
-                except Exception as e:
-                    last_exc = e
-
-                # Backoff + jitter
-                time.sleep(1.5 * (intento + 1) + random.random())
-
-            # Si tras reintentos sigue mal, levantamos para que lo capture el try externo
-            if last_exc is not None:
-                raise last_exc
-
-            return None
+            print(f"Descargando datos (yfinance) de {ticker}...")
+            datos = yf.download(ticker, period=periodo, progress=False)
+            return datos
 
         datos = descargar()
-
         if datos is None or datos.empty:
             return None, None, None, None
 
@@ -83,7 +42,6 @@ def obtener_precios(ticker, cache, periodo="1y"):
         precios = close.dropna().tolist()
         volumenes = volume.dropna().tolist()
         fechas = close.index.to_pydatetime().tolist()
-
         precio_actual = precios[-1] if precios else None
 
         if len(precios) < 50:
@@ -92,9 +50,65 @@ def obtener_precios(ticker, cache, periodo="1y"):
         return precios, volumenes, fechas, precio_actual
 
     except Exception as e:
-        print("Error descargando:", ticker, e)
+        print("Error descargando (yfinance):", ticker, e)
         return None, None, None, None
 
+
+def obtener_precios_eodhd(ticker, cache, periodo="1y"):
+    try:
+        token = os.getenv("EODHD_API_TOKEN")
+        if not token:
+            print("Falta EODHD_API_TOKEN")
+            return None, None, None, None
+
+        symbol = ticker
+        cache_key = f"eod_{symbol}_{periodo}"
+
+        @cache.cached(timeout=6 * 3600, key_prefix=cache_key)  # 6h
+        def descargar():
+            print(f"Descargando datos (EODHD) de {symbol}...")
+            url = f"https://eodhd.com/api/eod/{symbol}"
+            params = {
+                "api_token": token,
+                "period": "d",
+                "fmt": "json",
+                "order": "a",
+            }
+            r = requests.get(url, params=params, timeout=25)
+            r.raise_for_status()
+            return r.json()
+
+        data = descargar()
+        if not isinstance(data, list) or len(data) == 0:
+            return None, None, None, None
+
+        # Aproximación a días de mercado (no calendario)
+        dias_map = {"6mo": 160, "1y": 260, "2y": 520, "5y": 1300}
+        dias = dias_map.get(periodo, 260)
+        data = data[-dias:] if len(data) > dias else data
+
+        fechas = [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
+        precios = [float(row.get("adjusted_close") or row["close"]) for row in data]
+        volumenes = [float(row.get("volume") or 0) for row in data]
+
+        if len(precios) < 50:
+            return None, None, None, None
+
+        return precios, volumenes, fechas, precios[-1]
+
+    except Exception as e:
+        print("Error descargando (EODHD):", ticker, e)
+        return None, None, None, None
+
+
+def obtener_precios(ticker, cache, periodo="1y"):
+    provider = _data_provider()
+    print("USANDO PROVIDER =", provider, "ticker=", ticker, "periodo=", periodo)
+
+    if provider == "eodhd":
+        return obtener_precios_eodhd(ticker, cache, periodo)
+
+    return obtener_precios_yfinance(ticker, cache, periodo)
 
 # =============================
 # 📊 UNIVERSOS
