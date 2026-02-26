@@ -1,15 +1,6 @@
 # api.py
 from flask import request, jsonify
 import yfinance as yf
-import pandas as pdimport os
-import requests
-from datetime import datetime
-from .nucleo.calculos import aplicar_indicadores
-from .utilidades.serializador import preparar_para_json, formatear_niveles_sr, formatear_patrones
-from .routes import indicadores_bp
-
-from flask import request, jsonify
-import yfinance as yf
 import pandas as pd
 import os
 import requests
