@@ -56,11 +56,11 @@ cache = Cache(application, config={
 # ════════════════════════════════════════════════════════════════
 # 3️⃣ REGISTRAR BLUEPRINT DEL BACKTEST
 # ════════════════════════════════════════════════════════════════
-from MiWeb.backtest.backtest_api import backtest_bp
+from backtest.backtest_api import backtest_bp
 application.register_blueprint(backtest_bp)
-from MiWeb.medio.app_medio_blueprint import medio_bp
+from medio.app_medio_blueprint import medio_bp
 application.register_blueprint(medio_bp)
-from MiWeb.posicional.posicional_bp import posicional_bp
+from posicional.posicional_bp import posicional_bp
 application.register_blueprint(posicional_bp) 
 application.register_blueprint(indicadores_bp, url_prefix="/indicadores")
 
@@ -121,7 +121,7 @@ def swing_breakout():
         return redirect(url_for("swing_sistema"))
     
     try:
-        from MiWeb.swing_trading.logica_breakout import detectar_breakout_swing
+        from swing_trading.logica_breakout import detectar_breakout_swing
         from logica import generar_grafico, obtener_precios, NOMBRES_IBEX, contexto_ibex
         
         capital_total = float(request.form.get("capital_total", 10000))
@@ -148,11 +148,11 @@ def swing_breakout():
             
             contexto.update({
                 'señal': 'COMPRA',
-                'entrada': señal['entrada'],
-                'stop': señal['stop'],
-                'objetivo': señal['objetivo'],
-                'rr': señal['rr'],
-                'setup_score': señal['setup_score'],
+                'entrada': resultado['entrada'],
+                'stop': resultado['stop'],
+                'objetivo': resultado['objetivo'],
+                'rr': resultado['rr'],
+                'setup_score': resultado['setup_score'],
                 'acciones': max(acciones, 0),
                 'capital_total': capital_total,
                 'riesgo_pct': riesgo_pct,
@@ -194,7 +194,7 @@ def swing_pullback():
         return redirect(url_for("swing_sistema"))
     
     try:
-        from MiWeb.swing_trading.logica_pullback import detectar_pullback_swing
+        from swing_trading.logica_pullback import detectar_pullback_swing
         from logica import generar_grafico, obtener_precios, NOMBRES_IBEX, contexto_ibex
         
         capital_total = float(request.form.get("capital_total", 10000))
@@ -221,11 +221,11 @@ def swing_pullback():
             
             contexto.update({
                 'señal': 'COMPRA',
-                'entrada': señal['entrada'],
-                'stop': señal['stop'],
-                'objetivo': señal['objetivo'],
-                'rr': señal['rr'],
-                'setup_score': señal['setup_score'],
+                'entrada': resultado['entrada'],
+                'stop': resultado['stop'],
+                'objetivo': resultado['objetivo'],
+                'rr': resultado['rr'],
+                'setup_score': resultado['setup_score'],
                 'acciones': max(acciones, 0),
                 'capital_total': capital_total,
                 'riesgo_pct': riesgo_pct,
@@ -276,7 +276,7 @@ def scanner_breakouts():
 # RESTO DE RUTAS (INTACTAS)
 # ════════════════════════════════════════════════════════════════
 
-from MiWeb.controlador import guardar_pantallazo_controlador
+from controlador import guardar_pantallazo_controlador
 
 @application.route("/guardar_pantallazo", methods=["POST"])
 def guardar_pantallazo():
