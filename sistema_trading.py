@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from MiWeb.utils_validacion import validar_datos_ticker
+from utils_validacion import validar_datos_ticker
 
 # =============================
 # INDICADORES
