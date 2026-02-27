@@ -7,6 +7,9 @@ from flask import Blueprint, jsonify
 
 import io
 import gc
+import os
+import requests as _requests
+from datetime import datetime as _datetime, timedelta as _timedelta
 from contextlib import redirect_stdout
 from logica import obtener_precios
 from utils_validacion import construir_df_desde_listas
@@ -92,11 +95,55 @@ cache = DummyCache()
 
 
 
+def _obtener_precios_backtest(ticker, periodo_anios=2):
+    """Descarga solo los últimos N años limitando en el servidor EODHD, no en RAM."""
+    import yfinance as yf
+    import pandas as pd
+
+    provider = (os.getenv("DATA_PROVIDER", "yfinance") or "yfinance").strip().lower()
+    fecha_desde = (_datetime.now() - _timedelta(days=365 * periodo_anios)).strftime("%Y-%m-%d")
+
+    if provider == "eodhd":
+        try:
+            token = os.getenv("EODHD_API_TOKEN")
+            if token:
+                url = f"https://eodhd.com/api/eod/{ticker}"
+                params = {"api_token": token, "period": "d", "fmt": "json",
+                          "order": "a", "from": fecha_desde}
+                r = _requests.get(url, params=params, timeout=25)
+                r.raise_for_status()
+                data = r.json()
+                if isinstance(data, list) and len(data) >= 50:
+                    fechas  = [_datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
+                    precios = [float(row.get("adjusted_close") or row["close"]) for row in data]
+                    vols    = [float(row.get("volume") or 0) for row in data]
+                    return precios, vols, fechas, precios[-1]
+        except Exception as e:
+            print(f"EODHD backtest fallback yfinance: {ticker} - {e}")
+
+    # Fallback yfinance
+    try:
+        datos = yf.download(ticker, start=fecha_desde, progress=False)
+        if datos is None or datos.empty:
+            return None, None, None, None
+        close  = datos["Close"]
+        volume = datos["Volume"]
+        if isinstance(close, pd.DataFrame): close = close.iloc[:, 0]
+        if isinstance(volume, pd.DataFrame): volume = volume.iloc[:, 0]
+        precios   = close.dropna().tolist()
+        volumenes = volume.dropna().tolist()
+        fechas    = close.index.to_pydatetime().tolist()
+        if len(precios) < 50:
+            return None, None, None, None
+        return precios, volumenes, fechas, precios[-1]
+    except Exception as e:
+        print(f"yfinance backtest error: {ticker} - {e}")
+        return None, None, None, None
+
+
 @backtest_bp.route('/api/backtest/ejecutar/ibex', methods=['GET'])
 def ejecutar_backtest_ibex():
-    """
-    Backtest solo IBEX 35 — versión ligera para Render
-    """
+    """Backtest IBEX 35 optimizado para Render: descarga limitada en servidor."""
     try:
         tickers_operados = []
         tickers_excluidos = []
@@ -104,7 +151,7 @@ def ejecutar_backtest_ibex():
         todas_equities = []
 
         for ticker in IBEX35_TICKERS:
-            precios, volumenes, fechas, _ = obtener_precios(ticker, cache)
+            precios, volumenes, fechas, _ = _obtener_precios_backtest(ticker, periodo_anios=2)
 
             if precios is None or len(precios) < 60:
                 continue
@@ -117,33 +164,24 @@ def ejecutar_backtest_ibex():
                 continue
 
             with redirect_stdout(io.StringIO()):
-                data = MarketData(df)
-                strategy = StrategyLogic(modo_test=MODO_TEST, min_volatilidad_pct=MIN_VOLATILIDAD)
-                execution = ExecutionModel(
-                    comision_pct=0.0005,
-                    slippage_atr_pct=0.01,
-                    slippage_min_pct=0.0003
-                )
-                risk = RiskManager(CAPITAL_INICIAL, RIESGO_POR_TRADE)
+                data      = MarketData(df)
+                strategy  = StrategyLogic(modo_test=MODO_TEST, min_volatilidad_pct=MIN_VOLATILIDAD)
+                execution = ExecutionModel(comision_pct=0.0005, slippage_atr_pct=0.01, slippage_min_pct=0.0003)
+                risk      = RiskManager(CAPITAL_INICIAL, RIESGO_POR_TRADE)
                 portfolio = Portfolio(CAPITAL_INICIAL)
-                engine = BacktestEngine(data, strategy, execution, risk, portfolio)
+                engine    = BacktestEngine(data, strategy, execution, risk, portfolio)
                 engine.run()
 
             if portfolio.trades:
                 todos_trades.extend(portfolio.trades)
-                todas_equities.append(portfolio.equity_curve[-1])  # solo último valor
-
+                todas_equities.append(portfolio.equity_curve[-1])
                 capital_final = portfolio.equity_curve[-1]
                 retorno = ((capital_final - CAPITAL_INICIAL) / CAPITAL_INICIAL) * 100
-
                 tickers_operados.append({
-                    'ticker': ticker,
-                    'trades': len(portfolio.trades),
-                    'retorno': round(retorno, 1),
-                    'volatilidad': round(volatilidad, 1)
+                    'ticker': ticker, 'trades': len(portfolio.trades),
+                    'retorno': round(retorno, 1), 'volatilidad': round(volatilidad, 1)
                 })
 
-            # Liberar memoria tras cada ticker
             try:
                 del data, strategy, execution, risk, portfolio, engine, df
             except Exception:
@@ -153,31 +191,26 @@ def ejecutar_backtest_ibex():
         if not todos_trades:
             return jsonify({'success': False, 'error': 'No se ejecutaron trades'}), 400
 
-        metricas = calcular_metricas(todos_trades, todas_equities)
-
+        metricas   = calcular_metricas(todos_trades, todas_equities)
         aprobados  = [t for t in tickers_operados if t['retorno'] >= 2.0]
         neutros    = [t for t in tickers_operados if -2.0 <= t['retorno'] < 2.0]
         rechazados = [t for t in tickers_operados if t['retorno'] < -2.0]
 
         expectancy = metricas['expectancy_R']
-        if expectancy >= 0.40:
-            estado, color = "EXCELENTE", "success"
-        elif expectancy >= 0.20:
-            estado, color = "RENTABLE", "success"
-        elif expectancy > 0:
-            estado, color = "MARGINAL", "warning"
-        else:
-            estado, color = "NO RENTABLE", "danger"
+        if expectancy >= 0.40:   estado, color = "EXCELENTE", "success"
+        elif expectancy >= 0.20: estado, color = "RENTABLE",  "success"
+        elif expectancy > 0:     estado, color = "MARGINAL",  "warning"
+        else:                    estado, color = "NO RENTABLE","danger"
 
         if expectancy >= 0.20 and len(aprobados) >= 5:
             recomendacion = "Sistema listo para operar"
-            acciones = [f"Operar SOLO los {len(aprobados)} tickers aprobados", "Mantener configuración actual"]
+            acciones = [f"Operar SOLO los {len(aprobados)} tickers aprobados", "Mantener configuracion actual"]
         elif expectancy >= 0.20:
             recomendacion = "Pocos tickers aprobados"
-            acciones = [f"Considerar reducir filtro volatilidad a {MIN_VOLATILIDAD-2:.0f}%", "O incluir tickers neutros en watchlist"]
+            acciones = [f"Reducir filtro volatilidad a {MIN_VOLATILIDAD-2:.0f}%", "Incluir tickers neutros en watchlist"]
         else:
-            recomendacion = "Sistema requiere optimización"
-            acciones = ["Revisar parámetros de entrada", "NO operar hasta mejorar expectancy >0.20R"]
+            recomendacion = "Sistema requiere optimizacion"
+            acciones = ["Revisar parametros de entrada", "NO operar hasta mejorar expectancy >0.20R"]
 
         return jsonify({
             'success': True,
@@ -194,13 +227,11 @@ def ejecutar_backtest_ibex():
                 'aprobados':  [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(aprobados,  key=lambda x: x['retorno'], reverse=True)],
                 'neutros':    [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(neutros,    key=lambda x: x['retorno'], reverse=True)],
                 'rechazados': [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(rechazados, key=lambda x: x['retorno'])],
-                'excluidos':  [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'vol': t['vol']}              for t in sorted(tickers_excluidos, key=lambda x: x['vol'])]
+                'excluidos':  [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'vol': t['vol']} for t in sorted(tickers_excluidos, key=lambda x: x['vol'])]
             },
-            'config': {
-                'target': '3R', 'breakeven': '1R',
-                'riesgo': f"{RIESGO_POR_TRADE*100:.1f}%",
-                'filtro_vol': f">{MIN_VOLATILIDAD:.0f}%"
-            },
+            'config': {'target': '3R', 'breakeven': '1R',
+                       'riesgo': f"{RIESGO_POR_TRADE*100:.1f}%",
+                       'filtro_vol': f">{MIN_VOLATILIDAD:.0f}%", 'periodo': '2 anios'},
             'recomendacion': {'titulo': recomendacion, 'acciones': acciones}
         })
 
