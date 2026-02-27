@@ -20,64 +20,120 @@ except ImportError:
 
 def obtener_datos_semanales(ticker, periodo_años=10, validar=True):
     """
-    Descarga datos semanales para sistema posicional.
-    CORREGIDO: Fix timezone yfinance + logging actualización
-    
-    Args:
-        ticker: Símbolo del ticker (ej: "ITX.MC")
-        periodo_años: Años de histórico (default: 10)
-        validar: Validar calidad de datos
-    
-    Returns:
-        (df_semanal, dict_validacion)
+    Descarga datos semanales. Fuente principal: EODHD. Fallback: yfinance.
     """
+    import os
+    import requests as req
+    from datetime import datetime, timedelta, date
+
+    fecha_fin = datetime.now()
+    fecha_inicio = fecha_fin - timedelta(days=periodo_años * 365)
+    token = os.getenv("EODHD_API_TOKEN")
+
+    print(f"\n[{fecha_fin.strftime('%Y-%m-%d %H:%M:%S')}] Descargando {ticker}...")
+
+    df_diario = None
+
+    # ── 1. EODHD ────────────────────────────────────────────────────
+    if token and not ticker.startswith("^"):
+        try:
+            url = f"https://eodhd.com/api/eod/{ticker}"
+            params = {"api_token": token, "period": "d", "fmt": "json", "order": "a"}
+            r = req.get(url, params=params, timeout=25)
+            r.raise_for_status()
+            data = r.json()
+
+            if not isinstance(data, list) or len(data) == 0:
+                raise ValueError("Respuesta vacía EODHD")
+
+            data = [row for row in data
+                    if datetime.strptime(row["date"], "%Y-%m-%d") >= fecha_inicio]
+
+            if len(data) < 50:
+                raise ValueError(f"Pocos datos: {len(data)}")
+
+            df_diario = pd.DataFrame({
+                "Open":   [float(row.get("open")   or row["close"]) for row in data],
+                "High":   [float(row.get("high")   or row["close"]) for row in data],
+                "Low":    [float(row.get("low")    or row["close"]) for row in data],
+                "Close":  [float(row.get("adjusted_close") or row["close"]) for row in data],
+                "Volume": [float(row.get("volume") or 0) for row in data],
+            }, index=pd.DatetimeIndex(
+                [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
+            ))
+
+            # Completar con vela de hoy
+            try:
+                hoy = date.today()
+                if df_diario.index[-1].date() < hoy:
+                    tick = yf.Ticker(ticker)
+                    vela = tick.history(period="1d", interval="1d")
+                    if not vela.empty:
+                        vela.index = vela.index.tz_localize(None)
+                        if vela.index[-1].date() > df_diario.index[-1].date():
+                            df_diario = pd.concat([df_diario, vela[["Open","High","Low","Close","Volume"]]])
+                            df_diario = df_diario[~df_diario.index.duplicated(keep="last")]
+                            print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+            except Exception as e:
+                print(f"[yfinance hoy posicional] Error: {e}")
+
+            print(f"✅ EODHD OK: {len(df_diario)} días para {ticker}")
+
+        except Exception as e:
+            print(f"⚠️  EODHD falló ({e}) → yfinance...")
+            df_diario = None
+
+    # ── 2. Fallback yfinance ─────────────────────────────────────────
+    if df_diario is None:
+        try:
+            session = req.Session()
+            session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/120.0.0.0 Safari/537.36"
+            })
+            tick = yf.Ticker(ticker, session=session)
+            df_diario = tick.history(
+                start=fecha_inicio.strftime("%Y-%m-%d"),
+                end=fecha_fin.strftime("%Y-%m-%d"),
+                interval="1d"
+            )
+            if df_diario is None or df_diario.empty:
+                print(f"❌ No hay datos para {ticker}")
+                return None, {"errores": [f"No hay datos para {ticker}"]}
+            if df_diario.index.tz is not None:
+                df_diario.index = df_diario.index.tz_localize(None)
+            print(f"✅ yfinance OK: {len(df_diario)} días para {ticker}")
+        except Exception as e:
+            print(f"❌ ERROR descargando {ticker}: {e}")
+            return None, {"errores": [f"Error descargando {ticker}: {e}"]}
+
+    # ── 3. Convertir diario → semanal ────────────────────────────────
     try:
-        # Calcular fechas
-        fecha_fin = datetime.now()
-        fecha_inicio = fecha_fin - timedelta(days=periodo_años*365)
-        
-        # Logging
-        print(f"\n[{fecha_fin.strftime('%Y-%m-%d %H:%M:%S')}] Descargando {ticker}...")
-        
-        # Descargar datos
-        ticker_obj = yf.Ticker(ticker)
-        df = ticker_obj.history(
-            start=fecha_inicio.strftime('%Y-%m-%d'),
-            end=fecha_fin.strftime('%Y-%m-%d'),
-            interval="1wk",  # Datos semanales
-            auto_adjust=True
-        )
-        
-        if df is None or df.empty:
-            print(f"❌ No hay datos para {ticker}")
-            return None, {"errores": [f"No hay datos para {ticker}"]}
-        
-        # ✅ FIX CRÍTICO: yfinance devuelve fechas con timezone UTC
-        # datetime.now() es naive → TypeError al comparar → crash silencioso
-        if df.index.tz is not None:
-            df.index = df.index.tz_localize(None)  # Eliminar timezone
-        
-        # Verificar última fecha
-        ultima_fecha = df.index[-1]
-        dias_antiguedad = (fecha_fin - ultima_fecha).days
-        print(f"✓ {len(df)} semanas | Última: {ultima_fecha.strftime('%Y-%m-%d')} ({dias_antiguedad}d)")
-        
-        # Limpiar y preparar
-        df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
-        df = df.dropna()
-        
-        # Validación
-        validacion = {}
-        if validar:
-            validacion = validar_datos(df, ticker)
-            validacion['ultima_actualizacion'] = ultima_fecha.strftime('%Y-%m-%d')
-            validacion['dias_antiguedad'] = dias_antiguedad
-        
-        return df, validacion
-    
+        df_semanal = pd.DataFrame({
+            "Open":   df_diario["Open"].resample("W-FRI").first(),
+            "High":   df_diario["High"].resample("W-FRI").max(),
+            "Low":    df_diario["Low"].resample("W-FRI").min(),
+            "Close":  df_diario["Close"].resample("W-FRI").last(),
+            "Volume": df_diario["Volume"].resample("W-FRI").sum(),
+        }).dropna()
     except Exception as e:
-        print(f"❌ ERROR descargando {ticker}: {str(e)}")
-        return None, {"errores": [f"Error descargando {ticker}: {str(e)}"]}
+        return None, {"errores": [f"Error convirtiendo a semanal: {e}"]}
+
+    ultima_fecha = df_semanal.index[-1]
+    dias_antiguedad = (fecha_fin - ultima_fecha).days
+    print(f"✓ {len(df_semanal)} semanas | Última: {ultima_fecha.strftime('%Y-%m-%d')} ({dias_antiguedad}d)")
+
+    # ── 4. Validar ───────────────────────────────────────────────────
+    validacion = {}
+    if validar:
+        validacion = validar_datos(df_semanal, ticker)
+        validacion["ultima_actualizacion"] = ultima_fecha.strftime("%Y-%m-%d")
+        validacion["dias_antiguedad"] = dias_antiguedad
+        if validacion.get("errores"):
+            return None, validacion
+
+    return df_semanal, validacion
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -86,99 +142,69 @@ def obtener_datos_semanales(ticker, periodo_años=10, validar=True):
 
 def obtener_precio_tiempo_real(ticker):
     """
-    Obtiene el precio actual del ticker en tiempo real (o última cotización).
-    
-    Estrategia de fallback en cascada:
-    1. Datos de 1 día con intervalo 1 minuto (precio más reciente)
-    2. Datos de 5 días con intervalo 5 minutos
-    3. Último cierre diario (period="1d")
-    
-    Returns:
-        dict: {
-            'precio': float,
-            'hora': str (HH:MM),
-            'fecha': str (YYYY-MM-DD),
-            'variacion_pct': float,
-            'cierre_anterior': float,
-            'fuente': str  ('tiempo_real' | 'ultimo_cierre')
-        }
-        None si no se puede obtener
+    Precio actual. Fuente principal: EODHD intraday. Fallback: yfinance.
     """
-    try:
-        ticker_obj = yf.Ticker(ticker)
-        
-        # ─── Intento 1: datos intradía (1 minuto) ────────────────
+    import os
+    import requests as req
+    from datetime import date
+
+    token = os.getenv("EODHD_API_TOKEN")
+
+    # ── 1. EODHD precio del día ──────────────────────────────────────
+    if token and not ticker.startswith("^"):
         try:
-            df_rt = yf.download(
-                ticker,
-                period="1d",
-                interval="1m",
-                progress=False,
-                auto_adjust=True
-            )
-            if isinstance(df_rt.columns, pd.MultiIndex):
-                df_rt.columns = df_rt.columns.get_level_values(0)
-            
-            if df_rt is not None and not df_rt.empty:
-                # Eliminar timezone para consistencia
-                if df_rt.index.tz is not None:
-                    df_rt.index = df_rt.index.tz_convert('Europe/Madrid').tz_localize(None)
-                
-                precio = float(df_rt['Close'].iloc[-1])
-                hora   = df_rt.index[-1].strftime('%H:%M')
-                fecha  = df_rt.index[-1].strftime('%Y-%m-%d')
-                
-                # Calcular variación respecto al cierre anterior
-                df_diario = yf.download(ticker, period="5d", interval="1d",
-                                        progress=False, auto_adjust=True)
-                if isinstance(df_diario.columns, pd.MultiIndex):
-                    df_diario.columns = df_diario.columns.get_level_values(0)
-                
-                cierre_anterior = float(df_diario['Close'].iloc[-2]) if len(df_diario) >= 2 else precio
-                variacion_pct   = ((precio - cierre_anterior) / cierre_anterior) * 100
-                
-                print(f"⚡ Precio RT {ticker}: {precio:.2f}€ ({variacion_pct:+.2f}%) @ {hora}")
-                
+            url = f"https://eodhd.com/api/real-time/{ticker}"
+            params = {"api_token": token, "fmt": "json"}
+            r = req.get(url, params=params, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+
+            precio = float(data.get("close") or data.get("last") or 0)
+            anterior = float(data.get("previousClose") or precio)
+            if precio > 0:
+                variacion_pct = ((precio - anterior) / anterior) * 100
+                print(f"⚡ Precio RT {ticker}: {precio:.2f}€ ({variacion_pct:+.2f}%) [EODHD]")
                 return {
-                    'precio':          round(precio, 2),
-                    'hora':            hora,
-                    'fecha':           fecha,
-                    'variacion_pct':   round(variacion_pct, 2),
-                    'cierre_anterior': round(cierre_anterior, 2),
-                    'fuente':          'tiempo_real'
+                    "precio":          round(precio, 2),
+                    "hora":            data.get("timestamp", ""),
+                    "fecha":           str(date.today()),
+                    "variacion_pct":   round(variacion_pct, 2),
+                    "cierre_anterior": round(anterior, 2),
+                    "fuente":          "tiempo_real"
                 }
-        except Exception:
-            pass
-        
-        # ─── Intento 2: último cierre diario ─────────────────────
-        df_d = yf.download(ticker, period="5d", interval="1d",
-                           progress=False, auto_adjust=True)
-        if isinstance(df_d.columns, pd.MultiIndex):
-            df_d.columns = df_d.columns.get_level_values(0)
-        
+        except Exception as e:
+            print(f"⚠️  EODHD RT falló ({e}) → yfinance...")
+
+    # ── 2. Fallback yfinance ─────────────────────────────────────────
+    try:
+        session = req.Session()
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36"
+        })
+        tick = yf.Ticker(ticker, session=session)
+        df_d = tick.history(period="5d", interval="1d")
+
         if df_d is not None and not df_d.empty:
             if df_d.index.tz is not None:
                 df_d.index = df_d.index.tz_localize(None)
-            
-            precio          = float(df_d['Close'].iloc[-1])
-            fecha           = df_d.index[-1].strftime('%Y-%m-%d')
-            cierre_anterior = float(df_d['Close'].iloc[-2]) if len(df_d) >= 2 else precio
-            variacion_pct   = ((precio - cierre_anterior) / cierre_anterior) * 100
-            
+            precio = float(df_d["Close"].iloc[-1])
+            fecha  = df_d.index[-1].strftime("%Y-%m-%d")
+            anterior = float(df_d["Close"].iloc[-2]) if len(df_d) >= 2 else precio
+            variacion_pct = ((precio - anterior) / anterior) * 100
             print(f"📅 Precio cierre {ticker}: {precio:.2f}€ ({variacion_pct:+.2f}%) @ {fecha}")
-            
             return {
-                'precio':          round(precio, 2),
-                'hora':            'cierre',
-                'fecha':           fecha,
-                'variacion_pct':   round(variacion_pct, 2),
-                'cierre_anterior': round(cierre_anterior, 2),
-                'fuente':          'ultimo_cierre'
+                "precio":          round(precio, 2),
+                "hora":            "cierre",
+                "fecha":           fecha,
+                "variacion_pct":   round(variacion_pct, 2),
+                "cierre_anterior": round(anterior, 2),
+                "fuente":          "ultimo_cierre"
             }
-    
     except Exception as e:
         print(f"⚠️  No se pudo obtener precio RT para {ticker}: {e}")
-    
+
     return None
 
 
