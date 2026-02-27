@@ -3,7 +3,8 @@ from flask import request, jsonify
 import yfinance as yf
 import pandas as pd
 import os
-import requestsimport logging
+import requests
+import logging
 logger = logging.getLogger("gunicorn.error")
 
 from datetime import datetime
