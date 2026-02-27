@@ -301,9 +301,7 @@ def alinear_series_por_fecha(precios, volumenes, fechas):
         # LIMPIEZA BÁSICA
         # ─────────────────────────────
         df = df[~df.index.duplicated(keep="last")]
-        df["precio"] = pd.to_numeric(df["precio"], errors="coerce")
-        df["volumen"] = pd.to_numeric(df["volumen"], errors="coerce").fillna(0)
-        df = df.dropna(subset=["precio"])
+        df = df.dropna(subset=["precio", "volumen"])
         df = df[df["precio"] > 0]
         df = df[df["volumen"] >= 0]
 
