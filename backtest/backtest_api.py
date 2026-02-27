@@ -110,7 +110,7 @@ def _obtener_precios_backtest(ticker, periodo_anios=2):
                 url = f"https://eodhd.com/api/eod/{ticker}"
                 params = {"api_token": token, "period": "d", "fmt": "json",
                           "order": "a", "from": fecha_desde}
-                r = _requests.get(url, params=params, timeout=25)
+                r = _requests.get(url, params=params, timeout=10)
                 r.raise_for_status()
                 data = r.json()
                 if isinstance(data, list) and len(data) >= 50:
