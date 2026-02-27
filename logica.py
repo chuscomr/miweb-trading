@@ -30,7 +30,21 @@ def obtener_precios_yfinance(ticker, cache, periodo="1y"):
         datos = descargar()
         if datos is None or datos.empty:
             return None, None, None, None
-
+        try:
+            from datetime import date
+            hoy = date.today()
+            ultima = datos.index[-1].date() if not datos.empty else None
+            if ultima and ultima < hoy:
+                tick = yf.Ticker(ticker)
+                vela_hoy = tick.history(period="1d", interval="1d")
+                if not vela_hoy.empty:
+                    vela_hoy.index = vela_hoy.index.tz_localize(None)
+                    datos = pd.concat([datos, vela_hoy[["Open","High","Low","Close","Volume"]]])
+                    datos = datos[~datos.index.duplicated(keep="last")]
+                    print(f"[yfinance hoy] Vela añadida para {ticker}")
+        except Exception as e:
+            print(f"[yfinance hoy] Error: {e}")
+            
         close = datos["Close"]
         volume = datos["Volume"]
 
@@ -97,17 +111,31 @@ def obtener_precios_eodhd(ticker, cache, periodo="1y"):
         fechas = [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
         precios = [float(row.get("adjusted_close") or row["close"]) for row in data]
         volumenes = [float(row.get("volume") or 0) for row in data]
-
+        try:
+            from datetime import date
+            hoy = date.today()
+            ultima_fecha = fechas[-1].date() if fechas else None
+            if ultima_fecha and ultima_fecha < hoy:
+                tick = yf.Ticker(ticker)
+                vela_hoy = tick.history(period="1d", interval="1d")
+                if not vela_hoy.empty:
+                    vela_hoy.index = vela_hoy.index.tz_localize(None)
+                    f = vela_hoy.index[-1].to_pydatetime()
+                    c = float(vela_hoy["Close"].iloc[-1])
+                    v = float(vela_hoy["Volume"].iloc[-1])
+                    if f.date() > ultima_fecha:
+                        fechas.append(f)
+                        precios.append(c)
+                        volumenes.append(v)
+                        print(f"[yfinance hoy] Vela añadida: {f.date()} Close={c}")
+        except Exception as e:
+            print(f"[yfinance hoy EODHD] Error: {e}")
         if len(precios) < 50:
             return None, None, None, None
 
         return precios, volumenes, fechas, precios[-1]
 
-    except Exception as e:
-        print("Error descargando (EODHD):", ticker, e)
-        return None, None, None, None
-
-
+    
 def obtener_precios(ticker, cache, periodo="1y"):
     provider = _data_provider()
     print("USANDO PROVIDER =", provider, "ticker=", ticker, "periodo=", periodo)
