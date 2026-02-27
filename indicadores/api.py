@@ -82,7 +82,7 @@ def api_indicadores():
     ticker = request.args.get("ticker")
     timeframe = request.args.get("tf", "1d")
     indicadores = request.args.get("ind", "")
-
+    print(">>> API_INDICADORES HIT <<<", ticker, timeframe, flush=True)
     if not ticker:
         return jsonify({"error": "Ticker requerido"}), 400
 
