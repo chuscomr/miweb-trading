@@ -6,6 +6,7 @@ Ejecuta backtest y devuelve resumen ejecutivo en JSON
 from flask import Blueprint, jsonify
 
 import io
+import gc
 from contextlib import redirect_stdout
 from logica import obtener_precios
 from utils_validacion import construir_df_desde_listas
@@ -40,6 +41,15 @@ IBEX_TICKERS = [
     "A3M.MC","ATRY.MC","R4.MC","RLIA.MC","MVC.MC","EBROM.MC","AMP.MC",
     "HBX.MC","CASH.MC","ADX.MC","AMP.MC","IZER.MC", "AEDAS.MC"
     
+]
+
+
+IBEX35_TICKERS = [
+    "ACS.MC","AENA.MC","AMS.MC","ANA.MC","BBVA.MC","CABK.MC","ELE.MC","FER.MC",
+    "GRF.MC","IBE.MC","IAG.MC","IDR.MC","ITX.MC","MAP.MC","MRL.MC",
+    "NTGY.MC","RED.MC","REP.MC","ROVI.MC","SAB.MC","SAN.MC","SCYR.MC","SLR.MC",
+    "TEF.MC","UNI.MC","CLNX.MC","LOG.MC","ACX.MC","BKT.MC","COL.MC","ANE.MC",
+    "ENG.MC","FCC.MC","PUIG.MC","MTS.MC"
 ]
 
 TICKER_EMPRESA = {
@@ -79,6 +89,123 @@ class DummyCache:
         return decorator
 
 cache = DummyCache()
+
+
+
+@backtest_bp.route('/api/backtest/ejecutar/ibex', methods=['GET'])
+def ejecutar_backtest_ibex():
+    """
+    Backtest solo IBEX 35 — versión ligera para Render
+    """
+    try:
+        tickers_operados = []
+        tickers_excluidos = []
+        todos_trades = []
+        todas_equities = []
+
+        for ticker in IBEX35_TICKERS:
+            precios, volumenes, fechas, _ = obtener_precios(ticker, cache)
+
+            if precios is None or len(precios) < 60:
+                continue
+
+            df = construir_df_desde_listas(precios, volumenes, fechas)
+            volatilidad = (df['Close'].std() / df['Close'].mean()) * 100
+
+            if volatilidad < MIN_VOLATILIDAD:
+                tickers_excluidos.append({'ticker': ticker, 'vol': round(volatilidad, 1)})
+                continue
+
+            with redirect_stdout(io.StringIO()):
+                data = MarketData(df)
+                strategy = StrategyLogic(modo_test=MODO_TEST, min_volatilidad_pct=MIN_VOLATILIDAD)
+                execution = ExecutionModel(
+                    comision_pct=0.0005,
+                    slippage_atr_pct=0.01,
+                    slippage_min_pct=0.0003
+                )
+                risk = RiskManager(CAPITAL_INICIAL, RIESGO_POR_TRADE)
+                portfolio = Portfolio(CAPITAL_INICIAL)
+                engine = BacktestEngine(data, strategy, execution, risk, portfolio)
+                engine.run()
+
+            if portfolio.trades:
+                todos_trades.extend(portfolio.trades)
+                todas_equities.append(portfolio.equity_curve[-1])  # solo último valor
+
+                capital_final = portfolio.equity_curve[-1]
+                retorno = ((capital_final - CAPITAL_INICIAL) / CAPITAL_INICIAL) * 100
+
+                tickers_operados.append({
+                    'ticker': ticker,
+                    'trades': len(portfolio.trades),
+                    'retorno': round(retorno, 1),
+                    'volatilidad': round(volatilidad, 1)
+                })
+
+            # Liberar memoria tras cada ticker
+            try:
+                del data, strategy, execution, risk, portfolio, engine, df
+            except Exception:
+                pass
+            gc.collect()
+
+        if not todos_trades:
+            return jsonify({'success': False, 'error': 'No se ejecutaron trades'}), 400
+
+        metricas = calcular_metricas(todos_trades, todas_equities)
+
+        aprobados  = [t for t in tickers_operados if t['retorno'] >= 2.0]
+        neutros    = [t for t in tickers_operados if -2.0 <= t['retorno'] < 2.0]
+        rechazados = [t for t in tickers_operados if t['retorno'] < -2.0]
+
+        expectancy = metricas['expectancy_R']
+        if expectancy >= 0.40:
+            estado, color = "EXCELENTE", "success"
+        elif expectancy >= 0.20:
+            estado, color = "RENTABLE", "success"
+        elif expectancy > 0:
+            estado, color = "MARGINAL", "warning"
+        else:
+            estado, color = "NO RENTABLE", "danger"
+
+        if expectancy >= 0.20 and len(aprobados) >= 5:
+            recomendacion = "Sistema listo para operar"
+            acciones = [f"Operar SOLO los {len(aprobados)} tickers aprobados", "Mantener configuración actual"]
+        elif expectancy >= 0.20:
+            recomendacion = "Pocos tickers aprobados"
+            acciones = [f"Considerar reducir filtro volatilidad a {MIN_VOLATILIDAD-2:.0f}%", "O incluir tickers neutros en watchlist"]
+        else:
+            recomendacion = "Sistema requiere optimización"
+            acciones = ["Revisar parámetros de entrada", "NO operar hasta mejorar expectancy >0.20R"]
+
+        return jsonify({
+            'success': True,
+            'mercado': 'IBEX 35',
+            'estado': {'texto': estado, 'color': color},
+            'metricas': {
+                'expectancy': round(expectancy, 2),
+                'winrate': round(metricas['winrate'], 1),
+                'max_dd': round(metricas['max_drawdown_pct'], 1),
+                'total_trades': metricas['trades'],
+                'tickers_activos': len(tickers_operados)
+            },
+            'tickers': {
+                'aprobados':  [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(aprobados,  key=lambda x: x['retorno'], reverse=True)],
+                'neutros':    [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(neutros,    key=lambda x: x['retorno'], reverse=True)],
+                'rechazados': [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'retorno': t['retorno'], 'trades': t['trades']} for t in sorted(rechazados, key=lambda x: x['retorno'])],
+                'excluidos':  [{'nombre': t['ticker'].replace('.MC',''), 'empresa': nombre_empresa(t['ticker']), 'vol': t['vol']}              for t in sorted(tickers_excluidos, key=lambda x: x['vol'])]
+            },
+            'config': {
+                'target': '3R', 'breakeven': '1R',
+                'riesgo': f"{RIESGO_POR_TRADE*100:.1f}%",
+                'filtro_vol': f">{MIN_VOLATILIDAD:.0f}%"
+            },
+            'recomendacion': {'titulo': recomendacion, 'acciones': acciones}
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @backtest_bp.route('/api/backtest/ejecutar', methods=['GET'])
