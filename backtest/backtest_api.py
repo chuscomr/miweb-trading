@@ -145,6 +145,8 @@ def _obtener_precios_backtest(ticker, periodo_anios=2):
 def ejecutar_backtest_ibex():
     """Backtest IBEX 35 optimizado para Render: descarga limitada en servidor."""
     try:
+        print(">>> EJECUTANDO ENDPOINT /IBEX CON _obtener_precios_backtest <<<")
+
         tickers_operados = []
         tickers_excluidos = []
         todos_trades = []
