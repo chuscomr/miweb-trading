@@ -5,6 +5,8 @@ import pandas as pd
 import os
 import requests
 import logging
+import time
+
 logger = logging.getLogger("gunicorn.error")
 
 from datetime import datetime
@@ -12,9 +14,24 @@ from .nucleo.calculos import aplicar_indicadores
 from .utilidades.serializador import preparar_para_json, formatear_niveles_sr, formatear_patrones
 from .routes import indicadores_bp
 
+# ── CACHÉ EN MEMORIA ──────────────────────────────────────────────────────────
+_cache = {}
+CACHE_TTL = 300  # segundos (5 minutos)
+
+def _get_cache(key):
+    entry = _cache.get(key)
+    if entry and (time.time() - entry["ts"]) < CACHE_TTL:
+        logger.info(f"CACHE HIT: {key}")
+        return entry["data"]
+    return None
+
+def _set_cache(key, data):
+    _cache[key] = {"data": data, "ts": time.time()}
+    logger.info(f"CACHE SET: {key}")
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 def _descargar_datos(ticker, timeframe):
-    # EODHD solo para timeframe diario
     token = os.getenv("EODHD_API_TOKEN")
     if token and timeframe == "1d":
         try:
@@ -66,18 +83,24 @@ def _descargar_datos(ticker, timeframe):
                             print(">>> HOY YA EXISTE EN DF <<<", df_hoy.index[-1], flush=True)
 
                 except Exception as e:
-                    print(f"No se pudo añadir vela de hoy: {e}", flush=True)
+                    # En Render yfinance puede fallar: no es crítico, seguimos sin la vela de hoy
+                    print(f"No se pudo añadir vela de hoy (yfinance bloqueado en servidor): {e}", flush=True)
 
                 return df[["Open", "High", "Low", "Close", "Volume"]]
 
         except Exception as e:
-            print(f"EODHD falló para {ticker}: {e}, probando yfinance...", flush=True)
+            print(f"EODHD falló para {ticker}: {e}", flush=True)
+            return None  # No intentamos yfinance como fallback en producción
 
-    # Fallback yfinance
-    df = yf.download(ticker, period="1y", interval=timeframe, auto_adjust=True, progress=False)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    return df
+    # Fallback yfinance (solo si no hay token EODHD o timeframe != 1d)
+    try:
+        df = yf.download(ticker, period="1y", interval=timeframe, auto_adjust=True, progress=False)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        return df if not df.empty else None
+    except Exception as e:
+        print(f"yfinance falló para {ticker}: {e}", flush=True)
+        return None
 
 
 @indicadores_bp.route("/api")
@@ -86,15 +109,23 @@ def api_indicadores():
     timeframe = request.args.get("tf", "1d")
     indicadores = request.args.get("ind", "")
     print(">>> API_INDICADORES HIT <<<", ticker, timeframe, flush=True)
+
     if not ticker:
         return jsonify({"error": "Ticker requerido"}), 400
 
     lista_indicadores = indicadores.split(",") if indicadores else []
 
+    # ── Comprueba caché ───────────────────────────────────────────────────────
+    cache_key = f"{ticker}_{timeframe}_{indicadores}"
+    cached = _get_cache(cache_key)
+    if cached:
+        return jsonify(cached)
+    # ─────────────────────────────────────────────────────────────────────────
+
     df = _descargar_datos(ticker, timeframe)
 
     if df is None or df.empty:
-        return jsonify({"error": "No hay datos disponibles"}), 404
+        return jsonify({"error": "No hay datos disponibles. Cuota agotada o proveedor no disponible."}), 503
 
     df, soportes, resistencias, patrones, resumen_tecnico, divergencias, fibonacci, patrones_chartistas = aplicar_indicadores(df, lista_indicadores, timeframe)
 
@@ -104,7 +135,7 @@ def api_indicadores():
     resistencias_json = formatear_niveles_sr(resistencias)
     patrones_json = formatear_patrones(patrones)
 
-    return jsonify({
+    resultado = {
         "data": datos_json,
         "soportes": soportes_json,
         "resistencias": resistencias_json,
@@ -113,4 +144,10 @@ def api_indicadores():
         "divergencias": divergencias,
         "fibonacci": fibonacci,
         "patronesChartistas": patrones_chartistas
-    })
+    }
+
+    # ── Guarda en caché ───────────────────────────────────────────────────────
+    _set_cache(cache_key, resultado)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    return jsonify(resultado)
