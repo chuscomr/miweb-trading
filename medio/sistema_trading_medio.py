@@ -22,86 +22,93 @@ _CACHE_IBEX = {
 def obtener_estado_mercado_ibex(forzar_descarga=False):
     """
     Obtiene el estado del mercado IBEX (ALCISTA/BAJISTA) con caché.
-    
-    Args:
-        forzar_descarga: Si True, ignora el caché y descarga datos frescos
-    
-    Returns:
-        dict con estado del mercado o None si hay error
+    Fuente principal: EODHD (IBEX.INDX). Fallback: yfinance.
     """
+    import os
+    import requests
+    import yfinance as yf
+    import pandas as pd
     from datetime import datetime, timedelta
-    import time
-    
-    # Verificar si el cache es válido
+
+    # ── Caché ────────────────────────────────────────────────────────
     ahora = datetime.now()
-    cache_valido = False
-    
     if not forzar_descarga and _CACHE_IBEX["timestamp"] is not None:
-        tiempo_transcurrido = (ahora - _CACHE_IBEX["timestamp"]).total_seconds() / 60
-        cache_valido = tiempo_transcurrido < _CACHE_IBEX["validez_minutos"]
-    
-    # Si el cache es válido, devolver datos cacheados
-    if cache_valido and _CACHE_IBEX["datos"] is not None:
-        return _CACHE_IBEX["datos"]
-    
-    # Descargar datos frescos del IBEX
+        tiempo = (ahora - _CACHE_IBEX["timestamp"]).total_seconds() / 60
+        if tiempo < _CACHE_IBEX["validez_minutos"] and _CACHE_IBEX["datos"] is not None:
+            return _CACHE_IBEX["datos"]
+
+    # ── 1. EODHD (IBEX.INDX) ─────────────────────────────────────────
+    token = os.getenv("EODHD_API_TOKEN")
+    datos_ibex = None
+
+    if token:
+        try:
+            fecha_inicio = ahora - timedelta(days=365)
+            url = "https://eodhd.com/api/eod/IBEX.INDX"
+            params = {"api_token": token, "period": "d", "fmt": "json", "order": "a"}
+            r = requests.get(url, params=params, timeout=25)
+            r.raise_for_status()
+            data = r.json()
+            data = [row for row in data
+                    if datetime.strptime(row["date"], "%Y-%m-%d") >= fecha_inicio]
+            if len(data) >= 200:
+                datos_ibex = pd.DataFrame({
+                    "Close": [float(row.get("adjusted_close") or row["close"]) for row in data],
+                }, index=pd.DatetimeIndex(
+                    [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
+                ))
+                print("✅ IBEX via EODHD OK")
+        except Exception as e:
+            print(f"⚠️ EODHD IBEX falló: {e} → yfinance...")
+
+    # ── 2. Fallback yfinance ──────────────────────────────────────────
+    if datos_ibex is None:
+        try:
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/120.0.0.0 Safari/537.36"
+            })
+            tick = yf.Ticker("^IBEX", session=session)
+            datos_ibex = tick.history(period="1y", interval="1d")
+            if datos_ibex.index.tz is not None:
+                datos_ibex.index = datos_ibex.index.tz_localize(None)
+            if isinstance(datos_ibex.columns, pd.MultiIndex):
+                datos_ibex.columns = datos_ibex.columns.droplevel(1)
+            print("✅ IBEX via yfinance OK")
+        except Exception as e:
+            print(f"⚠️ IBEX yfinance falló: {e}")
+
+    # ── 3. Calcular estado ────────────────────────────────────────────
     try:
-        import yfinance as yf
-        import pandas as pd
-        
-        # Descargar datos del IBEX
-        datos_ibex = yf.download("^IBEX", period="1y", progress=False)
-        
-        # Aplanar MultiIndex si existe
-        if isinstance(datos_ibex.columns, pd.MultiIndex):
-            datos_ibex.columns = datos_ibex.columns.droplevel(1)
-        
-        # Verificar que tenemos datos válidos
-        if not datos_ibex.empty and len(datos_ibex) >= 200:
-            # Extraer serie de precios
-            serie_close = datos_ibex['Close']
-            
-            # Calcular MM200
-            mm200_serie = serie_close.rolling(200).mean()
-            
-            # Extraer valores escalares
-            precio_ibex_valor = serie_close.iloc[-1]
-            mm200_ibex_valor = mm200_serie.iloc[-1]
-            
-            # Convertir a float Python nativo
-            precio_ibex_num = float(precio_ibex_valor)
-            mm200_ibex_num = float(mm200_ibex_valor)
-            
-            # Determinar estado del mercado
-            estado = "ALCISTA" if precio_ibex_num > mm200_ibex_num else "BAJISTA"
-            
-            # Guardar en caché
-            resultado = {
-                "estado": estado,
-                "precio_ibex": round(precio_ibex_num, 2),
-                "mm200_ibex": round(mm200_ibex_num, 2),
-                "fecha_datos": datos_ibex.index[-1].strftime("%Y-%m-%d")
-            }
-            
-            _CACHE_IBEX["datos"] = resultado
-            _CACHE_IBEX["timestamp"] = ahora
-            
-            return resultado
-        else:
-            print(f"⚠️ Advertencia: Datos IBEX insuficientes. Continuando análisis...")
+        if datos_ibex is None or datos_ibex.empty or len(datos_ibex) < 200:
+            print("⚠️ Datos IBEX insuficientes. Continuando análisis...")
             return None
-            
+
+        serie_close = datos_ibex["Close"]
+        mm200_serie = serie_close.rolling(200).mean()
+
+        precio_ibex_num = float(serie_close.iloc[-1])
+        mm200_ibex_num  = float(mm200_serie.iloc[-1])
+
+        estado = "ALCISTA" if precio_ibex_num > mm200_ibex_num else "BAJISTA"
+
+        resultado = {
+            "estado":       estado,
+            "precio_ibex":  round(precio_ibex_num, 2),
+            "mm200_ibex":   round(mm200_ibex_num, 2),
+            "fecha_datos":  datos_ibex.index[-1].strftime("%Y-%m-%d")
+        }
+
+        _CACHE_IBEX["datos"]     = resultado
+        _CACHE_IBEX["timestamp"] = ahora
+
+        return resultado
+
     except Exception as e:
-        print(f"⚠️ Advertencia: No se pudo verificar mercado IBEX ({str(e)}). Continuando análisis...")
+        print(f"⚠️ No se pudo verificar mercado IBEX ({e}). Continuando análisis...")
         return None
-
-
-def limpiar_cache_ibex():
-    """
-    Limpia el caché del IBEX (útil para testing o forzar actualización).
-    """
-    _CACHE_IBEX["datos"] = None
-    _CACHE_IBEX["timestamp"] = None
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

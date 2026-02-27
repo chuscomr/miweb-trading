@@ -1,23 +1,20 @@
-import yfinance as yf
+from datos_posicional import obtener_datos_semanales
 from backtest_medio import backtest_medio_plazo
-from logica_medio import convertir_a_semanal
+
 
 TICKER = "ACS.MC"
 
-df = yf.download(TICKER, period="12y", interval="1d", auto_adjust=True)
+df_semanal, validacion = obtener_datos_semanales(TICKER, periodo_años=12, validar=False)
 
-precios = df["Close"].values.reshape(-1).tolist()
-volumenes = df["Volume"].values.reshape(-1).tolist()
-fechas = df.index.to_list()
+if df_semanal is None or df_semanal.empty:
+    print("❌ No se pudieron obtener datos")
+    quit()
 
-precios, volumenes, fechas = convertir_a_semanal(
-    precios=precios,
-    volumenes=volumenes,
-    fechas=fechas
-)
+precios = df_semanal["Close"].tolist()
+volumenes = df_semanal["Volume"].tolist()
+fechas = df_semanal.index.to_list()
 
 trades, equity = backtest_medio_plazo(precios, volumenes, fechas)
-
 print("\n📊 BACKTEST MEDIO PLAZO")
 print("=" * 40)
 print(f"Trades totales: {len(trades)}")
