@@ -20,18 +20,20 @@ def _descargar_datos(ticker, timeframe):
             r = requests.get(url, params=params, timeout=20)
             r.raise_for_status()
             data = r.json()
+
             if isinstance(data, list) and len(data) >= 50:
                 data = data[-260:]
                 df = pd.DataFrame(data)
                 df["Date"] = pd.to_datetime(df["date"])
                 df = df.set_index("Date")
+
                 factor = df["adjusted_close"].astype(float) / df["close"].astype(float)
                 df["Close"] = df["adjusted_close"].astype(float)
                 df["Open"] = df["open"].astype(float) * factor
                 df["High"] = df["high"].astype(float) * factor
                 df["Low"] = df["low"].astype(float) * factor
                 df["Volume"] = df["volume"].astype(float)
-                
+
                 try:
                     print(">>> FIX HOY 1D <<<", ticker, "UTC now:", datetime.utcnow(), flush=True)
                     print("EOD last index:", df.index[-1], "len:", len(df), flush=True)
@@ -54,7 +56,6 @@ def _descargar_datos(ticker, timeframe):
 
                         df_hoy = df_hoy[["Open", "High", "Low", "Close", "Volume"]]
 
-                        # Comparación por fecha (evita líos de hora/zona)
                         if df_hoy.index[-1].date() not in df.index.date:
                             print(">>> CONCAT HOY <<<", df_hoy.index[-1], flush=True)
                             df = pd.concat([df, df_hoy])
@@ -64,6 +65,10 @@ def _descargar_datos(ticker, timeframe):
                 except Exception as e:
                     print(f"No se pudo añadir vela de hoy: {e}", flush=True)
 
+                return df[["Open", "High", "Low", "Close", "Volume"]]
+
+        except Exception as e:
+            print(f"EODHD falló para {ticker}: {e}, probando yfinance...", flush=True)
 
     # Fallback yfinance
     df = yf.download(ticker, period="1y", interval=timeframe, auto_adjust=True, progress=False)
