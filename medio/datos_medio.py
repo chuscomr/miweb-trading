@@ -6,8 +6,9 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-
+import os
+import requests
+from datetime import datetime, timedelta, date
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📥 DESCARGA DE DATOS
@@ -15,39 +16,100 @@ from datetime import datetime, timedelta
 
 def descargar_datos_diarios(ticker, periodo="10y"):
     """
-    Descarga datos DIARIOS de yfinance.
-    Estos se convertirán a semanales después.
-    
-    Returns:
-        DataFrame con OHLCV diarios
+    Descarga datos DIARIOS. Fuente principal: EODHD. Fallback: yfinance.
     """
+    token = os.getenv("EODHD_API_TOKEN")
+
+    # ── 1. Intentar EODHD ──────────────────────────────────────────
+    if token and not ticker.startswith("^"):
+        try:
+            print(f"Descargando (EODHD) {ticker}...")
+            url = f"https://eodhd.com/api/eod/{ticker}"
+            params = {
+                "api_token": token,
+                "period": "d",
+                "fmt": "json",
+                "order": "a",
+            }
+            r = requests.get(url, params=params, timeout=25)
+            r.raise_for_status()
+            data = r.json()
+
+            if not isinstance(data, list) or len(data) == 0:
+                raise ValueError("Respuesta vacía de EODHD")
+
+            # Filtrar por período
+            dias_map = {"1y": 365, "2y": 730, "5y": 1825, "10y": 3650}
+            dias = dias_map.get(periodo, 3650)
+            fecha_inicio = datetime.now() - timedelta(days=dias)
+            data = [row for row in data if datetime.strptime(row["date"], "%Y-%m-%d") >= fecha_inicio]
+
+            if len(data) < 50:
+                raise ValueError(f"Pocos datos EODHD: {len(data)}")
+
+            # Construir DataFrame
+            df = pd.DataFrame({
+                "Open":   [float(r.get("open") or r["close"]) for r in data],
+                "High":   [float(r.get("high") or r["close"]) for r in data],
+                "Low":    [float(r.get("low")  or r["close"]) for r in data],
+                "Close":  [float(r.get("adjusted_close") or r["close"]) for r in data],
+                "Volume": [float(r.get("volume") or 0) for r in data],
+            }, index=pd.DatetimeIndex(
+                [datetime.strptime(r["date"], "%Y-%m-%d") for r in data]
+            ))
+
+            # ── Completar con vela de hoy via yfinance ──────────────
+            try:
+                hoy = date.today()
+                if df.index[-1].date() < hoy:
+                    tick = yf.Ticker(ticker)
+                    vela = tick.history(period="1d", interval="1d")
+                    if not vela.empty:
+                        vela.index = vela.index.tz_localize(None)
+                        if vela.index[-1].date() > df.index[-1].date():
+                            df = pd.concat([df, vela[["Open","High","Low","Close","Volume"]]])
+                            df = df[~df.index.duplicated(keep="last")]
+                            print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+            except Exception as e:
+                print(f"[yfinance hoy medio] Error: {e}")
+
+            print(f"✅ EODHD OK: {len(df)} días para {ticker}")
+            return df
+
+        except Exception as e:
+            print(f"⚠️  EODHD falló para {ticker}: {e} → intentando yfinance...")
+
+    # ── 2. Fallback: yfinance ───────────────────────────────────────
     try:
-        df = yf.download(
-            ticker,
-            period=periodo,
-            interval="1d",
-            auto_adjust=True,
-            progress=False
-        )
-        
+        print(f"Descargando (yfinance) {ticker}...")
+        session = requests.Session()
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36"
+        })
+        tick = yf.Ticker(ticker, session=session)
+        df = tick.history(period=periodo, interval="1d")
+
         if df.empty:
             return None
-        
-        # Normalizar columnas (yfinance puede devolver MultiIndex)
-        if hasattr(df.columns, 'levels'):
+
+        df.index = df.index.tz_localize(None)
+
+        # Normalizar columnas MultiIndex si las hay
+        if hasattr(df.columns, "levels"):
             df.columns = df.columns.get_level_values(0)
-        
-        # Asegurar que tenemos las columnas necesarias
-        required = ['Open', 'High', 'Low', 'Close', 'Volume']
+
+        required = ["Open", "High", "Low", "Close", "Volume"]
         if not all(col in df.columns for col in required):
             return None
-        
+
+        print(f"✅ yfinance OK: {len(df)} días para {ticker}")
         return df
-        
+
     except Exception as e:
         print(f"❌ Error descargando {ticker}: {e}")
         return None
-
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📊 CONVERSIÓN DIARIA → SEMANAL
