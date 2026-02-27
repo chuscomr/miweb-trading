@@ -31,9 +31,9 @@ def descargar_datos_diarios(ticker, periodo="10y"):
                 "fmt": "json",
                 "order": "a",
             }
-            r = requests.get(url, params=params, timeout=25)
-            r.raise_for_status()
-            data = r.json()
+            resp = requests.get(url, params=params, timeout=25)
+            resp.raise_for_status()
+            data = resp.json()
 
             if not isinstance(data, list) or len(data) == 0:
                 raise ValueError("Respuesta vacía de EODHD")
@@ -49,13 +49,13 @@ def descargar_datos_diarios(ticker, periodo="10y"):
 
             # Construir DataFrame
             df = pd.DataFrame({
-                "Open":   [float(r.get("open") or r["close"]) for r in data],
-                "High":   [float(r.get("high") or r["close"]) for r in data],
-                "Low":    [float(r.get("low")  or r["close"]) for r in data],
-                "Close":  [float(r.get("adjusted_close") or r["close"]) for r in data],
-                "Volume": [float(r.get("volume") or 0) for r in data],
+                "Open":   [float(row.get("open")   or row["close"]) for row in data],
+                "High":   [float(row.get("high")   or row["close"]) for row in data],
+                "Low":    [float(row.get("low")    or row["close"]) for row in data],
+                "Close":  [float(row.get("adjusted_close") or row["close"]) for row in data],
+                "Volume": [float(row.get("volume") or 0)             for row in data],
             }, index=pd.DatetimeIndex(
-                [datetime.strptime(r["date"], "%Y-%m-%d") for r in data]
+                [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
             ))
 
             # ── Completar con vela de hoy via yfinance ──────────────
@@ -96,7 +96,6 @@ def descargar_datos_diarios(ticker, periodo="10y"):
 
         df.index = df.index.tz_localize(None)
 
-        # Normalizar columnas MultiIndex si las hay
         if hasattr(df.columns, "levels"):
             df.columns = df.columns.get_level_values(0)
 
