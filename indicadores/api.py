@@ -31,8 +31,22 @@ def _descargar_datos(ticker, timeframe):
                 df["High"] = df["high"].astype(float) * factor
                 df["Low"] = df["low"].astype(float) * factor
                 df["Volume"] = df["volume"].astype(float)
+                
+                try:
+                    df_hoy = yf.download(ticker, period="1d", interval="1d",
+                                         auto_adjust=True, progress=False)
+                    if isinstance(df_hoy.columns, pd.MultiIndex):
+                        df_hoy.columns = df_hoy.columns.get_level_values(0)
+                    if not df_hoy.empty:
+                        df_hoy.index = pd.to_datetime(df_hoy.index)
+                        df_hoy = df_hoy[["Open", "High", "Low", "Close", "Volume"]]
+                        if df_hoy.index[-1] not in df.index:
+                            df = pd.concat([df, df_hoy])
+                except Exception as e:
+                    print(f"No se pudo añadir vela de hoy: {e}")
 
                 return df[["Open", "High", "Low", "Close", "Volume"]]
+
         except Exception as e:
             print(f"EODHD falló para {ticker}: {e}, probando yfinance...")
 
