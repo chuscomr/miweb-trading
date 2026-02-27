@@ -156,8 +156,9 @@ def ejecutar_backtest_ibex():
         signal.alarm(0)
         for ticker in IBEX35_TICKERS:
             try:
-            precios, volumenes, fechas, _ = _obtener_precios_backtest(ticker, periodo_anios=2)
-
+                precios, volumenes, fechas, _ = _obtener_precios_backtest(ticker, periodo_anios=2)
+            except Exception:
+                continue  # si falla el fetch de precios para ese ticker, saltamos al siguiente
             if precios is None or len(precios) < 60:
                 continue
 
