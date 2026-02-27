@@ -151,8 +151,11 @@ def ejecutar_backtest_ibex():
         tickers_excluidos = []
         todos_trades = []
         todas_equities = []
-
+        
+        import signal
+        signal.alarm(0)
         for ticker in IBEX35_TICKERS:
+            try:
             precios, volumenes, fechas, _ = _obtener_precios_backtest(ticker, periodo_anios=2)
 
             if precios is None or len(precios) < 60:
