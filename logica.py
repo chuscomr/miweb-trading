@@ -302,7 +302,8 @@ def alinear_series_por_fecha(precios, volumenes, fechas):
         # ─────────────────────────────
         df = df[~df.index.duplicated(keep="last")]
         df = df.dropna(subset=["precio", "volumen"])
-        df = df[(df["precio"] > 0) & (df["volumen"] > 0)]
+        df = df[(df["precio"] > 0) 
+        df = df[df["volumen"] >= 0]
 
         # ─────────────────────────────
         # FILTRO DE GAPS EXTREMOS
