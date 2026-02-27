@@ -135,7 +135,10 @@ def obtener_precios_eodhd(ticker, cache, periodo="1y"):
 
         return precios, volumenes, fechas, precios[-1]
 
-    
+    except Exception as e:                               
+        print("Error descargando (EODHD):", ticker, e)
+        return None, None, None, None  
+        
 def obtener_precios(ticker, cache, periodo="1y"):
     provider = _data_provider()
     print("USANDO PROVIDER =", provider, "ticker=", ticker, "periodo=", periodo)
