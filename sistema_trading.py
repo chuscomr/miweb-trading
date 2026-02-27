@@ -324,8 +324,12 @@ def calcular_rsi_seguro(precios, periodo=14):
         perdidas = -delta.clip(upper=0)
         
         # Media móvil exponencial (método Wilder)
-        media_gan = ganancias.ewm(alpha=1/periodo, adjust=False).mean()
-        media_per = perdidas.ewm(alpha=1/periodo, adjust=False).mean()
+        ganancias = ganancias.dropna()
+        perdidas = perdidas.dropna()
+        if len(ganancias) < periodo:
+            return None
+        media_gan = ganancias.ewm(alpha=1/periodo, adjust=False, min_periods=periodo).mean()
+        media_per = perdidas.ewm(alpha=1/periodo, adjust=False, min_periods=periodo).mean()
         
         # Evitar división por cero
         if media_per.iloc[-1] == 0:
