@@ -153,7 +153,17 @@ def calcular_metricas_globales(todos_los_trades, resultados_por_ticker):
             "total_trades": 0,
             "expectancy_R": 0,
             "winrate": 0,
-            "equity_final_R": 0
+            "avg_winner": 0,
+            "avg_loser": 0,
+            "profit_factor": 0,
+            "mejor_trade": 0,
+            "peor_trade": 0,
+            "max_drawdown_R": 0,
+            "equity_final_R": 0,
+            "equity_curve": [0],
+            "expectancy_promedio_ticker": 0,
+            "tickers_rentables": 0,
+            "tickers_no_rentables": 0
         }
     
     # Extraer todos los Rs
