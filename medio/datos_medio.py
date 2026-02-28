@@ -73,6 +73,10 @@ def descargar_datos_diarios(ticker, periodo="10y"):
             except Exception as e:
                 print(f"[yfinance hoy medio] Error: {e}")
 
+            if len(df) < 500:
+                print(f"⚠️  EODHD limitado ({len(df)} días) → usando yfinance para histórico completo")
+                raise ValueError("Histórico insuficiente para backtest")
+
             print(f"✅ EODHD OK: {len(df)} días para {ticker}")
             return df
 
