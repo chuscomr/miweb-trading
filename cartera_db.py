@@ -317,3 +317,27 @@ def actualizar_posicion(posicion_id, ticker=None, nombre=None, precio_entrada=No
 # Inicializar BD al importar el módulo
 if not os.path.exists(DATABASE_PATH):
     init_db()
+    
+def migrar_db():
+    """
+    Añade columnas nuevas si no existen (migraciones simples)
+    """
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Obtener columnas actuales
+    cursor.execute("PRAGMA table_info(posiciones)")
+    columnas_actuales = [col[1] for col in cursor.fetchall()]
+
+    # Columnas necesarias
+    columnas_necesarias = {
+        "stop_original": "REAL",
+    }
+
+    for columna, tipo in columnas_necesarias.items():
+        if columna not in columnas_actuales:
+            cursor.execute(f"ALTER TABLE posiciones ADD COLUMN {columna} {tipo}")
+            print(f"✅ Columna añadida: {columna}")
+
+    conn.commit()
+    conn.close()
