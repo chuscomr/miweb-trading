@@ -44,7 +44,11 @@ def init_db():
             creado_en TEXT NOT NULL
         )
     """)
-    
+    cursor.execute("PRAGMA table_info(posiciones)")
+    columnas = [col[1] for col in cursor.fetchall()]
+    if "stop_original" not in columnas:
+        cursor.execute("ALTER TABLE posiciones ADD COLUMN stop_original REAL")
+        
     conn.commit()
     conn.close()
     print("✅ Base de datos inicializada")
