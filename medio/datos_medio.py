@@ -31,9 +31,9 @@ def descargar_datos_diarios(ticker, periodo="10y"):
                 "fmt": "json",
                 "order": "a",
             }
-            resp = requests.get(url, params=params, timeout=25)
-            resp.raise_for_status()
-            data = resp.json()
+            r = requests.get(url, params=params, timeout=25)
+            r.raise_for_status()
+            data = r.json()
 
             if not isinstance(data, list) or len(data) == 0:
                 raise ValueError("Respuesta vacía de EODHD")
@@ -49,29 +49,77 @@ def descargar_datos_diarios(ticker, periodo="10y"):
 
             # Construir DataFrame
             df = pd.DataFrame({
-                "Open":   [float(row.get("open")   or row["close"]) for row in data],
-                "High":   [float(row.get("high")   or row["close"]) for row in data],
-                "Low":    [float(row.get("low")    or row["close"]) for row in data],
-                "Close":  [float(row.get("adjusted_close") or row["close"]) for row in data],
-                "Volume": [float(row.get("volume") or 0)             for row in data],
+                "Open":   [float(r.get("open") or r["close"]) for r in data],
+                "High":   [float(r.get("high") or r["close"]) for r in data],
+                "Low":    [float(r.get("low")  or r["close"]) for r in data],
+                "Close":  [float(r.get("adjusted_close") or r["close"]) for r in data],
+                "Volume": [float(r.get("volume") or 0) for r in data],
             }, index=pd.DatetimeIndex(
-                [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
+                [datetime.strptime(r["date"], "%Y-%m-%d") for r in data]
             ))
 
-            # ── Completar con vela de hoy via yfinance ──────────────
+            # ── Completar con vela de hoy: FMP → yfinance ──────────
             try:
                 hoy = date.today()
                 if df.index[-1].date() < hoy:
-                    tick = yf.Ticker(ticker)
-                    vela = tick.history(period="1d", interval="1d")
-                    if not vela.empty:
-                        vela.index = vela.index.tz_localize(None)
-                        if vela.index[-1].date() > df.index[-1].date():
-                            df = pd.concat([df, vela[["Open","High","Low","Close","Volume"]]])
-                            df = df[~df.index.duplicated(keep="last")]
-                            print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+                    vela_añadida = False
+
+                    # 1. Intentar FMP (cierre del día sin retraso)
+                    fmp_key = os.getenv("FMP_API_KEY")
+                    if fmp_key:
+                        try:
+                            # FMP usa ticker sin sufijo .MC → ej: "IAG.MC" → "IAG.MC"
+                            # Para mercado español FMP acepta directamente el formato Yahoo
+                            url_fmp = f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}"
+                            params_fmp = {
+                                "apikey": fmp_key,
+                                "from": hoy.strftime("%Y-%m-%d"),
+                                "to": hoy.strftime("%Y-%m-%d"),
+                                "serietype": "line"
+                            }
+                            r_fmp = requests.get(url_fmp, params=params_fmp, timeout=10)
+                            if r_fmp.status_code == 200:
+                                data_fmp = r_fmp.json()
+                                historico = data_fmp.get("historical", [])
+                                if historico:
+                                    row = historico[0]
+                                    fecha_fmp = datetime.strptime(row["date"], "%Y-%m-%d")
+                                    if fecha_fmp.date() > df.index[-1].date():
+                                        nueva_vela = pd.DataFrame({
+                                            "Open":   [float(row.get("open") or row["close"])],
+                                            "High":   [float(row.get("high") or row["close"])],
+                                            "Low":    [float(row.get("low") or row["close"])],
+                                            "Close":  [float(row["close"])],
+                                            "Volume": [float(row.get("volume") or 0)],
+                                        }, index=pd.DatetimeIndex([fecha_fmp]))
+                                        df = pd.concat([df, nueva_vela])
+                                        df = df[~df.index.duplicated(keep="last")]
+                                        vela_añadida = True
+                                        print(f"[FMP hoy] Vela añadida: {fecha_fmp.date()} | Close: {row['close']}")
+                        except Exception as e_fmp:
+                            print(f"[FMP hoy] Error: {e_fmp}")
+
+                    # 2. Fallback: yfinance con User-Agent
+                    if not vela_añadida:
+                        try:
+                            session_yf = requests.Session()
+                            session_yf.headers.update({
+                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                              "Chrome/120.0.0.0 Safari/537.36"
+                            })
+                            tick = yf.Ticker(ticker, session=session_yf)
+                            vela = tick.history(period="1d", interval="1d")
+                            if not vela.empty:
+                                vela.index = vela.index.tz_localize(None)
+                                if vela.index[-1].date() > df.index[-1].date():
+                                    df = pd.concat([df, vela[["Open","High","Low","Close","Volume"]]])
+                                    df = df[~df.index.duplicated(keep="last")]
+                                    print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+                        except Exception as e_yf:
+                            print(f"[yfinance hoy medio] Error: {e_yf}")
             except Exception as e:
-                print(f"[yfinance hoy medio] Error: {e}")
+                print(f"[vela hoy] Error general: {e}")
 
             print(f"✅ EODHD OK: {len(df)} días para {ticker}")
             return df
@@ -96,6 +144,7 @@ def descargar_datos_diarios(ticker, periodo="10y"):
 
         df.index = df.index.tz_localize(None)
 
+        # Normalizar columnas MultiIndex si las hay
         if hasattr(df.columns, "levels"):
             df.columns = df.columns.get_level_values(0)
 
