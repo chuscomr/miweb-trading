@@ -791,6 +791,10 @@
                 <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
         </button>
+
+        <button class="btn btn-definiciones" onclick="abrirDefiniciones()">
+            📖 Definiciones
+        </button>
     </div>
 
     <!-- LAYOUT PRINCIPAL -->
@@ -1322,6 +1326,97 @@
         grid-template-columns: 1fr;
     }
 }
+
+.btn-definiciones {
+    background: #166534;
+    color: #ffffff;
+    border: 1px solid #1e293b;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+.btn-definiciones:hover { background: #14532d; border-color: #166534; }
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.abierto { display: flex; }
+.modal-contenido {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 780px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+.modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.modal-titulo { display: flex; align-items: center; gap: 10px; }
+.modal-icono { font-size: 1.4rem; }
+.modal-titulo h2 { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin: 0; }
+.modal-controles { display: flex; gap: 10px; align-items: center; }
+#buscadorIndicador {
+    flex: 1;
+    padding: 8px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    outline: none;
+    transition: border-color 0.2s;
+}
+#buscadorIndicador:focus { border-color: #2563eb; }
+.modal-cerrar {
+    background: #e2e8f0;
+    border: none;
+    color: #475569;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.modal-cerrar:hover { background: #fecaca; color: #dc2626; }
+.modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: #f1f5f9; }
+.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.cat-separador { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
+.cat-separador:first-child { margin-top: 0; }
+.cat-separador h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; white-space: nowrap; margin: 0; }
+.cat-separador::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+.indicador-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; transition: border-color 0.2s; }
+.indicador-card:hover { border-color: #93c5fd; }
+.ind-cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ind-badge { background: #2563eb; color: white; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.ind-nombre { font-weight: 600; color: #0f172a; font-size: 14px; }
+.ind-definicion { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 8px; }
+.ind-uso { font-size: 12px; color: #475569; background: #eff6ff; border-left: 3px solid #2563eb; padding: 6px 10px; border-radius: 0 6px 6px 0; line-height: 1.5; }
+.ind-uso strong { color: #1d4ed8; }
+.sin-resultados { text-align: center; color: #94a3b8; padding: 40px 20px; font-size: 14px; }
+
 </style>
 
     <script>
@@ -1475,6 +1570,167 @@
     })();
     </script>
     
+
+<div id="modalDefiniciones" class="modal-overlay" onclick="cerrarModalFuera(event)">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <div class="modal-titulo">
+                <span class="modal-icono">📖</span>
+                <h2>Glosario de Indicadores Técnicos</h2>
+            </div>
+            <div class="modal-controles">
+                <input type="text" id="buscadorIndicador" placeholder="🔍 Buscar indicador..." oninput="filtrarIndicadores(this.value)" autocomplete="off">
+                <button class="modal-cerrar" onclick="cerrarDefiniciones()" title="Cerrar">✕</button>
+            </div>
+        </div>
+        <div class="modal-body" id="listaIndicadores"></div>
+    </div>
+</div>
+
+<script>
+const GLOSARIO = [
+    // TENDENCIA
+    { cat: "📈 Tendencia", badge: "MM20", nombre: "Media Móvil Simple 20",
+      def: "Promedio del precio de cierre de las últimas 20 velas. Suaviza las fluctuaciones del precio y muestra hacia dónde se dirige la tendencia a corto plazo.",
+      uso: "Si el precio está por encima de la MM20, hay tendencia alcista. Si está por debajo, bajista. Se usa frecuentemente como soporte o resistencia dinámica." },
+    { cat: "📈 Tendencia", badge: "MM50", nombre: "Media Móvil Simple 50",
+      def: "Promedio de los últimos 50 cierres. Refleja la tendencia a medio plazo y filtra el ruido del mercado mejor que la MM20.",
+      uso: "El cruce de MM20 con MM50 (cruce dorado alcista / cruce de la muerte bajista) es una señal clásica de cambio de tendencia." },
+    { cat: "📈 Tendencia", badge: "MM200", nombre: "Media Móvil Simple 200",
+      def: "Promedio de los últimos 200 cierres. Es la media más usada para definir si un activo está en tendencia alcista o bajista a largo plazo.",
+      uso: "Precio sobre MM200 = mercado alcista de fondo. Precio bajo MM200 = mercado bajista. Los gestores institucionales la usan como referencia clave." },
+    { cat: "📈 Tendencia", badge: "EMA9", nombre: "Media Móvil Exponencial 9",
+      def: "Media móvil que da más peso a los precios recientes. Con período 9 es muy sensible a los movimientos del precio.",
+      uso: "Se usa en intradía y swing trading para detectar cambios de tendencia rápidos. Cruce EMA9/EMA21 = señal de entrada." },
+    { cat: "📈 Tendencia", badge: "EMA21", nombre: "Media Móvil Exponencial 21",
+      def: "EMA de 21 períodos. Equilibrio entre rapidez de reacción y fiabilidad de señal.",
+      uso: "Combinada con EMA9: el cruce alcista (EMA9 supera EMA21) sugiere entrada larga. Sirve también de soporte dinámico en tendencias fuertes." },
+    { cat: "📈 Tendencia", badge: "EMA50", nombre: "Media Móvil Exponencial 50",
+      def: "EMA de medio plazo. Reacciona más rápido que la SMA50 ante giros del mercado.",
+      uso: "Niveles de soporte/resistencia dinámico. Muy útil para buscar pullbacks en tendencia." },
+    { cat: "📈 Tendencia", badge: "ADX", nombre: "Average Directional Index — Fuerza de Tendencia",
+      def: "Mide la FUERZA de la tendencia en una escala de 0 a 100, sin importar si es alcista o bajista. No indica dirección.",
+      uso: "ADX > 25 = tendencia fuerte. ADX < 20 = mercado lateral, mejor usar osciladores. +DI > -DI = fuerza alcista." },
+    { cat: "📈 Tendencia", badge: "PSAR", nombre: "Parabolic SAR — Stops Dinámicos",
+      def: "Aparece como puntos sobre o bajo el precio. Puntos bajo el precio = tendencia alcista. Puntos encima = tendencia bajista.",
+      uso: "Se usa para colocar stops de seguimiento (trailing stop). El cruce del precio con los puntos marca una posible inversión de tendencia." },
+    { cat: "📈 Tendencia", badge: "ICHIMOKU", nombre: "Ichimoku Cloud — Nube Ichimoku",
+      def: "Sistema de 5 líneas que muestra tendencia, soporte/resistencia y momentum de un solo vistazo. La nube (Kumo) es la zona de soporte/resistencia principal.",
+      uso: "Precio sobre la nube = tendencia alcista. Dentro = indecisión. Bajo la nube = bajista. Cruce Tenkan/Kijun genera señales de entrada." },
+    // MOMENTUM
+    { cat: "⚡ Momentum", badge: "RSI", nombre: "Relative Strength Index — Índice de Fuerza Relativa",
+      def: "Oscilador entre 0 y 100 que mide la velocidad y magnitud de los cambios de precio. Período estándar: 14.",
+      uso: "RSI > 70 = sobrecomprado (posible corrección). RSI < 30 = sobrevendido (posible rebote). Divergencias RSI/precio son señales muy potentes." },
+    { cat: "⚡ Momentum", badge: "MACD", nombre: "MACD — Convergencia/Divergencia de Medias",
+      def: "Diferencia entre EMA12 y EMA26, con una señal (EMA9 del MACD). Histograma muestra la diferencia entre MACD y señal.",
+      uso: "Cruce MACD sobre señal = señal alcista. Cruce bajo señal = bajista. Histograma creciendo = momentum alcista ganando fuerza." },
+    { cat: "⚡ Momentum", badge: "STOCH", nombre: "Stochastic — Oscilador Estocástico",
+      def: "Compara el precio de cierre con el rango máx/mín de un período. Escala 0-100. Líneas %K (rápida) y %D (señal).",
+      uso: "Valores > 80 = sobrecomprado. < 20 = sobrevendido. El cruce %K/%D en zonas extremas es señal de entrada/salida." },
+    { cat: "⚡ Momentum", badge: "MFI", nombre: "Money Flow Index — RSI con Volumen",
+      def: "Como el RSI pero incorpora el volumen para medir la presión compradora/vendedora. Más fiable en valores líquidos.",
+      uso: "MFI > 80 = sobrecomprado con volumen. MFI < 20 = sobrevendido con volumen. Divergencias con el precio son señales de alta fiabilidad." },
+    // VOLUMEN
+    { cat: "📊 Volumen", badge: "VOLUMEN", nombre: "Barras de Volumen",
+      def: "Número de acciones intercambiadas en cada período. Es el indicador más básico de actividad del mercado.",
+      uso: "Volumen alto confirma movimientos de precio. Ruptura con volumen alto = breakout válido. Movimiento sin volumen = señal débil o trampa." },
+    { cat: "📊 Volumen", badge: "OBV", nombre: "On Balance Volume",
+      def: "Acumula el volumen sumando cuando el precio sube y restando cuando baja. Muestra si el dinero fluye hacia o fuera del valor.",
+      uso: "OBV subiendo = acumulación (señal alcista). OBV bajando = distribución (señal bajista). Divergencia OBV/precio anticipa cambios de tendencia." },
+    { cat: "📊 Volumen", badge: "VWAP", nombre: "VWAP — Precio Medio Ponderado por Volumen",
+      def: "Precio promedio ponderado por volumen durante la sesión. Es el precio de referencia institucional.",
+      uso: "Precio sobre VWAP = sesión alcista, institucionales comprando. Precio bajo VWAP = sesión bajista. Se usa como soporte/resistencia intradiario." },
+    { cat: "📊 Volumen", badge: "VOLPROFILE", nombre: "Volume Profile — Perfil de Volumen",
+      def: "Distribución del volumen negociado por niveles de precio. Identifica el POC (Point of Control): precio con mayor volumen histórico.",
+      uso: "El POC actúa como imán de precio. Zonas de alto volumen = soporte/resistencia fuertes. Zonas de bajo volumen = precio atraviesa rápido." },
+    // VOLATILIDAD
+    { cat: "📉 Volatilidad", badge: "BB", nombre: "Bollinger Bands — Bandas de Bollinger",
+      def: "Banda central (MM20) más dos bandas a 2 desviaciones estándar. Se expanden con alta volatilidad y contraen con baja.",
+      uso: "Precio tocando banda superior = sobrecomprado. Banda inferior = sobrevendido. Contracción extrema (squeeze) precede movimientos explosivos." },
+    { cat: "📉 Volatilidad", badge: "ATR", nombre: "Average True Range — Rango Verdadero Medio",
+      def: "Mide la volatilidad promedio del mercado como rango de movimiento típico por período. No indica dirección.",
+      uso: "Usado para calcular tamaño de stops: stop = entrada - (2 x ATR). ATR alto = mercado volátil, stops más amplios. ATR bajo = mercado tranquilo." },
+    { cat: "📉 Volatilidad", badge: "KELTNER", nombre: "Keltner Channels — Canales Keltner",
+      def: "Canal basado en EMA20 más/menos 2xATR. Similar a Bollinger pero usa ATR en lugar de desviación estándar.",
+      uso: "Precio fuera del canal = tendencia fuerte. Si Bollinger se contrae dentro de Keltner = squeeze de volatilidad, preparar para explosión." },
+    // NIVELES
+    { cat: "🎯 Niveles", badge: "SR", nombre: "Soportes y Resistencias",
+      def: "Zonas de precio donde históricamente el mercado ha frenado, girado o acelerado. Son los niveles más importantes del análisis técnico.",
+      uso: "Comprar cerca de soportes con stop por debajo. Vender/cerrar cerca de resistencias. Un soporte roto se convierte en resistencia y viceversa." },
+    { cat: "🎯 Niveles", badge: "FIBO", nombre: "Fibonacci — Retrocesos de Fibonacci",
+      def: "Niveles de retroceso basados en la secuencia de Fibonacci: 23.6%, 38.2%, 50%, 61.8% y 78.6% de un movimiento previo.",
+      uso: "En tendencia alcista, buscar entradas en retrocesos al 38.2% o 61.8%. El 61.8% (ratio áureo) es el nivel más respetado por el mercado." },
+    { cat: "🎯 Niveles", badge: "PIVOT", nombre: "Pivot Points — Puntos Pivote",
+      def: "Niveles S/R calculados matemáticamente a partir del OHLC del período anterior. Ampliamente usados por traders institucionales.",
+      uso: "PP central = nivel clave del día. S1/R1 son los primeros objetivos. Ruptura de R1 con volumen = señal alcista fuerte para el día." },
+    // PATRONES
+    { cat: "📐 Patrones", badge: "PATRONES", nombre: "Patrones de Velas Japonesas",
+      def: "Formaciones de 1-3 velas que señalan posibles cambios o continuaciones de tendencia: Doji, Martillo, Envolvente, Estrella, etc.",
+      uso: "Los patrones de reversión (Martillo, Estrella fugaz) son más fiables en soportes/resistencias clave. Siempre confirmar con volumen y contexto." },
+    { cat: "📐 Patrones", badge: "DIVERGENCIAS", nombre: "Divergencias de Indicadores",
+      def: "Cuando el precio hace nuevos máximos/mínimos pero el indicador (RSI, MACD) no los confirma. Señal de agotamiento de tendencia.",
+      uso: "Divergencia bajista: precio sube pero RSI baja → posible techo. Divergencia alcista: precio baja pero RSI sube → posible suelo. Alta fiabilidad en timeframes altos." },
+];
+
+function abrirDefiniciones() {
+    const modal = document.getElementById('modalDefiniciones');
+    modal.classList.add('abierto');
+    document.getElementById('buscadorIndicador').value = '';
+    renderizarGlosario(GLOSARIO);
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarDefiniciones() {
+    document.getElementById('modalDefiniciones').classList.remove('abierto');
+    document.body.style.overflow = '';
+}
+
+function cerrarModalFuera(e) {
+    if (e.target.id === 'modalDefiniciones') cerrarDefiniciones();
+}
+
+function filtrarIndicadores(texto) {
+    const t = texto.toLowerCase().trim();
+    if (!t) { renderizarGlosario(GLOSARIO); return; }
+    const filtrados = GLOSARIO.filter(i =>
+        i.badge.toLowerCase().includes(t) ||
+        i.nombre.toLowerCase().includes(t) ||
+        i.cat.toLowerCase().includes(t) ||
+        i.def.toLowerCase().includes(t)
+    );
+    renderizarGlosario(filtrados);
+}
+
+function renderizarGlosario(lista) {
+    const contenedor = document.getElementById('listaIndicadores');
+    if (lista.length === 0) {
+        contenedor.innerHTML = '<div class="sin-resultados">🔍 No se encontraron indicadores.</div>';
+        return;
+    }
+    const categorias = [...new Set(lista.map(i => i.cat))];
+    let html = '';
+    categorias.forEach(cat => {
+        html += `<div class="cat-separador"><h3>${cat}</h3></div>`;
+        lista.filter(i => i.cat === cat).forEach(ind => {
+            html += `
+            <div class="indicador-card">
+                <div class="ind-cabecera">
+                    <span class="ind-badge">${ind.badge}</span>
+                    <span class="ind-nombre">${ind.nombre}</span>
+                </div>
+                <p class="ind-definicion">${ind.def}</p>
+                <div class="ind-uso"><strong>💡 Cómo usarlo:</strong> ${ind.uso}</div>
+            </div>`;
+        });
+    });
+    contenedor.innerHTML = html;
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarDefiniciones();
+});
+</script>
+
     <script src="{{ url_for('indicadores.static', filename='js/grafico.js') }}"></script>
 </div>
 </body>
