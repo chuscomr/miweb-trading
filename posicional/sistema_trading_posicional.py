@@ -66,7 +66,18 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
         try:
             import pandas as pd
             
-            datos_ibex = yf.download("^IBEX", period="1y", progress=False)
+            # FIX RENDER: User-Agent para evitar bloqueo en IPs cloud
+            import requests as _req
+            _session = _req.Session()
+            _session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/120.0.0.0 Safari/537.36"
+            })
+            ibex_obj = yf.Ticker("^IBEX", session=_session)
+            datos_ibex = ibex_obj.history(period="1y", interval="1d")
+            if not datos_ibex.empty and datos_ibex.index.tz is not None:
+                datos_ibex.index = datos_ibex.index.tz_localize(None)
         
             # Verificar que hay datos
             if isinstance(datos_ibex, pd.DataFrame) and len(datos_ibex) >= 200:
