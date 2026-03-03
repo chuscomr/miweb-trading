@@ -30,6 +30,12 @@ def obtener_datos_semanales(ticker, periodo_años=10, validar=True):
     fecha_inicio = fecha_fin - timedelta(days=periodo_años * 365)
     token = os.getenv("EODHD_API_TOKEN")
 
+    # ── Forzar yfinance en local ─────────────────────────────────────
+    ENTORNO = os.getenv("ENTORNO", "local")  # en producción pon ENTORNO=produccion
+    if ENTORNO == "local":
+        token = None  # Ignora EODHD en local → va directo a yfinance
+    # ─────────────────────────────────────────────────────────────────
+
     print(f"\n[{fecha_fin.strftime('%Y-%m-%d %H:%M:%S')}] Descargando {ticker}...")
 
     df_diario = None
@@ -62,20 +68,60 @@ def obtener_datos_semanales(ticker, periodo_años=10, validar=True):
                 [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
             ))
 
-            # Completar con vela de hoy
+            # Completar con vela de hoy: FMP → yfinance
             try:
+                import os as _os
                 hoy = date.today()
                 if df_diario.index[-1].date() < hoy:
-                    tick = yf.Ticker(ticker)
-                    vela = tick.history(period="1d", interval="1d")
-                    if not vela.empty:
-                        vela.index = vela.index.tz_localize(None)
-                        if vela.index[-1].date() > df_diario.index[-1].date():
-                            df_diario = pd.concat([df_diario, vela[["Open","High","Low","Close","Volume"]]])
-                            df_diario = df_diario[~df_diario.index.duplicated(keep="last")]
-                            print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+                    vela_añadida = False
+
+                    # 1. Intentar FMP
+                    fmp_key = _os.getenv("FMP_API_KEY")
+                    if fmp_key:
+                        try:
+                            r_fmp = req.get(
+                                f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}",
+                                params={"apikey": fmp_key, "from": hoy.strftime("%Y-%m-%d"), "to": hoy.strftime("%Y-%m-%d")},
+                                timeout=10
+                            )
+                            if r_fmp.status_code == 200:
+                                hist = r_fmp.json().get("historical", [])
+                                if hist:
+                                    row = hist[0]
+                                    fecha_fmp = datetime.strptime(row["date"], "%Y-%m-%d")
+                                    if fecha_fmp.date() > df_diario.index[-1].date():
+                                        nueva = pd.DataFrame({
+                                            "Open":   [float(row.get("open")   or row["close"])],
+                                            "High":   [float(row.get("high")   or row["close"])],
+                                            "Low":    [float(row.get("low")    or row["close"])],
+                                            "Close":  [float(row["close"])],
+                                            "Volume": [float(row.get("volume") or 0)],
+                                        }, index=pd.DatetimeIndex([fecha_fmp]))
+                                        df_diario = pd.concat([df_diario, nueva])
+                                        df_diario = df_diario[~df_diario.index.duplicated(keep="last")]
+                                        vela_añadida = True
+                                        print(f"[FMP hoy] Vela añadida: {fecha_fmp.date()} Close={row['close']}")
+                        except Exception as e_fmp:
+                            print(f"[FMP hoy posicional] Error: {e_fmp}")
+
+                    # 2. Fallback yfinance con User-Agent
+                    if not vela_añadida:
+                        try:
+                            _s = req.Session()
+                            _s.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+                            tick = yf.Ticker(ticker, session=_s)
+                            vela = tick.history(period="1d", interval="1d")
+                            if not vela.empty:
+                                if vela.index.tz is not None:
+                                    vela.index = vela.index.tz_localize(None)
+                                if vela.index[-1].date() > df_diario.index[-1].date():
+                                    df_diario = pd.concat([df_diario, vela[["Open","High","Low","Close","Volume"]]])
+                                    df_diario = df_diario[~df_diario.index.duplicated(keep="last")]
+                                    print(f"[yfinance hoy] Vela añadida: {vela.index[-1].date()}")
+                        except Exception as e_yf:
+                            print(f"[yfinance hoy posicional] Error: {e_yf}")
             except Exception as e:
-                print(f"[yfinance hoy posicional] Error: {e}")
+                print(f"[vela hoy posicional] Error general: {e}")
 
             print(f"✅ EODHD OK: {len(df_diario)} días para {ticker}")
 
@@ -86,13 +132,7 @@ def obtener_datos_semanales(ticker, periodo_años=10, validar=True):
     # ── 2. Fallback yfinance ─────────────────────────────────────────
     if df_diario is None:
         try:
-            session = req.Session()
-            session.headers.update({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                              "AppleWebKit/537.36 (KHTML, like Gecko) "
-                              "Chrome/120.0.0.0 Safari/537.36"
-            })
-            tick = yf.Ticker(ticker, session=session)
+            tick = yf.Ticker(ticker)
             df_diario = tick.history(
                 start=fecha_inicio.strftime("%Y-%m-%d"),
                 end=fecha_fin.strftime("%Y-%m-%d"),
@@ -177,13 +217,7 @@ def obtener_precio_tiempo_real(ticker):
 
     # ── 2. Fallback yfinance ─────────────────────────────────────────
     try:
-        session = req.Session()
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/120.0.0.0 Safari/537.36"
-        })
-        tick = yf.Ticker(ticker, session=session)
+        tick = yf.Ticker(ticker)
         df_d = tick.history(period="5d", interval="1d")
 
         if df_d is not None and not df_d.empty:
