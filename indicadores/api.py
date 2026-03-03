@@ -4,103 +4,111 @@ import yfinance as yf
 import pandas as pd
 import os
 import requests
-import logging
-import time
-
-logger = logging.getLogger("gunicorn.error")
-
 from datetime import datetime
 from .nucleo.calculos import aplicar_indicadores
 from .utilidades.serializador import preparar_para_json, formatear_niveles_sr, formatear_patrones
 from .routes import indicadores_bp
 
-# ── CACHÉ EN MEMORIA ──────────────────────────────────────────────────────────
-_cache = {}
-CACHE_TTL = 300  # segundos (5 minutos)
-
-def _get_cache(key):
-    entry = _cache.get(key)
-    if entry and (time.time() - entry["ts"]) < CACHE_TTL:
-        logger.info(f"CACHE HIT: {key}")
-        return entry["data"]
-    return None
-
-def _set_cache(key, data):
-    _cache[key] = {"data": data, "ts": time.time()}
-    logger.info(f"CACHE SET: {key}")
-# ─────────────────────────────────────────────────────────────────────────────
-
 
 def _descargar_datos(ticker, timeframe):
+    from datetime import date, timedelta
+    hoy = date.today()
+    fecha_inicio = hoy - timedelta(days=365)
+
+    # ── 1. EODHD (solo timeframe diario) ────────────────────────────
     token = os.getenv("EODHD_API_TOKEN")
     if token and timeframe == "1d":
         try:
             url = f"https://eodhd.com/api/eod/{ticker}"
-            params = {"api_token": token, "period": "d", "fmt": "json", "order": "a"}
+            params = {
+                "api_token": token, "period": "d", "fmt": "json", "order": "a",
+                "from": fecha_inicio.strftime("%Y-%m-%d"),
+                "to":   hoy.strftime("%Y-%m-%d"),
+            }
             r = requests.get(url, params=params, timeout=20)
             r.raise_for_status()
             data = r.json()
-
             if isinstance(data, list) and len(data) >= 50:
-                data = data[-260:]
                 df = pd.DataFrame(data)
                 df["Date"] = pd.to_datetime(df["date"])
                 df = df.set_index("Date")
-
                 factor = df["adjusted_close"].astype(float) / df["close"].astype(float)
-                df["Close"] = df["adjusted_close"].astype(float)
-                df["Open"] = df["open"].astype(float) * factor
-                df["High"] = df["high"].astype(float) * factor
-                df["Low"] = df["low"].astype(float) * factor
+                df["Close"]  = df["adjusted_close"].astype(float)
+                df["Open"]   = df["open"].astype(float) * factor
+                df["High"]   = df["high"].astype(float) * factor
+                df["Low"]    = df["low"].astype(float) * factor
                 df["Volume"] = df["volume"].astype(float)
 
-                try:
-                    print(">>> FIX HOY 1D <<<", ticker, "UTC now:", datetime.utcnow(), flush=True)
-                    print("EOD last index:", df.index[-1], "len:", len(df), flush=True)
-
-                    df_hoy = yf.download(
-                        ticker, period="5d", interval="1d",
-                        auto_adjust=True, progress=False
-                    )
-
-                    print("YF empty:", df_hoy.empty, flush=True)
-
-                    if isinstance(df_hoy.columns, pd.MultiIndex):
-                        df_hoy.columns = df_hoy.columns.get_level_values(0)
-
-                    if not df_hoy.empty:
-                        df_hoy.index = pd.to_datetime(df_hoy.index).tz_localize(None)
-                        df.index = pd.to_datetime(df.index).tz_localize(None)
-
-                        print("YF last index:", df_hoy.index[-1], flush=True)
-
-                        df_hoy = df_hoy[["Open", "High", "Low", "Close", "Volume"]]
-
-                        if df_hoy.index[-1].date() not in df.index.date:
-                            print(">>> CONCAT HOY <<<", df_hoy.index[-1], flush=True)
-                            df = pd.concat([df, df_hoy])
-                        else:
-                            print(">>> HOY YA EXISTE EN DF <<<", df_hoy.index[-1], flush=True)
-
-                except Exception as e:
-                    # En Render yfinance puede fallar: no es crítico, seguimos sin la vela de hoy
-                    print(f"No se pudo añadir vela de hoy (yfinance bloqueado en servidor): {e}", flush=True)
+                # Vela de hoy: FMP → yfinance
+                ultima = df.index[-1].date()
+                if ultima < hoy:
+                    vela_añadida = False
+                    # 1a. FMP
+                    fmp_key = os.getenv("FMP_API_KEY")
+                    if fmp_key:
+                        try:
+                            r_fmp = requests.get(
+                                f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}",
+                                params={"apikey": fmp_key, "from": hoy.strftime("%Y-%m-%d"), "to": hoy.strftime("%Y-%m-%d")},
+                                timeout=10
+                            )
+                            if r_fmp.status_code == 200:
+                                hist = r_fmp.json().get("historical", [])
+                                if hist:
+                                    row = hist[0]
+                                    fecha_fmp = pd.to_datetime(row["date"])
+                                    if fecha_fmp.date() > ultima:
+                                        nueva = pd.DataFrame({
+                                            "Open":   [float(row.get("open")   or row["close"])],
+                                            "High":   [float(row.get("high")   or row["close"])],
+                                            "Low":    [float(row.get("low")    or row["close"])],
+                                            "Close":  [float(row["close"])],
+                                            "Volume": [float(row.get("volume") or 0)],
+                                        }, index=pd.DatetimeIndex([fecha_fmp]))
+                                        df = pd.concat([df, nueva])
+                                        df = df[~df.index.duplicated(keep="last")]
+                                        vela_añadida = True
+                                        print(f"[FMP] Vela hoy {ticker}: {row['close']}")
+                        except Exception as e_fmp:
+                            print(f"[FMP] Error {ticker}: {e_fmp}")
+                    # 1b. Fallback yfinance para vela de hoy
+                    if not vela_añadida:
+                        try:
+                            tick = yf.Ticker(ticker)
+                            df_hoy = tick.history(period="1d", interval="1d")
+                            if not df_hoy.empty:
+                                if df_hoy.index.tz is not None:
+                                    df_hoy.index = df_hoy.index.tz_localize(None)
+                                df_hoy.index = pd.to_datetime(df_hoy.index)
+                                df_hoy = df_hoy[["Open", "High", "Low", "Close", "Volume"]]
+                                if df_hoy.index[-1].date() > ultima:
+                                    df = pd.concat([df, df_hoy])
+                                    df = df[~df.index.duplicated(keep="last")]
+                                    print(f"[yfinance] Vela hoy {ticker}: {df_hoy['Close'].iloc[-1]:.2f}")
+                        except Exception as e_yf:
+                            print(f"[yfinance hoy] Error {ticker}: {e_yf}")
 
                 return df[["Open", "High", "Low", "Close", "Volume"]]
 
         except Exception as e:
-            print(f"EODHD falló para {ticker}: {e}", flush=True)
-            return None  # No intentamos yfinance como fallback en producción
+            print(f"EODHD falló para {ticker}: {e}")
 
-    # Fallback yfinance (solo si no hay token EODHD o timeframe != 1d)
+    # ── 2. Fallback yfinance completo ────────────────────────────────
     try:
-        df = yf.download(ticker, period="1y", interval=timeframe, auto_adjust=True, progress=False)
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        return df if not df.empty else None
+        tick = yf.Ticker(ticker)
+        df = tick.history(
+            start=fecha_inicio.strftime("%Y-%m-%d"),
+            end=hoy.strftime("%Y-%m-%d"),
+            interval=timeframe
+        )
+        if df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
+        df.index = pd.to_datetime(df.index)
+        print(f"[yfinance] {ticker}: {len(df)} velas")
+        return df[["Open", "High", "Low", "Close", "Volume"]]
     except Exception as e:
-        print(f"yfinance falló para {ticker}: {e}", flush=True)
-        return None
+        print(f"[yfinance] Error {ticker}: {e}")
+        return pd.DataFrame()
 
 
 @indicadores_bp.route("/api")
@@ -108,24 +116,16 @@ def api_indicadores():
     ticker = request.args.get("ticker")
     timeframe = request.args.get("tf", "1d")
     indicadores = request.args.get("ind", "")
-    print(">>> API_INDICADORES HIT <<<", ticker, timeframe, flush=True)
 
     if not ticker:
         return jsonify({"error": "Ticker requerido"}), 400
 
     lista_indicadores = indicadores.split(",") if indicadores else []
 
-    # ── Comprueba caché ───────────────────────────────────────────────────────
-    cache_key = f"{ticker}_{timeframe}_{indicadores}"
-    cached = _get_cache(cache_key)
-    if cached:
-        return jsonify(cached)
-    # ─────────────────────────────────────────────────────────────────────────
-
     df = _descargar_datos(ticker, timeframe)
 
     if df is None or df.empty:
-        return jsonify({"error": "No hay datos disponibles. Cuota agotada o proveedor no disponible."}), 503
+        return jsonify({"error": "No hay datos disponibles"}), 404
 
     df, soportes, resistencias, patrones, resumen_tecnico, divergencias, fibonacci, patrones_chartistas = aplicar_indicadores(df, lista_indicadores, timeframe)
 
@@ -135,7 +135,7 @@ def api_indicadores():
     resistencias_json = formatear_niveles_sr(resistencias)
     patrones_json = formatear_patrones(patrones)
 
-    resultado = {
+    return jsonify({
         "data": datos_json,
         "soportes": soportes_json,
         "resistencias": resistencias_json,
@@ -144,10 +144,4 @@ def api_indicadores():
         "divergencias": divergencias,
         "fibonacci": fibonacci,
         "patronesChartistas": patrones_chartistas
-    }
-
-    # ── Guarda en caché ───────────────────────────────────────────────────────
-    _set_cache(cache_key, resultado)
-    # ─────────────────────────────────────────────────────────────────────────
-
-    return jsonify(resultado)
+    })
