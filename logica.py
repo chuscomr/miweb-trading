@@ -24,31 +24,78 @@ def obtener_precios_yfinance(ticker, cache, periodo="1y"):
         @cache.cached(timeout=600, key_prefix=cache_key)
         def descargar():
             print(f"Descargando datos (yfinance) de {ticker}...")
-            datos = yf.download(ticker, period=periodo, progress=False)
+            # FIX RENDER: User-Agent para evitar bloqueo en IPs cloud
+            _session = requests.Session()
+            _session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/120.0.0.0 Safari/537.36"
+            })
+            _tick = yf.Ticker(ticker, session=_session)
+            datos = _tick.history(period=periodo, interval="1d")
+            if not datos.empty and datos.index.tz is not None:
+                datos.index = datos.index.tz_localize(None)
             return datos
 
         datos = descargar()
         if datos is None or datos.empty:
             return None, None, None, None
+
+        # Completar con cierre de hoy: FMP → yfinance
         try:
-            from datetime import date
-            hoy = date.today()
+            from datetime import date as _date
+            hoy = _date.today()
             ultima = datos.index[-1].date() if not datos.empty else None
             if ultima and ultima < hoy:
-                tick = yf.Ticker(ticker)
-                vela_hoy = tick.history(period="1d", interval="1d")
-                if not vela_hoy.empty:
-                    vela_hoy.index = vela_hoy.index.tz_localize(None)
-                    datos = pd.concat([datos, vela_hoy[["Open","High","Low","Close","Volume"]]])
-                    datos = datos[~datos.index.duplicated(keep="last")]
-                    print(f"[yfinance hoy] Vela añadida para {ticker}")
+                vela_añadida = False
+                fmp_key = os.getenv("FMP_API_KEY")
+                if fmp_key:
+                    try:
+                        r_fmp = requests.get(
+                            f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}",
+                            params={"apikey": fmp_key, "from": hoy.strftime("%Y-%m-%d"), "to": hoy.strftime("%Y-%m-%d")},
+                            timeout=10
+                        )
+                        if r_fmp.status_code == 200:
+                            hist = r_fmp.json().get("historical", [])
+                            if hist:
+                                row = hist[0]
+                                fecha_fmp = pd.Timestamp(row["date"])
+                                if fecha_fmp.date() > ultima:
+                                    nueva = pd.DataFrame({
+                                        "Open": [float(row.get("open") or row["close"])],
+                                        "High": [float(row.get("high") or row["close"])],
+                                        "Low":  [float(row.get("low")  or row["close"])],
+                                        "Close":[float(row["close"])],
+                                        "Volume":[float(row.get("volume") or 0)]
+                                    }, index=pd.DatetimeIndex([fecha_fmp]))
+                                    datos = pd.concat([datos, nueva])
+                                    datos = datos[~datos.index.duplicated(keep="last")]
+                                    vela_añadida = True
+                                    print(f"[FMP hoy] {ticker}: {row['close']} ({fecha_fmp.date()})")
+                    except Exception as e_fmp:
+                        print(f"[FMP hoy] Error: {e_fmp}")
+                if not vela_añadida:
+                    try:
+                        _s2 = requests.Session()
+                        _s2.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+                        _t2 = yf.Ticker(ticker, session=_s2)
+                        vela_hoy = _t2.history(period="1d", interval="1d")
+                        if not vela_hoy.empty:
+                            if vela_hoy.index.tz is not None:
+                                vela_hoy.index = vela_hoy.index.tz_localize(None)
+                            if vela_hoy.index[-1].date() > ultima:
+                                datos = pd.concat([datos, vela_hoy[["Open","High","Low","Close","Volume"]]])
+                                datos = datos[~datos.index.duplicated(keep="last")]
+                                print(f"[yfinance hoy] Vela añadida para {ticker}")
+                    except Exception as e_yf:
+                        print(f"[yfinance hoy] Error: {e_yf}")
         except Exception as e:
-            print(f"[yfinance hoy] Error: {e}")
-            
+            print(f"[vela hoy] Error: {e}")
+
         close = datos["Close"]
         volume = datos["Volume"]
 
-        # Yahoo puede devolver DataFrame o Series
         if isinstance(close, pd.DataFrame):
             close = close.iloc[:, 0]
         if isinstance(volume, pd.DataFrame):
@@ -70,6 +117,8 @@ def obtener_precios_yfinance(ticker, cache, periodo="1y"):
 
 
 def obtener_precios_eodhd(ticker, cache, periodo="1y"):
+    dias_map = {"6mo": 160, "1y": 260, "2y": 520, "5y": 1300}
+    dias = dias_map.get(periodo, 260)
     try:
         token = os.getenv("EODHD_API_TOKEN")
         if not token:
@@ -88,12 +137,19 @@ def obtener_precios_eodhd(ticker, cache, periodo="1y"):
         @cache.cached(timeout=6 * 3600, key_prefix=cache_key)  # 6h
         def descargar():
             print(f"Descargando datos (EODHD) de {symbol}...")
+            # FIX: fechas explícitas → EODHD devuelve histórico completo
+            dias_map2 = {"6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
+            _dias = dias_map2.get(periodo, 365)
+            _fecha_fin = datetime.now()
+            _fecha_ini = _fecha_fin - timedelta(days=_dias)
             url = f"https://eodhd.com/api/eod/{symbol}"
             params = {
                 "api_token": token,
                 "period": "d",
                 "fmt": "json",
                 "order": "a",
+                "from": _fecha_ini.strftime("%Y-%m-%d"),
+                "to":   _fecha_fin.strftime("%Y-%m-%d"),
             }
             r = requests.get(url, params=params, timeout=25)
             r.raise_for_status()
@@ -103,42 +159,68 @@ def obtener_precios_eodhd(ticker, cache, periodo="1y"):
         if not isinstance(data, list) or len(data) == 0:
             return None, None, None, None
 
-        # Aproximación a días de mercado (no calendario)
-        dias_map = {"6mo": 160, "1y": 260, "2y": 520, "5y": 1300}
-        dias = dias_map.get(periodo, 260)
-        data = data[-dias:] if len(data) > dias else data
-
         fechas = [datetime.strptime(row["date"], "%Y-%m-%d") for row in data]
         precios = [float(row.get("adjusted_close") or row["close"]) for row in data]
         volumenes = [float(row.get("volume") or 0) for row in data]
+
+        # Completar con cierre de hoy: FMP → yfinance
         try:
-            from datetime import date
-            hoy = date.today()
+            from datetime import date as _date
+            hoy = _date.today()
             ultima_fecha = fechas[-1].date() if fechas else None
             if ultima_fecha and ultima_fecha < hoy:
-                tick = yf.Ticker(ticker)
-                vela_hoy = tick.history(period="1d", interval="1d")
-                if not vela_hoy.empty:
-                    vela_hoy.index = vela_hoy.index.tz_localize(None)
-                    f = vela_hoy.index[-1].to_pydatetime()
-                    c = float(vela_hoy["Close"].iloc[-1])
-                    v = float(vela_hoy["Volume"].iloc[-1])
-                    if f.date() > ultima_fecha:
-                        fechas.append(f)
-                        precios.append(c)
-                        volumenes.append(v)
-                        print(f"[yfinance hoy] Vela añadida: {f.date()} Close={c}")
+                vela_añadida = False
+                fmp_key = os.getenv("FMP_API_KEY")
+                if fmp_key:
+                    try:
+                        r_fmp = requests.get(
+                            f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}",
+                            params={"apikey": fmp_key, "from": hoy.strftime("%Y-%m-%d"), "to": hoy.strftime("%Y-%m-%d")},
+                            timeout=10
+                        )
+                        if r_fmp.status_code == 200:
+                            hist = r_fmp.json().get("historical", [])
+                            if hist:
+                                row = hist[0]
+                                fecha_fmp = datetime.strptime(row["date"], "%Y-%m-%d")
+                                if fecha_fmp.date() > ultima_fecha:
+                                    fechas.append(fecha_fmp)
+                                    precios.append(float(row["close"]))
+                                    volumenes.append(float(row.get("volume") or 0))
+                                    vela_añadida = True
+                                    print(f"[FMP hoy] {symbol}: {row['close']} ({fecha_fmp.date()})")
+                    except Exception as e_fmp:
+                        print(f"[FMP hoy] Error {symbol}: {e_fmp}")
+                if not vela_añadida:
+                    try:
+                        _syf = requests.Session()
+                        _syf.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+                        _tyf = yf.Ticker(ticker, session=_syf)
+                        vela_hoy = _tyf.history(period="1d", interval="1d")
+                        if not vela_hoy.empty:
+                            if vela_hoy.index.tz is not None:
+                                vela_hoy.index = vela_hoy.index.tz_localize(None)
+                            f = vela_hoy.index[-1].to_pydatetime()
+                            if f.date() > ultima_fecha:
+                                fechas.append(f)
+                                precios.append(float(vela_hoy["Close"].iloc[-1]))
+                                volumenes.append(float(vela_hoy["Volume"].iloc[-1]))
+                                print(f"[yfinance hoy] {symbol}: {precios[-1]} ({f.date()})")
+                    except Exception as e_yf:
+                        print(f"[yfinance hoy EODHD] Error: {e_yf}")
         except Exception as e:
-            print(f"[yfinance hoy EODHD] Error: {e}")
+            print(f"[vela hoy EODHD] Error: {e}")
+
         if len(precios) < 50:
             return None, None, None, None
 
         return precios, volumenes, fechas, precios[-1]
 
-    except Exception as e:                               
+    except Exception as e:
         print("Error descargando (EODHD):", ticker, e)
-        return None, None, None, None  
-        
+        return None, None, None, None
+
+
 def obtener_precios(ticker, cache, periodo="1y"):
     provider = _data_provider()
     print("USANDO PROVIDER =", provider, "ticker=", ticker, "periodo=", periodo)
@@ -168,7 +250,7 @@ NOMBRES_IBEX = {
     "ACS.MC":"ACS","AENA.MC":"AENA","AMS.MC":"Amadeus","ANA.MC":"Acciona",
     "BBVA.MC":"BBVA","CABK.MC":"CaixaBank","ELE.MC":"Endesa","FER.MC":"Ferrovial",
     "GRF.MC":"Grifols","IBE.MC":"Iberdrola","IAG.MC":"IAG","IDR.MC":"Indra",
-    "ITX.MC":"Inditex","MAP.MC":"Mapfre","MRL.MC":"Merlin","ADX.MC":"AUDAX",
+    "ITX.MC":"Inditex","MAP.MC":"Mapfre","MRL.MC":"Merlin",
     "NTGY.MC":"Naturgy","RED.MC":"Redeia","REP.MC":"Repsol","ROVI.MC":"Rovi",
     "SAB.MC":"Sabadell","SAN.MC":"Santander","SCYR.MC":"Sacyr","SLR.MC":"Solaria",
     "TEF.MC":"Telefónica","UNI.MC":"Unicaja","CLNX.MC":"Cellnex","LOG.MC":"Logista",
@@ -178,7 +260,7 @@ NOMBRES_IBEX = {
 
 CONTINUO = [
     "CIE.MC","VID.MC","TUB.MC","TRE.MC","CAF.MC","GEST.MC","APAM.MC",
-    "PHM.MC","OHLA.MC","DOM.MC","ENC.MC","GRE.MC","ANE.MC",
+    "PHM.MC","OHLA.MC","DOM.MC","ENC.MC","GRE.MC","ADX.MC","AUDAX",
     "HOME.MC","CIRSA.MC","FAE.MC","NEA.MC","PSG.MC","LDA.MC",
     "MEL.MC","VIS.MC","ECR.MC","ENO.MC","DIA.MC","IMC.MC","LIB.MC",
     "A3M.MC","ATRY.MC","R4.MC","RLIA.MC","MVC.MC","EBROM.MC","AMP.MC",
@@ -612,10 +694,26 @@ def calcular_objetivo_adaptativo(entrada, riesgo_por_accion, atr, setup_score):
 # =============================
 
 def contexto_ibex(cache):
-    ticker_ibex = "^IBEX" if _data_provider() != "eodhd" else None
-    if ticker_ibex is None:
-        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "Contexto IBEX no disponible (EODHD)"}
-    precios, _, _, precio_actual = obtener_precios(ticker_ibex, cache)
+    # FIX RENDER: ^IBEX siempre con yfinance + User-Agent (EODHD no soporta ^IBEX)
+    try:
+        session_ibex = requests.Session()
+        session_ibex.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36"
+        })
+        ibex_obj = yf.Ticker("^IBEX", session=session_ibex)
+        datos_ibex = ibex_obj.history(period="1y", interval="1d")
+        if not datos_ibex.empty and datos_ibex.index.tz is not None:
+            datos_ibex.index = datos_ibex.index.tz_localize(None)
+        precios = datos_ibex["Close"].dropna().tolist() if not datos_ibex.empty else []
+        precio_actual = precios[-1] if precios else None
+    except Exception as e:
+        print(f"contexto_ibex error: {e}")
+        precios = []
+        precio_actual = None
+    if not precios or len(precios) < 210 or precio_actual is None:
+        return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "IBEX sin datos suficientes"}
     if not precios or len(precios) < 210 or precio_actual is None:
         return {"estado": "RIESGO MEDIO", "color": "grey", "texto": "IBEX sin datos suficientes"}
     serie = pd.Series(precios, dtype=float).dropna()
@@ -1610,7 +1708,7 @@ def ejecutar_app(MODO, request, cache):
 
             # ───────────────────────────
             # 2️⃣ CALCULAR ATR
-                  # ───────────────────────────
+                     # ───────────────────────────
             print(f"\n📊 Calculando ATR para {ticker}...")
             atr = calcular_atr(precios)
 
@@ -1621,7 +1719,7 @@ def ejecutar_app(MODO, request, cache):
 
             # ───────────────────────────
             # 3️⃣ CALCULAR STOP
-                  # ───────────────────────────
+                     # ───────────────────────────
             stop = calcular_stop_adaptativo(
                 precios=precios,
                 entrada=entrada,
@@ -1685,7 +1783,7 @@ def ejecutar_app(MODO, request, cache):
 
             # ───────────────────────────
             # 6️⃣ OBJETIVO
-                  # ───────────────────────────
+                     # ───────────────────────────
             objetivo = calcular_objetivo_adaptativo(
                 entrada=entrada,
                 riesgo_por_accion=riesgo_por_accion,
@@ -1740,4 +1838,3 @@ def ejecutar_app(MODO, request, cache):
     print(f"{'='*60}\n")
     
     return locals()
-
