@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Nueva Posición - Sistema de Trading</title>
+    
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .contenedor {
+            max-width: 800px;
+            margin: auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-volver {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-guardar {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .calculos-auto {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .calculos-auto h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .calc-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .calc-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .calc-valor {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .mensaje-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .mensaje-error ul {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+        }
+        
+        .botones-form {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    
+    <div class="header">
+        <h1>➕ Nueva Posición</h1>
+        <a href="/cartera" class="btn btn-volver">← Cancelar</a>
+    </div>
+    
+    {% if errores %}
+    <div class="mensaje-error">
+        <strong>❌ Error al guardar:</strong>
+        <ul>
+            {% for error in errores %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div class="form-container">
+        <form method="POST" action="/cartera/nueva" id="formNueva">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ticker">Ticker *</label>
+                    <input type="text" id="ticker" name="ticker" 
+                           placeholder="Ej: SAN.MC" required
+                           value="{{ datos.ticker if datos else '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" 
+                           placeholder="Ej: Santander"
+                           value="{{ datos.nombre if datos else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fecha_entrada">Fecha entrada *</label>
+                    <input type="date" id="fecha_entrada" name="fecha_entrada" required
+                           value="{{ datos.fecha_entrada if datos else '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="precio_entrada">Precio entrada (€) *</label>
+                    <input type="number" id="precio_entrada" name="precio_entrada" 
+                           step="0.01" min="0.01" required
+                           value="{{ datos.precio_entrada if datos else '' }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stop_loss">Stop loss (€) *</label>
+                    <input type="number" id="stop_loss" name="stop_loss" 
+                           step="0.01" min="0.01" required
+                           value="{{ datos.stop_loss if datos else '' }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="objetivo">Objetivo (€) *</label>
+                    <input type="number" id="objetivo" name="objetivo" 
+                           step="0.01" min="0.01" required
+                           value="{{ datos.objetivo if datos else '' }}"
+                           onchange="calcularAutomatico()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="acciones">Acciones *</label>
+                    <input type="number" id="acciones" name="acciones" 
+                           min="1" required
+                           value="{{ datos.acciones if datos else '' }}"
+                           onchange="calcularAutomatico()">
+                </div>
+            </div>
+            
+            <div class="calculos-auto" id="calculos" style="display: none;">
+                <h4>📊 CÁLCULOS AUTOMÁTICOS</h4>
+                <div class="calc-grid">
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo por acción</span>
+                        <span class="calc-valor" id="calc-riesgo">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo %</span>
+                        <span class="calc-valor" id="calc-riesgo-pct">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">R/R</span>
+                        <span class="calc-valor" id="calc-rr">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Capital invertido</span>
+                        <span class="calc-valor" id="calc-capital">-</span>
+                    </div>
+                    <div class="calc-item">
+                        <span class="calc-label">Riesgo máximo</span>
+                        <span class="calc-valor" id="calc-riesgo-max">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="setup_score">Setup Score</label>
+                    <select id="setup_score" name="setup_score">
+                        <option value="">Sin puntuar</option>
+                        <option value="1">⭐ 1/5</option>
+                        <option value="2">⭐⭐ 2/5</option>
+                        <option value="3">⭐⭐⭐ 3/5</option>
+                        <option value="4">⭐⭐⭐⭐ 4/5</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5/5</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contexto_ibex">Contexto IBEX</label>
+                    <select id="contexto_ibex" name="contexto_ibex">
+                        <option value="">Sin especificar</option>
+                        <option value="RIESGO BAJO">🟢 RIESGO BAJO</option>
+                        <option value="RIESGO MEDIO">🟡 RIESGO MEDIO</option>
+                        <option value="RIESGO ALTO">🔴 RIESGO ALTO</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notas">Notas (opcional)</label>
+                <textarea id="notas" name="notas" 
+                          placeholder="Motivos de la operación, análisis técnico, etc.">{{ datos.notas if datos else '' }}</textarea>
+            </div>
+            
+            <div class="botones-form">
+                <a href="/cartera" class="btn btn-volver">Cancelar</a>
+                <button type="submit" class="btn btn-guardar">💾 Guardar Posición</button>
+            </div>
+            
+        </form>
+    </div>
+    
+</div>
+
+<script>
+function calcularAutomatico() {
+    const entrada = parseFloat(document.getElementById('precio_entrada').value);
+    const stop = parseFloat(document.getElementById('stop_loss').value);
+    const objetivo = parseFloat(document.getElementById('objetivo').value);
+    const acciones = parseInt(document.getElementById('acciones').value);
+    
+    if (!entrada || !stop || !objetivo || !acciones) return;
+    
+    const riesgo = entrada - stop;
+    const beneficio = objetivo - entrada;
+    const rr = beneficio / riesgo;
+    const riesgoPct = (riesgo / entrada) * 100;
+    const capitalInvertido = entrada * acciones;
+    const riesgoMax = riesgo * acciones;
+    
+    document.getElementById('calc-riesgo').textContent = riesgo.toFixed(2) + '€';
+    document.getElementById('calc-riesgo-pct').textContent = riesgoPct.toFixed(1) + '%';
+    document.getElementById('calc-rr').textContent = rr.toFixed(2);
+    document.getElementById('calc-capital').textContent = capitalInvertido.toFixed(2) + '€';
+    document.getElementById('calc-riesgo-max').textContent = riesgoMax.toFixed(2) + '€';
+    
+    document.getElementById('calculos').style.display = 'block';
+}
+
+// Establecer fecha actual por defecto
+document.getElementById('fecha_entrada').valueAsDate = new Date();
+</script>
+
+</body>
+</html>

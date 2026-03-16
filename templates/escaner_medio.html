@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner - Sistema Medio Plazo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* SELECTOR DE UNIVERSO */
+        .universo-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .btn-universo {
+            flex: 1;
+            max-width: 300px;
+            padding: 20px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #667eea;
+        }
+        
+        .btn-universo:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-universo.ibex {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .btn-universo.continuo {
+            border-color: #f0883e;
+            color: #f0883e;
+        }
+        
+        .btn-universo.ibex:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-universo.continuo:hover {
+            background: #f0883e;
+            color: white;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-item value {
+            display: block;
+            color: #667eea;
+            font-size: 2em;
+            font-weight: 700;
+        }
+        
+        .section {
+            margin-top: 30px;
+        }
+        
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .valores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .valor-card {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s;
+        }
+        
+        .valor-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .valor-card.compra {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .valor-card.vigilancia {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .valor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .valor-ticker {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .valor-score {
+            padding: 5px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .valor-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .valor-info-item {
+            font-size: 0.9em;
+        }
+        
+        .valor-info-item label {
+            color: #666;
+            display: block;
+        }
+        
+        .valor-info-item value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+        }
+        
+        .universo-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .universo-badge.ibex {
+            background: #667eea;
+            color: white;
+        }
+        
+        .universo-badge.continuo {
+            background: #f0883e;
+            color: white;
+        }
+         
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" style="display: inline-block; color: #333; text-decoration: none; margin-bottom: 20px; margin-left: 30px; font-size: 1em;">← Volver al inicio</a>
+        
+        <div class="header">
+            <h1>🔍 Escáner de Valores</h1>
+            <p>Análisis automático - Sistema Medio Plazo</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest</a>
+            <a href="/medio/escaner">🔍 Escáner</a>
+            <a href="/medio/backtest-sistema">🚀 Backtest Sistema</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; text-align: center;">Selecciona el universo a escanear</h2>
+            
+            <form method="POST">
+                <div class="universo-selector">
+                    <button type="submit" name="universo" value="ibex" class="btn-universo ibex">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🇪🇸</div>
+                        <div>IBEX 35</div>
+                        <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.7;">35 valores</div>
+                    </button>
+                    
+                    <button type="submit" name="universo" value="continuo" class="btn-universo continuo">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🔄</div>
+                        <div>Mercado Continuo</div>
+                        <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.7;">~100 valores</div>
+                    </button>
+                </div>
+            </form>
+            
+            {% if not resultado %}
+            <p style="margin-top: 20px; text-align: center; color: #666;">
+                Selecciona un universo para comenzar el análisis
+            </p>
+            {% endif %}
+        </div>
+        
+        {% if resultado %}
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">
+                📊 Resultados del Escaneo
+                {% if resultado.universo == 'ibex' %}
+                <span class="universo-badge ibex">IBEX 35</span>
+                {% else %}
+                <span class="universo-badge continuo">Mercado Continuo</span>
+                {% endif %}
+            </h2>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <label>Analizados</label>
+                    <value>{{ resultado.total_analizados }}</value>
+                </div>
+                <div class="stat-item">
+                    <label>Compras</label>
+                    <value style="color: #28a745;">{{ resultado.total_compras }}</value>
+                </div>
+                <div class="stat-item">
+                    <label>Vigilancia</label>
+                    <value style="color: #ffc107;">{{ resultado.total_vigilancia }}</value>
+                </div>
+                <div class="stat-item">
+                    <label>Descartados</label>
+                    <value style="color: #999;">{{ resultado.total_descartados }}</value>
+                </div>
+                <div class="stat-item">
+                    <label>Errores</label>
+                    <value style="color: #dc3545;">{{ resultado.total_errores }}</value>
+                </div>
+            </div>
+            
+            {% if resultado.compras %}
+            <div class="section">
+                <h3>🟢 Señales de Compra ({{ resultado.total_compras }})</h3>
+                <div class="valores-grid">
+                    {% for valor in resultado.compras %}
+                    <div class="valor-card compra">
+                        <div class="valor-header">
+                            <span class="valor-ticker">{{ valor.empresa }}</span>
+                            <span class="valor-score">{{ valor.score }}</span>
+                        </div>
+                        <div class="valor-info">
+                            <div class="valor-info-item">
+                                <label>Precio</label>
+                                <value>{{ valor.precio }}€</value>
+                            </div>
+                            <div class="valor-info-item">
+                                <label>Entrada</label>
+                                <value>{{ valor.entrada }}€</value>
+                            </div>
+                            <div class="valor-info-item">
+                                <label>Stop</label>
+                                <value>{{ valor.stop }}€</value>
+                            </div>
+                            <div class="valor-info-item">
+                                <label>Riesgo</label>
+                                <value>{{ valor.riesgo_pct }}%</value>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if resultado.vigilancia %}
+            <div class="section">
+                <h3>🟡 En Vigilancia ({{ resultado.total_vigilancia }})</h3>
+                <div class="valores-grid">
+                    {% for valor in resultado.vigilancia %}
+                    <div class="valor-card vigilancia">
+                        <div class="valor-header">
+                            <span class="valor-ticker">{{ valor.empresa }}</span>
+                            <span class="valor-score">{{ valor.score }}</span>
+                        </div>
+                        <div class="valor-info">
+                            <div class="valor-info-item">
+                                <label>Precio</label>
+                                <value>{{ valor.precio }}€</value>
+                            </div>
+                            <div class="valor-info-item" style="grid-column: 1 / -1;">
+                                <label>Motivo</label>
+                                <value style="font-size: 0.9em;">{{ valor.motivo }}</value>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if not resultado.compras and not resultado.vigilancia %}
+            <div class="empty">
+                😔 No se encontraron valores con setup favorable
+            </div>
+            {% endif %}
+            
+            {% if resultado.errores %}
+            <div class="section">
+                <h3 style="color: #dc3545;">⚠️ Errores ({{ resultado.total_errores }})</h3>
+                <div style="padding: 15px; background: #f8d7da; border-radius: 8px;">
+                    {{ resultado.errores|join(', ') }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

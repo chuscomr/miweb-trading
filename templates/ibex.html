@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Escáner IBEX 35</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            background: #f4f4f4;
+        }
+        h2 { margin-top: 0; }
+        ul { padding-left: 0px; }
+        li { margin-bottom: 6px; }
+    .alerta-bloque {
+        padding-left: 0;
+    }
+
+    .alerta-bloque li {
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        list-style: none;
+        font-weight: bold;
+    }
+
+    /* Compras (verde) */
+    .alerta-compra {
+        border-left: 6px solid #2e8b57;
+        color: #1f5f3a;
+    }
+
+    /* Vigilancia (naranja) */
+    .alerta-vigilancia {
+        border-left: 6px solid #ff9800;
+        color: #a05a00;
+    }
+    </style>
+</head>
+<body>
+
+<h2>Escáner IBEX 35</h2>
+
+<p>
+    🟢 {{ escaneo_ibex.total_compras }} compras |
+    🟠 {{ escaneo_ibex.total_vigilancia }} vigilancias
+</p>
+
+{% if escaneo_ibex.compras %}
+<h3>🟢 Compras</h3>
+<ul class="alerta-bloque">
+    {% for r in escaneo_ibex.compras %}
+        <li class="alerta-compra">
+            {{ r.nombre }} <span class="ticker">({{ r.ticker }})</span>
+({{ r.setup_score }}/{{ r.setup_max }})
+        </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if escaneo_ibex.vigilancia %}
+<h3>🟠 Vigilancia</h3>
+<ul class="alerta-bloque">
+    {% for r in escaneo_ibex.vigilancia %}
+        <li class="alerta-vigilancia">
+            {{ r.nombre }} <span class="ticker">({{ r.ticker }})</span>
+({{ r.setup_score }}/{{ r.setup_max }})
+— {{ r.motivo }}
+        </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+</body>
+</html>

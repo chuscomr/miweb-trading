@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💼 Mi Cartera - Sistema de Trading</title>
+    
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .contenedor {
+            max-width: 1000px;
+            margin: auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .botones-header {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-volver {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-volver:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-añadir {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-añadir:hover {
+            background-color: #218838;
+        }
+        
+        .btn-cerrar {
+            background-color: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-cerrar:hover {
+            background-color: #c82333;
+        }
+        
+        /* Resumen global */
+        .resumen-global {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .resumen-global h2 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+        }
+        
+        .resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .resumen-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .resumen-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .resumen-valor {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* Tarjetas de posición */
+        .posicion-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .posicion-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .posicion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .posicion-titulo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .posicion-ticker {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .posicion-datos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .dato-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .dato-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .dato-valor {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .separador {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 15px 0;
+        }
+        
+        .metricas-r {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .estado-box {
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .estado-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .estado-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+        }
+        
+        .estado-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .estado-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        
+        .estado-neutral {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 2px solid #d6d8db;
+        }
+        
+        .alerta-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #856404;
+        }
+        
+        .progreso-bar {
+            background: #e0e0e0;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progreso-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .color-green {
+            color: #28a745;
+        }
+        
+        .color-red {
+            color: #dc3545;
+        }
+        
+        /* Formulario añadir posición */
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .calculos-auto {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .calculos-auto h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .mensaje-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .mensaje-exito {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .sin-posiciones {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .sin-posiciones h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .posicion-datos {
+                grid-template-columns: 1fr;
+            }
+            
+            .resumen-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    
+    <!-- Header -->
+    <div class="header">
+        <h1>💼 Mi Cartera de Trading</h1>
+        <div class="botones-header">
+            <a href="/swing/" class="btn btn-volver">← Volver</a>
+            <a href="/cartera/nueva" class="btn btn-añadir">+ Añadir Posición</a>
+        </div>
+    </div>
+    
+    <!-- Mensajes -->
+    {% if mensaje_error %}
+    <div class="mensaje-error">
+        ❌ {{ mensaje_error }}
+    </div>
+    {% endif %}
+    
+    {% if mensaje_exito %}
+    <div class="mensaje-exito">
+        ✅ {{ mensaje_exito }}
+    </div>
+    {% endif %}
+    
+    <!-- Resumen Global -->
+    {% if resumen %}
+    <div class="resumen-global">
+        <h2>📊 RESUMEN GLOBAL</h2>
+        <div class="resumen-grid">
+            <div class="resumen-item">
+                <div class="resumen-label">Posiciones abiertas</div>
+                <div class="resumen-valor">{{ resumen.num_posiciones }}</div>
+            </div>
+            <div class="resumen-item">
+                <div class="resumen-label">Capital invertido</div>
+                <div class="resumen-valor">{{ "%.2f"|format(resumen.capital_invertido) }}€</div>
+            </div>
+            <div class="resumen-item">
+                <div class="resumen-label">P&L total</div>
+                <div class="resumen-valor">
+                    {{ "%+.2f"|format(resumen.pnl_total) }}€ 
+                    ({{ "%+.1f"|format(resumen.pnl_porcentaje) }}%)
+                </div>
+            </div>
+            <div class="resumen-item">
+                <div class="resumen-label">Riesgo en cartera</div>
+                <div class="resumen-valor">{{ "%.1f"|format(resumen.riesgo_total_pct) }}%</div>
+            </div>
+            {% if resumen.mejor_posicion %}
+            <div class="resumen-item">
+                <div class="resumen-label">Mejor posición</div>
+                <div class="resumen-valor" style="font-size: 16px;">{{ resumen.mejor_posicion }}</div>
+            </div>
+            {% endif %}
+            {% if resumen.peor_posicion %}
+            <div class="resumen-item">
+                <div class="resumen-label">Peor posición</div>
+                <div class="resumen-valor" style="font-size: 16px;">{{ resumen.peor_posicion }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Posiciones -->
+    {% if posiciones %}
+        {% for pos in posiciones %}
+        <div class="posicion-card">
+            <!-- Header -->
+            <div class="posicion-header">
+                <div>
+                    <div class="posicion-titulo">
+                        {{ pos.nombre or pos.ticker }}
+                    </div>
+                    <div class="posicion-ticker">{{ pos.ticker }}</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/cartera/editar/{{ pos.id }}" class="btn btn-editar" 
+                       style="background-color: #ffc107; color: #333; padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                        ✏️ Editar
+                    </a>
+                    <form method="POST" action="/cartera/cerrar/{{ pos.id }}" style="display: inline;" 
+                          onsubmit="return confirm('¿Cerrar posición de {{ pos.ticker }}?');">
+                        <button type="submit" class="btn btn-cerrar">Cerrar ✕</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Datos principales -->
+            <div class="posicion-datos">
+                <div class="dato-item">
+                    <span class="dato-label">📅 Fecha entrada</span>
+                    <span class="dato-valor">{{ pos.fecha_entrada }}</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">💰 Precio entrada</span>
+                    <span class="dato-valor">{{ "%.2f"|format(pos.precio_entrada) }}€</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">📊 Precio actual</span>
+                    <span class="dato-valor {{ 'color-green' if pos.direccion == 'up' else 'color-red' if pos.direccion == 'down' else '' }}">
+                        {{ "%.2f"|format(pos.precio_actual) }}€ 
+                        {% if pos.direccion == 'up' %}↑{% elif pos.direccion == 'down' %}↓{% endif %}
+                    </span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">🔴 Stop loss</span>
+                    <span class="dato-valor">{{ "%.2f"|format(pos.stop_loss) }}€</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">🎯 Objetivo</span>
+                    <span class="dato-valor">{{ "%.2f"|format(pos.objetivo) }}€</span>
+                </div>
+            </div>
+            
+            <hr class="separador">
+            
+            <!-- Métricas R y P&L -->
+            <div class="metricas-r">
+                <div class="metricas-grid">
+                    <div class="dato-item">
+                        <span class="dato-label">📈 R alcanzado</span>
+                        <span class="dato-valor {{ 'color-green' if pos.r_alcanzado > 0 else 'color-red' }}">
+                            {{ "%+.1f"|format(pos.r_alcanzado) }}R
+                        </span>
+                    </div>
+                    <div class="dato-item">
+                        <span class="dato-label">💵 P&L</span>
+                        <span class="dato-valor {{ 'color-green' if pos.pnl_euros > 0 else 'color-red' }}">
+                            {{ "%+.2f"|format(pos.pnl_euros) }}€ ({{ "%+.1f"|format(pos.pnl_porcentaje) }}%)
+                        </span>
+                    </div>
+                    <div class="dato-item">
+                        <span class="dato-label">🔢 Acciones</span>
+                        <span class="dato-valor">{{ pos.acciones }}</span>
+                    </div>
+                    <div class="dato-item">
+                        <span class="dato-label">💼 Capital</span>
+                        <span class="dato-valor">{{ "%.2f"|format(pos.capital_invertido) }}€</span>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="separador">
+            
+            <!-- Estado -->
+            <div class="estado-box estado-{{ pos.estado.clase }}">
+                {{ pos.estado.emoji }} Estado: {{ pos.estado.texto }}
+            </div>
+            
+            <!-- Alerta -->
+            {% if pos.estado.alerta %}
+            <div class="alerta-box">
+                {{ pos.estado.alerta }}
+            </div>
+            {% endif %}
+            
+            <!-- Barra de progreso -->
+            <div class="progreso-bar">
+                <div class="progreso-fill" style="width: {{ pos.progreso }}%;">
+                    {{ "%.0f"|format(pos.progreso) }}%
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 12px; color: #666; margin-top: 5px;">
+                Progreso a objetivo
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="sin-posiciones">
+            <h3>📭 No tienes posiciones abiertas</h3>
+            <p>Añade tu primera posición para empezar a hacer seguimiento</p>
+            <a href="/cartera/nueva" class="btn btn-añadir" style="margin-top: 15px;">+ Añadir Primera Posición</a>
+        </div>
+    {% endif %}
+    
+</div>
+
+</body>
+</html>

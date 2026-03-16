@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis Completo{% if ticker %} — {{ ticker }}{% endif %} · MiWeb</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh; padding: 24px 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  a.back { color: rgba(255,255,255,.7); text-decoration: none; font-size: .85rem; display: inline-block; margin-bottom: 14px; }
+  a.back:hover { color: #fff; }
+  .card { background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  h1 { font-size: 1.8rem; color: #1a1a2e; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: .92rem; margin-bottom: 20px; }
+  .alert-error { background: #fee; border-left: 4px solid #c33; color: #c33; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: .9rem; }
+
+  /* Scores duales */
+  .scores-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .score-card { padding: 20px 22px; border-radius: 10px; display: flex; align-items: center; gap: 16px; }
+  .score-card.tecnico   { background: linear-gradient(135deg,#e8f0fe,#d1e3fa); border-left: 5px solid #4285f4; }
+  .score-card.fund      { background: linear-gradient(135deg,#e6f4ea,#ceead6); border-left: 5px solid #34a853; }
+  .score-num  { font-size: 2.6rem; font-weight: 800; color: #333; }
+  .score-info h3 { font-size: 1rem; color: #333; }
+  .score-info p  { font-size: .82rem; color: #666; margin-top: 3px; }
+
+  /* Sección */
+  .section-title { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
+
+  /* SR */
+  .sr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sr-list { list-style: none; }
+  .sr-list li { display: flex; justify-content: space-between; padding: 7px 10px; margin-bottom: 6px; border-radius: 6px; font-size: .88rem; font-weight: 600; }
+  .sr-soporte   li { background: #d4edda; color: #155724; }
+  .sr-resistencia li { background: #f8d7da; color: #721c24; }
+  .sr-label { color: inherit; font-size: .75rem; font-weight: 400; }
+
+  /* Fund datos */
+  .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px; }
+  .data-item { padding: 10px 12px; background: #f8f9fa; border-radius: 6px; }
+  .data-label { font-size: .72rem; color: #888; margin-bottom: 3px; }
+  .data-value { font-size: .95rem; font-weight: 600; color: #333; }
+  .data-value.good { color: #28a745; }
+  .data-value.bad  { color: #dc3545; }
+
+  /* Fortalezas/debilidades */
+  .fw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fw-list  { list-style: none; }
+  .fw-list li { padding: 5px 0; border-bottom: 1px solid #f0f0f0; font-size: .84rem; }
+  .fortalezas li::before  { content: "✅ "; }
+  .debilidades li::before { content: "⚠️ "; }
+
+  @media (max-width:640px) {
+    .scores-row, .sr-grid, .fw-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/analisis/tecnico" class="back">← Análisis Técnico</a>
+
+  {% if error %}
+  <div class="card">
+    <div class="alert-error">❌ {{ error }}</div>
+  </div>
+  {% endif %}
+
+  {% if ticker %}
+  <div class="card">
+    <h1>🔬 Análisis Completo — {{ nombre_valor or ticker }}</h1>
+    <p class="subtitle">Técnico + Fundamental · {{ ticker }}</p>
+  </div>
+
+  <!-- Scores duales -->
+  {% if score_fund %}
+  <div class="scores-row">
+    <div class="score-card tecnico">
+      <div class="score-num">{% if sr %}✓{% else %}—{% endif %}</div>
+      <div class="score-info">
+        <h3>Análisis Técnico</h3>
+        <p>Soportes, resistencias y patrones</p>
+      </div>
+    </div>
+    <div class="score-card fund">
+      <div class="score-num">{{ score_fund.score }}</div>
+      <div class="score-info">
+        <h3>Fundamental — {{ score_fund.nivel }}</h3>
+        <p>Score sobre 100 puntos</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Técnico: Soportes y Resistencias -->
+  {% if sr %}
+  <div class="card">
+    <div class="section-title">📊 Soportes y Resistencias</div>
+    <p style="font-size:.88rem; color:#666; margin-bottom:14px;">
+      Precio actual: <strong>{{ '%.2f'|format(sr.precio_actual) }}€</strong>
+      — {{ sr.analisis.posicion or '' }}
+    </p>
+    <div class="sr-grid">
+      <div>
+        <p style="font-weight:600; color:#155724; margin-bottom:8px; font-size:.9rem;">🟢 Soportes</p>
+        <ul class="sr-list sr-soporte">
+          {% for s in sr.soportes[:5] %}
+          <li>
+            <span>{{ '%.2f'|format(s.nivel) }}€</span>
+            <span class="sr-label">{{ s.toques }} toques · fuerza {{ s.fuerza }}</span>
+          </li>
+          {% else %}
+          <li style="color:#999">Sin soportes detectados</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <p style="font-weight:600; color:#721c24; margin-bottom:8px; font-size:.9rem;">🔴 Resistencias</p>
+        <ul class="sr-list sr-resistencia">
+          {% for r in sr.resistencias[:5] %}
+          <li>
+            <span>{{ '%.2f'|format(r.nivel) }}€</span>
+            <span class="sr-label">{{ r.toques }} toques · fuerza {{ r.fuerza }}</span>
+          </li>
+          {% else %}
+          <li style="color:#999">Sin resistencias detectadas</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Fundamental: datos y fortalezas -->
+  {% if datos_fund and score_fund %}
+  <div class="card">
+    <div class="section-title">📋 Datos Fundamentales</div>
+    <div class="data-grid">
+      <div class="data-item"><div class="data-label">PER</div><div class="data-value">{{ datos_fund.per or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">PER Forward</div><div class="data-value">{{ datos_fund.per_forward or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">EV/EBITDA</div><div class="data-value">{{ datos_fund.ev_ebitda or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">ROE</div><div class="data-value {{ 'good' if datos_fund.roe and datos_fund.roe > 0.10 else 'bad' if datos_fund.roe and datos_fund.roe < 0 else '' }}">{{ '%.1f'|format(datos_fund.roe * 100) ~ '%' if datos_fund.roe else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Margen Neto</div><div class="data-value">{{ '%.1f'|format(datos_fund.margen_neto * 100) ~ '%' if datos_fund.margen_neto else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Deuda/Equity</div><div class="data-value {{ 'bad' if datos_fund.deuda_equity and datos_fund.deuda_equity > 2 else '' }}">{{ '%.2f'|format(datos_fund.deuda_equity) if datos_fund.deuda_equity else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Dividendo</div><div class="data-value">{{ '%.2f'|format(datos_fund.dividend_yield * 100) ~ '%' if datos_fund.dividend_yield else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Sector</div><div class="data-value" style="font-size:.8rem">{{ datos_fund.sector or '—' }}</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Fortalezas y debilidades fundamentales</div>
+    <div class="fw-grid">
+      <div>
+        <p style="font-weight:600; color:#28a745; margin-bottom:8px; font-size:.9rem;">✅ Fortalezas</p>
+        <ul class="fw-list fortalezas">
+          {% for f in score_fund.fortalezas %}
+          <li>{{ f }}</li>
+          {% else %}<li style="color:#999">Sin fortalezas destacadas</li>{% endfor %}
+        </ul>
+      </div>
+      <div>
+        <p style="font-weight:600; color:#dc3545; margin-bottom:8px; font-size:.9rem;">⚠️ Debilidades</p>
+        <ul class="fw-list debilidades">
+          {% for d in score_fund.debilidades %}
+          <li>{{ d }}</li>
+          {% else %}<li style="color:#999">Sin debilidades destacadas</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+</body>
+</html>

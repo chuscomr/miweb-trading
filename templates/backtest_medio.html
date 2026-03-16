@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest - Sistema Medio Plazo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-error {
+            background: #fee;
+            border-left: 4px solid #c00;
+            color: #c00;
+        }
+        
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metrica-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metrica-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .metrica-item value {
+            display: block;
+            color: #333;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
+        .evaluacion {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .evaluacion.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745;
+        }
+        
+        .evaluacion.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 6px solid #ffc107;
+        }
+        
+        .evaluacion.danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545;
+        }
+        
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .trades-table th,
+        .trades-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .trades-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .trades-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .r-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .r-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Backtest Sistema Medio Plazo</h1>
+            <p>Análisis histórico sobre datos semanales</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest</a>
+            <a href="/medio/escaner">🔍 Escáner IBEX</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Ejecutar Backtest</h2>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label>Ticker (ej: ACS, TEF, SAN)</label>
+                    <input type="text" name="ticker" placeholder="ACS" required autofocus>
+                </div>
+                
+                <button type="submit" class="btn">🚀 Ejecutar Backtest</button>
+            </form>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if resultado %}
+        <div class="card">
+            <h2>{{ resultado.ticker }}</h2>
+            
+            <div class="evaluacion {{ resultado.color }}">
+                🎖️ {{ resultado.evaluacion }}
+            </div>
+            
+            <h3 style="margin-top: 30px; color: #667eea;">📊 Métricas Principales</h3>
+            <div class="metricas-grid">
+                <div class="metrica-item">
+                    <label>Total Trades</label>
+                    <value>{{ resultado.total_trades }}</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Expectancy</label>
+                    <value>{{ resultado.metricas.expectancy_R }}R</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Winrate</label>
+                    <value>{{ resultado.metricas.winrate }}%</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Equity Final</label>
+                    <value>{{ resultado.metricas.equity_final_R }}R</value>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px; color: #667eea;">📈 Estadísticas de Trades</h3>
+            <div class="metricas-grid">
+                <div class="metrica-item">
+                    <label>Mejor Trade</label>
+                    <value style="color: #28a745;">{{ resultado.metricas.mejor_trade }}R</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Peor Trade</label>
+                    <value style="color: #dc3545;">{{ resultado.metricas.peor_trade }}R</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Avg Winner</label>
+                    <value style="color: #28a745;">{{ resultado.metricas.avg_winner }}R</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Avg Loser</label>
+                    <value style="color: #dc3545;">{{ resultado.metricas.avg_loser }}R</value>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px; color: #667eea;">💰 Performance</h3>
+            <div class="metricas-grid">
+                <div class="metrica-item">
+                    <label>Profit Factor</label>
+                    <value>{{ resultado.metricas.profit_factor }}</value>
+                </div>
+                <div class="metrica-item">
+                    <label>Max Drawdown</label>
+                    <value style="color: #dc3545;">{{ resultado.metricas.max_drawdown_R }}R</value>
+                </div>
+            </div>
+            
+            {% if resultado.trades %}
+            <h3 style="margin-top: 30px; color: #667eea;">📝 Últimos 10 Trades</h3>
+            <table class="trades-table">
+                <thead>
+                    <tr>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Resultado</th>
+                        <th>Semanas</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in resultado.trades %}
+                    <tr>
+                        <td>{{ trade.fecha_entrada }}</td>
+                        <td>{{ trade.fecha_salida }}</td>
+                        <td>
+                            <span class="{% if trade.R > 0 %}r-positive{% else %}r-negative{% endif %}">
+                                {{ trade.R }}R
+                            </span>
+                        </td>
+                        <td>{{ trade.semanas }}</td>
+                        <td>{{ trade.motivo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            
+            <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
+                📅 Período: {{ resultado.fecha_desde }} → {{ resultado.fecha_hasta }} 
+                ({{ resultado.semanas_historico }} semanas)
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
