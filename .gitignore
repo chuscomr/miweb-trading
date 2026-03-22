@@ -63,3 +63,4 @@ backup/
 
 # archivo .gitignore
 .env
+_env 
