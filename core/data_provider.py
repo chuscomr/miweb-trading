@@ -207,7 +207,43 @@ def _completar_con_hoy(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
     return df
 
 
-def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
+def _desde_fmp(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
+    """Descarga histórico completo desde FMP."""
+    fmp_key = os.getenv("FMP_API_KEY")
+    if not fmp_key:
+        return None
+    try:
+        r = requests.get(
+            f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}",
+            params={
+                "apikey": fmp_key,
+                "from": fecha_inicio.strftime("%Y-%m-%d"),
+                "to":   fecha_fin.strftime("%Y-%m-%d"),
+            },
+            timeout=30,
+        )
+        if r.status_code != 200:
+            logger.warning(f"⚠️  FMP {ticker}: HTTP {r.status_code}")
+            return None
+        hist = r.json().get("historical", [])
+        if len(hist) < 50:
+            logger.warning(f"⚠️  FMP {ticker}: solo {len(hist)} filas")
+            return None
+        hist = sorted(hist, key=lambda x: x["date"])
+        df = pd.DataFrame({
+            "Open":   [float(h.get("open")   or h["close"]) for h in hist],
+            "High":   [float(h.get("high")   or h["close"]) for h in hist],
+            "Low":    [float(h.get("low")    or h["close"]) for h in hist],
+            "Close":  [float(h["close"]) for h in hist],
+            "Volume": [float(h.get("volume") or 0) for h in hist],
+        }, index=pd.DatetimeIndex(
+            [datetime.strptime(h["date"], "%Y-%m-%d") for h in hist]
+        ))
+        logger.info(f"✅ FMP OK: {len(df)} días para {ticker}")
+        return df
+    except Exception as e:
+        logger.warning(f"⚠️  FMP falló para {ticker}: {e}")
+        return None
     """Histórico diario desde yfinance. Devuelve DataFrame o None."""
     try:
         # yfinance excluye el end — sumamos 1 día para incluir fecha_fin
@@ -250,8 +286,11 @@ def _descargar_diario(ticker: str, periodo_años: float = 1.0) -> Optional[pd.Da
             df = _completar_con_hoy(df, ticker)
         return df
 
-    # Producción
-    df = _desde_eodhd(ticker, fecha_inicio, fecha_fin)
+    # Producción: FMP → EODHD → yfinance
+    df = _desde_fmp(ticker, fecha_inicio, fecha_fin)
+    if df is None:
+        logger.warning(f"⚠️  FMP falló para {ticker} → intentando EODHD...")
+        df = _desde_eodhd(ticker, fecha_inicio, fecha_fin)
     if df is None:
         logger.warning(f"⚠️  EODHD falló para {ticker} → intentando yfinance...")
         df = _desde_yfinance(ticker, fecha_inicio, fecha_fin)
