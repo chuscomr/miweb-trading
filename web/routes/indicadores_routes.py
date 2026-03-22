@@ -18,7 +18,7 @@ indicadores_bp = Blueprint(
     "indicadores", __name__,
     url_prefix="/indicadores",
     static_folder="../../static",
-    static_url_path="/indicadores/static",
+    static_url_path="/static",
 )
 
 
