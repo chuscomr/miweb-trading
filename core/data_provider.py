@@ -244,7 +244,9 @@ def _desde_fmp(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Opti
     except Exception as e:
         logger.warning(f"⚠️  FMP falló para {ticker}: {e}")
         return None
-    """Histórico diario desde yfinance. Devuelve DataFrame o None."""
+
+
+def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
     try:
         # yfinance excluye el end — sumamos 1 día para incluir fecha_fin
         fecha_fin_yf = fecha_fin + timedelta(days=1)
