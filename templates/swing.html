@@ -742,6 +742,9 @@
                         <button type="button" id="btnBacktestModal" class="btn-backtest-modal">
                             🚀 Backtest S.
                         </button>
+                        <a href="/swing/config" class="btn-backtest-modal" style="text-align:center; text-decoration:none; display:block;">
+                            ⚙️ Config.
+                        </a>
                     </div>
                     
                     <!-- Inputs en fila horizontal -->
@@ -788,27 +791,44 @@
                                     <option value="UNI.MC">UNI</option>
                                 </optgroup>
                                 <optgroup label="─ CONTINUO ─">
-                                    <option value="APPS.MC">APPS</option>
+                                    <option value="A3M.MC">A3M</option>
+                                    <option value="AEDAS.MC">AEDAS</option>
+                                    <option value="AMP.MC">AMP</option>
+                                    <option value="ANE.MC">ANE</option>
+                                    <option value="APAM.MC">APAM</option>
+                                    <option value="ATRY.MC">ATRY</option>
                                     <option value="CAF.MC">CAF</option>
+                                    <option value="CASH.MC">CASH</option>
                                     <option value="CIE.MC">CIE</option>
+                                    <option value="CIRSA.MC">CIRSA</option>
                                     <option value="DIA.MC">DIA</option>
                                     <option value="DOM.MC">DOM</option>
+                                    <option value="EBROM.MC">EBROM</option>
                                     <option value="ECR.MC">ECR</option>
                                     <option value="ENC.MC">ENC</option>
-                                    <option value="ENCE.MC">ENCE</option>
                                     <option value="ENO.MC">ENO</option>
+                                    <option value="FAE.MC">FAE</option>
                                     <option value="GEST.MC">GEST</option>
                                     <option value="GRE.MC">GRE</option>
+                                    <option value="HBX.MC">HBX</option>
                                     <option value="HOME.MC">HOME</option>
                                     <option value="IMC.MC">IMC</option>
+                                    <option value="IZER.MC">IZER</option>
+                                    <option value="LDA.MC">LDA</option>
                                     <option value="LIB.MC">LIB</option>
                                     <option value="MEL.MC">MEL</option>
+                                    <option value="MVC.MC">MVC</option>
+                                    <option value="NEA.MC">NEA</option>
                                     <option value="OHLA.MC">OHLA</option>
                                     <option value="PHM.MC">PHM</option>
+                                    <option value="PSG.MC">PSG</option>
+                                    <option value="R4.MC">R4</option>
+                                    <option value="RLIA.MC">RLIA</option>
                                     <option value="TRE.MC">TRE</option>
                                     <option value="TUB.MC">TUB</option>
                                     <option value="VID.MC">VID</option>
                                     <option value="VIS.MC">VIS</option>
+                                    <option value="ADX.MC">ADX</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -844,11 +864,19 @@
                             <span class="input-addon suffix">%</span>
                         </div>
                     </div>
-                    <button type="button"
-                        onclick="abrirFundamental()"
-                        class="btn-fundamental">
-                    📊 A. Fdtal.
-                    </button>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <button type="button"
+                            onclick="abrirFundamental()"
+                            class="btn-fundamental">
+                        📊 A. Fdtal.
+                        </button>
+                        <button type="button"
+                            onclick="abrirNoticias()"
+                            class="btn-fundamental"
+                            style="background:linear-gradient(135deg,#1a3a2a,#1e4d35); border-color:#28a74566; font-size:0.78rem; padding:5px 10px;">
+                        📰 Noticias
+                        </button>
+                    </div>
                     <button type="button"
                         onclick="abrirSentimiento()"
                         class="btn-noticias">
@@ -905,8 +933,9 @@
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label style="font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase;">Tipo</label>
                     <select id="scanner-tipo" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
-                        <option value="breakout" selected>🚀 Breakouts</option>
-                        <option value="pullback">🔄 Pullbacks</option>
+                        <option value="breakouts" selected>🚀 Breakouts</option>
+                        <option value="pullbacks">🔄 Pullbacks</option>
+                        <option value="ambos">🔀 Todos</option>
                     </select>
                 </div>
                 
@@ -1207,7 +1236,14 @@
                 <strong>Tipo de entrada:</strong> {{ tipo_entrada | default(tipo_estrategia | default("N/A")) }}
             </div>
             <div class="plan-item">
-                <strong>Entrada recomendada:</strong> {{ "%.2f"|format(entrada | default(0)) }} €
+                <strong>Precio actual:</strong> {{ "%.2f"|format(precio_actual | default(0)) }} €
+            </div>
+            <div class="plan-item" style="background:#f0f9ff; border-left:3px solid #3b82f6; padding:8px 12px; border-radius:4px;">
+                <strong>Entrada (trigger):</strong>
+                <span style="font-size:1.1em; font-weight:700; color:#1d4ed8;">
+                    {{ "%.2f"|format(trigger | default(entrada | default(0))) }} €
+                </span>
+                <br><small style="color:#1e40af;">{{ trigger_tipo | default("Máximo sesión anterior") }} + 0.1% — Coloca Buy Stop en tu broker</small>
             </div>
             <div class="plan-item">
                 <strong>Stop loss técnico:</strong> {{ "%.2f"|format(stop | default(0)) }} €
@@ -1301,21 +1337,46 @@
     <div id="modalBacktest" class="modal-backtest">
         <div class="modal-content-backtest">
             <div class="modal-header-backtest">
-                <h2>🚀 Backtest Sistema Completo</h2>
+                <h2>📊 Backtest Sistema Completo</h2>
                 <span class="close-backtest">&times;</span>
             </div>
             <div class="modal-body-backtest">
-                <!-- Selector de universo -->
-                <div id="selectorUniverso" style="text-align:center; padding: 30px 20px;">
-                    <p style="margin-bottom:16px; font-size:0.95em; color:#555;">Selecciona el universo a analizar <span style="color:#888;">(5 años de datos)</span></p>
+                <!-- Selector estrategia + universo -->
+                <div id="selectorUniverso" style="text-align:center; padding: 24px 20px;">
+
+                    <!-- Estrategia -->
+                    <p style="margin-bottom:10px; font-size:0.88em; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Estrategia</p>
+                    <div style="display:flex; gap:8px; justify-content:center; margin-bottom:20px;">
+                        <button onclick="selEstrategiaBacktest('breakout')" id="btnEstBreakout" style="
+                            padding: 9px 20px; font-size: 0.9em; font-weight: 600;
+                            background: #e8400c; color: white; border: 2px solid #e8400c;
+                            border-radius: 8px; cursor: pointer; opacity:0.5; transition: all 0.2s;">
+                            🚀 Breakout
+                        </button>
+                        <button onclick="selEstrategiaBacktest('pullback')" id="btnEstPullback" style="
+                            padding: 9px 20px; font-size: 0.9em; font-weight: 600;
+                            background: #27ae60; color: white; border: 2px solid #27ae60;
+                            border-radius: 8px; cursor: pointer; opacity:0.5; transition: all 0.2s;">
+                            📊 Pullback
+                        </button>
+                        <button onclick="selEstrategiaBacktest('ambos')" id="btnEstAmbos" style="
+                            padding: 9px 20px; font-size: 0.9em; font-weight: 600;
+                            background: #2c3e50; color: white; border: 2px solid #2c3e50;
+                            border-radius: 8px; cursor: pointer; opacity:1; transition: all 0.2s;">
+                            🔄 Ambos
+                        </button>
+                    </div>
+
+                    <!-- Universo -->
+                    <p style="margin-bottom:10px; font-size:0.88em; color:#888; text-transform:uppercase; letter-spacing:0.05em;">Universo <span style="color:#bbb;">(5 años)</span></p>
                     <div style="display:flex; gap:12px; justify-content:center;">
-                        <button id="btnIbex" onclick="ejecutarBacktest('ibex')" style="
+                        <button onclick="ejecutarBacktestSistema('ibex')" style="
                             padding: 12px 28px; font-size: 1em; font-weight: 600;
                             background: #e8400c; color: white; border: none;
                             border-radius: 8px; cursor: pointer; transition: opacity 0.2s;">
                             🇪🇸 IBEX 35
                         </button>
-                        <button id="btnContinuo" onclick="ejecutarBacktest('continuo')" style="
+                        <button onclick="ejecutarBacktestSistema('continuo')" style="
                             padding: 12px 28px; font-size: 1em; font-weight: 600;
                             background: #2c3e50; color: white; border: none;
                             border-radius: 8px; cursor: pointer; transition: opacity 0.2s;">
@@ -1473,8 +1534,218 @@
 
     </script>
     
-    <!-- SCRIPT MODAL BACKTEST (SIN CAMBIOS) -->
+    <!-- SCRIPT MODAL BACKTEST -->
     <script>
+    // ── Variables y funciones globales del modal backtest ──
+    let _estrategiaBacktest = 'ambos';
+    const _entradaModo = 'trigger';  // siempre trigger para pullback
+    let _backtestEnCurso = false;
+
+    function selEstrategiaBacktest(est) {
+        _estrategiaBacktest = est;
+        ['breakout','pullback','ambos'].forEach(function(e) {
+            const b = document.getElementById('btnEst' + e.charAt(0).toUpperCase() + e.slice(1));
+            if (b) b.style.opacity = (e === est) ? '1' : '0.45';
+        });
+    }
+
+    async function ejecutarBacktestSistema(universo) {
+        if (_backtestEnCurso) return;
+        _backtestEnCurso = true;
+        const selectorEl = document.getElementById('selectorUniverso');
+        const loadingEl  = document.getElementById('loadingBacktest');
+        const contenidoEl = document.getElementById('contenidoBacktest');
+        if (selectorEl)  selectorEl.style.display  = 'none';
+        if (loadingEl)   loadingEl.style.display    = 'block';
+        if (contenidoEl) contenidoEl.style.display  = 'none';
+        const nombreUniverso = universo === 'continuo' ? 'Mercado Continuo' : 'IBEX 35';
+        const nombreEst = _estrategiaBacktest === 'breakout' ? 'Breakout'
+                        : _estrategiaBacktest === 'pullback' ? 'Pullback'
+                        : 'Breakout + Pullback';
+        const textoEl = document.getElementById('loadingTexto');
+        if (textoEl) textoEl.textContent = 'Ejecutando backtest ' + nombreEst + ' · ' + nombreUniverso + ' (5 años)...';
+        try {
+            const response = await fetch('/backtest/api/sistema?universo=' + universo + '&estrategia=' + _estrategiaBacktest + '&entrada_modo=' + _entradaModo);
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+            mostrarResultados(data);
+        } catch (error) {
+            if (contenidoEl) contenidoEl.innerHTML = '<div style="text-align:center;padding:40px;color:#dc3545;"><h3>❌ Error al ejecutar backtest</h3><p>' + error.message + '</p></div>';
+        } finally {
+            if (loadingEl)   loadingEl.style.display   = 'none';
+            if (contenidoEl) contenidoEl.style.display = 'block';
+            _backtestEnCurso = false;
+        }
+    }
+
+    function volverAlSelector() {
+        const contenidoEl = document.getElementById('contenidoBacktest');
+        const selectorEl  = document.getElementById('selectorUniverso');
+        if (contenidoEl) { contenidoEl.style.display = 'none'; contenidoEl.innerHTML = ''; }
+        if (selectorEl)  selectorEl.style.display = 'block';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar botón activo
+        selEstrategiaBacktest('ambos');
+    });
+
+        function mostrarResultados(data) {
+        try {
+        const estLabel = data.estrategia === 'breakout' ? '🚀 Breakout' : data.estrategia === 'pullback' ? '📊 Pullback' : '🔄 Breakout + Pullback';
+        const html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div style="font-size:0.85em; color:#666;">
+                    📅 <strong>${data.periodo || '5 años'}</strong> &nbsp;|&nbsp; 
+                    🗂 <strong>${data.universo || 'IBEX 35'}</strong> &nbsp;|&nbsp;
+                    <strong>${estLabel}</strong>
+                    ${data.entrada_modo === 'trigger' ? ' &nbsp;|&nbsp; 🎯 <strong>Trigger</strong>' : ' &nbsp;|&nbsp; 📍 <strong>Zona</strong>'}
+                </div>
+                <button onclick="volverAlSelector()" style="
+                    padding: 5px 14px; font-size: 0.8em; cursor: pointer;
+                    background: #f0f0f0; border: 1px solid #ccc;
+                    border-radius: 6px; color: #444;">
+                    ← Cambiar universo
+                </button>
+            </div>
+            
+            <div class="estado-badge estado-${data.estado.color}">
+                ${data.estado.color === 'success' ? '✅' : data.estado.color === 'warning' ? '⚠️' : '❌'} 
+                ${data.estado.texto}
+            </div>
+            
+            <div class="metricas-grid">
+                <div class="metrica-card">
+                    <div class="metrica-label">Expectativa</div>
+                    <div class="metrica-value" style="color: ${data.metricas.expectancy >= 0.2 ? '#28a745' : '#dc3545'}">
+                        ${data.metricas.expectancy >= 0 ? '+' : ''}${data.metricas.expectancy}R
+                    </div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-label">Win Rate</div>
+                    <div class="metrica-value">${data.metricas.winrate}%</div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-label">Max DD</div>
+                    <div class="metrica-value">${data.metricas.max_dd}%</div>
+                </div>
+                <div class="metrica-card">
+                    <div class="metrica-label">Trades</div>
+                    <div class="metrica-value">${data.metricas.total_trades}</div>
+                </div>
+            </div>
+            
+            ${data.tickers.aprobados.length > 0 ? `
+            <div class="seccion-tickers">
+                <h3>✅ Tickers Aprobados (${data.tickers.aprobados.length})</h3>
+                <div class="ticker-list">
+                    ${data.tickers.aprobados.map(t => `
+                        <span class="ticker-badge ticker-aprobado">
+                            ${t.empresa} (${t.retorno >= 0 ? '+' : ''}${t.retorno}%)
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.tickers.neutros.length > 0 ? `
+            <div class="seccion-tickers">
+                <h3>⚪ Tickers Neutros (${data.tickers.neutros.length})</h3>
+                <div class="ticker-list">
+                    ${data.tickers.neutros.map(t => `
+                        <span class="ticker-badge ticker-neutro">
+                            ${t.empresa} (${t.retorno >= 0 ? '+' : ''}${t.retorno}%)
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.tickers.rechazados.length > 0 ? `
+            <div class="seccion-tickers">
+                <h3>❌ Tickers Rechazados (${data.tickers.rechazados.length})</h3>
+                <div class="ticker-list">
+                    ${data.tickers.rechazados.map(t => `
+                        <span class="ticker-badge ticker-rechazado">
+                            ${t.empresa} (${t.retorno}%)
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.tickers.excluidos.length > 0 ? `
+            <div class="seccion-tickers">
+                <h3>🚫 Excluidos (${data.tickers.excluidos.length})</h3>
+                <div class="ticker-list">
+                    ${data.tickers.excluidos.map(t => `
+                        <span class="ticker-badge ticker-excluido">
+                            ${t.nombre} ${t.motivo === 'sin señales en 5 años' ? '(sin señales)' : `(${t.vol}% vol)`}
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="recomendacion-box">
+                <h3>💡 ${data.recomendacion.titulo}</h3>
+                <ul>
+                    ${data.recomendacion.acciones.map(accion => `<li>${accion}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="config-info">
+                ⚙️ Config: Target ${data.config.target}R | BE ${data.config.breakeven}R | 
+                Riesgo ${data.config.riesgo}% | Vol ${data.config.filtro_vol}%
+            </div>
+            
+            <button id="btnGuardarBacktestPantalla" class="btn-guardar-backtest">
+                📸 Guardar Backtest
+            </button>
+        `;
+        
+        document.getElementById('contenidoBacktest').innerHTML = html;
+        } catch(e) {
+            document.getElementById('contenidoBacktest').innerHTML = '<div style="padding:20px;color:red;">❌ Error mostrando resultados: ' + e.message + '</div>';
+            console.error('mostrarResultados error:', e);
+        }
+    }
+    
+    document.addEventListener("click", function (e) {
+        if (e.target && e.target.id === "btnGuardarBacktestPantalla") {
+            const zona = document.getElementById("contenidoBacktest");
+            if (!zona) {
+                alert("No se encuentra el contenido del backtest");
+                return;
+            }
+
+            e.target.disabled = true;
+            e.target.textContent = "⏳ Guardando...";
+
+            html2canvas(zona, { scale: 2 }).then(canvas => {
+                const imagen = canvas.toDataURL("image/png");
+                fetch("/guardar_pantallazo", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        imagen: imagen,
+                        ticker: "BACKTEST_SISTEMA"
+                    })
+                })
+                .then(() => {
+                    alert("✅ Backtest guardado");
+                    e.target.textContent = "📸 Guardar Backtest";
+                    e.target.disabled = false;
+                })
+                .catch(() => {
+                    alert("❌ Error al guardar");
+                    e.target.textContent = "📸 Guardar Backtest";
+                    e.target.disabled = false;
+                });
+            });
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('modalBacktest');
         const btn = document.getElementById('btnBacktestModal');
@@ -1501,193 +1772,9 @@
             }
         }
         
-        async function ejecutarBacktest(universo) {
-            document.getElementById('selectorUniverso').style.display = 'none';
-            loading.style.display = 'block';
-            contenido.style.display = 'none';
-            const nombreUniverso = universo === 'continuo' ? 'Mercado Continuo' : 'IBEX 35';
-            document.getElementById('loadingTexto').textContent = `Ejecutando backtest ${nombreUniverso} (5 años)... puede tardar unos minutos`;
-            
-            try {
-                const response = await fetch(`/backtest/api/ejecutar?universo=${universo}`);
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'Error desconocido');
-                }
-                
-                mostrarResultados(data);
-                
-            } catch (error) {
-                contenido.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #dc3545;">
-                        <h3>❌ Error al ejecutar backtest</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            } finally {
-                loading.style.display = 'none';
-                contenido.style.display = 'block';
-            }
-        }
-        
-        function volverAlSelector() {
-            contenido.style.display = 'none';
-            contenido.innerHTML = '';
-            document.getElementById('selectorUniverso').style.display = 'block';
-        }
-        
         // Exponer al scope global para los onclick del HTML
         window.ejecutarBacktest = ejecutarBacktest;
-        window.volverAlSelector = volverAlSelector;
         
-        function mostrarResultados(data) {
-            const html = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-size:0.85em; color:#666;">
-                        📅 <strong>${data.periodo || '5 años'}</strong> &nbsp;|&nbsp; 
-                        🗂 <strong>${data.universo || 'IBEX 35'}</strong>
-                    </div>
-                    <button onclick="volverAlSelector()" style="
-                        padding: 5px 14px; font-size: 0.8em; cursor: pointer;
-                        background: #f0f0f0; border: 1px solid #ccc;
-                        border-radius: 6px; color: #444;">
-                        ← Cambiar universo
-                    </button>
-                </div>
-                
-                <div class="estado-badge estado-${data.estado.color}">
-                    ${data.estado.color === 'success' ? '✅' : data.estado.color === 'warning' ? '⚠️' : '❌'} 
-                    ${data.estado.texto}
-                </div>
-                
-                <div class="metricas-grid">
-                    <div class="metrica-card">
-                        <div class="metrica-label">Expectativa</div>
-                        <div class="metrica-value" style="color: ${data.metricas.expectancy >= 0.2 ? '#28a745' : '#dc3545'}">
-                            ${data.metricas.expectancy >= 0 ? '+' : ''}${data.metricas.expectancy}R
-                        </div>
-                    </div>
-                    <div class="metrica-card">
-                        <div class="metrica-label">Win Rate</div>
-                        <div class="metrica-value">${data.metricas.winrate}%</div>
-                    </div>
-                    <div class="metrica-card">
-                        <div class="metrica-label">Max DD</div>
-                        <div class="metrica-value">${data.metricas.max_dd}%</div>
-                    </div>
-                    <div class="metrica-card">
-                        <div class="metrica-label">Trades</div>
-                        <div class="metrica-value">${data.metricas.total_trades}</div>
-                    </div>
-                </div>
-                
-                ${data.tickers.aprobados.length > 0 ? `
-                <div class="seccion-tickers">
-                    <h3>✅ Tickers Aprobados (${data.tickers.aprobados.length})</h3>
-                    <div class="ticker-list">
-                        ${data.tickers.aprobados.map(t => `
-                            <span class="ticker-badge ticker-aprobado">
-                                ${t.empresa} (${t.retorno >= 0 ? '+' : ''}${t.retorno}%)
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-                
-                ${data.tickers.neutros.length > 0 ? `
-                <div class="seccion-tickers">
-                    <h3>⚪ Tickers Neutros (${data.tickers.neutros.length})</h3>
-                    <div class="ticker-list">
-                        ${data.tickers.neutros.map(t => `
-                            <span class="ticker-badge ticker-neutro">
-                                ${t.empresa} (${t.retorno >= 0 ? '+' : ''}${t.retorno}%)
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-                
-                ${data.tickers.rechazados.length > 0 ? `
-                <div class="seccion-tickers">
-                    <h3>❌ Tickers Rechazados (${data.tickers.rechazados.length})</h3>
-                    <div class="ticker-list">
-                        ${data.tickers.rechazados.map(t => `
-                            <span class="ticker-badge ticker-rechazado">
-                                ${t.empresa} (${t.retorno}%)
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-                
-                ${data.tickers.excluidos.length > 0 ? `
-                <div class="seccion-tickers">
-                    <h3>🚫 Excluidos (${data.tickers.excluidos.length})</h3>
-                    <div class="ticker-list">
-                        ${data.tickers.excluidos.map(t => `
-                            <span class="ticker-badge ticker-excluido">
-                                ${t.nombre} (${t.vol}% vol)
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-                
-                <div class="recomendacion-box">
-                    <h3>💡 ${data.recomendacion.titulo}</h3>
-                    <ul>
-                        ${data.recomendacion.acciones.map(accion => `<li>${accion}</li>`).join('')}
-                    </ul>
-                </div>
-                
-                <div class="config-info">
-                    ⚙️ Config: Target ${data.config.target}R | BE ${data.config.breakeven}R | 
-                    Riesgo ${data.config.riesgo}% | Vol ${data.config.filtro_vol}%
-                </div>
-                
-                <button id="btnGuardarBacktestPantalla" class="btn-guardar-backtest">
-                    📸 Guardar Backtest
-                </button>
-            `;
-            
-            contenido.innerHTML = html;
-        }
-        
-        document.addEventListener("click", function (e) {
-            if (e.target && e.target.id === "btnGuardarBacktestPantalla") {
-                const zona = document.getElementById("contenidoBacktest");
-                if (!zona) {
-                    alert("No se encuentra el contenido del backtest");
-                    return;
-                }
-
-                e.target.disabled = true;
-                e.target.textContent = "⏳ Guardando...";
-
-                html2canvas(zona, { scale: 2 }).then(canvas => {
-                    const imagen = canvas.toDataURL("image/png");
-                    fetch("/guardar_pantallazo", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            imagen: imagen,
-                            ticker: "BACKTEST_SISTEMA"
-                        })
-                    })
-                    .then(() => {
-                        alert("✅ Backtest guardado");
-                        e.target.textContent = "📸 Guardar Backtest";
-                        e.target.disabled = false;
-                    })
-                    .catch(() => {
-                        alert("❌ Error al guardar");
-                        e.target.textContent = "📸 Guardar Backtest";
-                        e.target.disabled = false;
-                    });
-                });
-            }
-        });
     });
 
     // ═══════════════════════════════════════════════════════════
@@ -1779,11 +1866,16 @@
             row.onmouseenter = () => row.style.background = '#f8f9fa';
             row.onmouseleave = () => row.style.background = 'white';
             
+            const rSafe = {...r};   // ⭐ declarar primero — evita mutación y error TDZ
+
             // #
             row.insertCell().innerHTML = `<span style="color: #999;">${i + 1}</span>`;
             
-            // Ticker
-            row.insertCell().innerHTML = `<strong style="color: #e74c3c;">${r.ticker}</strong>`;
+            // Ticker + nombre
+            const tickerCell = row.insertCell();
+            const nombre = rSafe.nombre || rSafe.ticker || '';
+            tickerCell.innerHTML = `<strong style="color: #e74c3c;">${rSafe.ticker}</strong>`
+                + (nombre && nombre !== rSafe.ticker ? `<br><span style="font-size:10px;color:#666;">${nombre}</span>` : '');
             
             // Tipo
             const tipoBadge = r.tipo_señal === 'BREAKOUT' 
@@ -1792,18 +1884,17 @@
             row.insertCell().innerHTML = tipoBadge;
             
             // Score
-            const rSafe = {...r};   // ⭐ evita mutación
 
             const scoreCell = row.insertCell();
             scoreCell.style.textAlign = 'right';
 
             const score = Number(rSafe.setup_score ?? rSafe.score ?? 0);
             scoreCell.innerHTML = `<strong style="color: ${
-                score >= 6 ? '#16a34a' :
-                score >= 4 ? '#2563eb' :
-                score >= 2 ? '#f59e0b' :
+                score >= 8 ? '#16a34a' :
+                score >= 6 ? '#2563eb' :
+                score >= 4 ? '#f59e0b' :
                 '#999'
-            };">${score.toFixed(0)}/7</strong>`;
+            };">${score.toFixed(1)}/10</strong>`;
 
             // Confianza basada en score real (escala 0-7)
             const confianza = rSafe.confianza ?? (
@@ -2791,6 +2882,148 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarNotici
         }
     });
     {% endif %}
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL NOTICIAS RSS
+     ══════════════════════════════════════════════════════════ -->
+<div id="news-modal" style="
+  display:none;
+  position:fixed;
+  top:16px; left:16px;
+  width:560px;
+  max-width:calc(100vw - 32px);
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  z-index:9999;
+  border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.85);
+  background:#111827;
+  border:1px solid rgba(255,255,255,0.1);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+">
+  <!-- Barra de arrastre -->
+  <div id="news-drag-bar" style="
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 12px 7px; cursor:grab; user-select:none;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    background:rgba(40,167,69,0.08); border-radius:12px 12px 0 0;
+    position:sticky; top:0; z-index:1;
+  ">
+    <span style="font-size:11px;color:#4ade80;font-weight:700;letter-spacing:0.5px;">⠿ NOTICIAS DEL DÍA</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input id="news-filtro" type="text" placeholder="Filtrar…" oninput="filtrarNoticias()"
+        style="padding:3px 8px;border-radius:5px;border:1px solid rgba(255,255,255,0.15);
+               background:rgba(255,255,255,0.07);color:#e0e6f0;font-size:11px;width:150px;
+               user-select:text;pointer-events:all;cursor:text;"
+        onmousedown="event.stopPropagation()" onclick="event.stopPropagation()">
+      <button onclick="cargarNoticias()" title="Actualizar" style="
+        background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);
+        color:#4ade80;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">↻</button>
+      <button onclick="cerrarNoticias2()" style="
+        background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+        color:#fff;border-radius:50%;width:22px;height:22px;font-size:0.8rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div id="news-spinner" style="padding:50px 20px;text-align:center;color:#aaa;">
+    <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+    <div style="font-size:0.85rem;">Cargando noticias…</div>
+  </div>
+
+  <!-- Lista de noticias -->
+  <div id="news-lista" style="padding:10px 12px;display:none;"></div>
+
+  <!-- Sin resultados -->
+  <div id="news-vacio" style="display:none;padding:40px 20px;text-align:center;color:#64748b;font-size:0.85rem;">
+    Sin noticias que coincidan con el filtro.
+  </div>
+</div>
+
+<script>
+// ── NOTICIAS MODAL ──────────────────────────────────────────
+let _newsCache = null;
+
+function abrirNoticias() {
+  document.getElementById('news-modal').style.display = 'block';
+  if (!_newsCache) cargarNoticias();
+}
+
+function cerrarNoticias2() {
+  document.getElementById('news-modal').style.display = 'none';
+}
+
+async function cargarNoticias() {
+  document.getElementById('news-spinner').style.display = 'block';
+  document.getElementById('news-lista').style.display   = 'none';
+  document.getElementById('news-vacio').style.display   = 'none';
+  try {
+    const r = await fetch('/analisis/api/noticias');
+    const data = await r.json();
+    _newsCache = data.noticias || [];
+    renderNoticias(_newsCache);
+  } catch(e) {
+    document.getElementById('news-spinner').innerHTML =
+      '<div style="color:#f06060;padding:20px;">Error al cargar noticias.<br><small>'+e+'</small></div>';
+  }
+}
+
+function renderNoticias(lista) {
+  document.getElementById('news-spinner').style.display = 'none';
+  const contenedor = document.getElementById('news-lista');
+  if (!lista || lista.length === 0) {
+    document.getElementById('news-vacio').style.display = 'block';
+    return;
+  }
+  contenedor.innerHTML = lista.map(n => `
+    <div class="news-item" data-texto="${(n.titulo||'').toLowerCase()}" style="
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+    ">
+      <a href="${n.url}" target="_blank" rel="noopener" style="
+        color:#e2e8f0;text-decoration:none;font-size:0.85rem;line-height:1.5;
+        display:block;margin-bottom:4px;
+      " onmouseover="this.style.color='#60a5fa'" onmouseout="this.style.color='#e2e8f0'">
+        ${n.titulo}
+      </a>
+      <div style="display:flex;gap:10px;font-size:0.72rem;color:#64748b;">
+        <span style="
+          background:rgba(74,222,128,0.1);color:#4ade80;
+          padding:1px 7px;border-radius:99px;font-weight:500;
+        ">${n.fuente}</span>
+        ${n.fecha ? '<span>'+n.fecha+'</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+  contenedor.style.display = 'block';
+}
+
+function filtrarNoticias() {
+  if (!_newsCache) return;
+  const q = document.getElementById('news-filtro').value.toLowerCase().trim();
+  const filtradas = q ? _newsCache.filter(n => (n.titulo||'').toLowerCase().includes(q)) : _newsCache;
+  renderNoticias(filtradas);
+  document.getElementById('news-vacio').style.display = filtradas.length === 0 ? 'block' : 'none';
+}
+
+// ── DRAG ────────────────────────────────────────────────────
+(function() {
+  const modal = document.getElementById('news-modal');
+  const bar   = document.getElementById('news-drag-bar');
+  let drag = false, sx, sy, il, it;
+  bar.addEventListener('mousedown', e => {
+    drag = true; sx = e.clientX; sy = e.clientY;
+    il = modal.offsetLeft; it = modal.offsetTop;
+    bar.style.cursor = 'grabbing'; e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    modal.style.left = (il + e.clientX - sx) + 'px';
+    modal.style.top  = (it + e.clientY - sy) + 'px';
+    modal.style.right = 'auto';
+  });
+  document.addEventListener('mouseup', () => { drag = false; bar.style.cursor = 'grab'; });
+})();
 </script>
 </body>
 </html>

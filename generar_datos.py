@@ -4,7 +4,10 @@ import yfinance as yf
 import json
 
 # ⚠️ IMPORTAMOS TU SISTEMA LOCAL TAL CUAL
-from sistema_trading import sistema_trading
+try:
+    from sistema_trading import sistema_trading
+except ImportError:
+    sistema_trading = None  # módulo legacy, no disponible en nueva arquitectura
 
 
 # ======================================================

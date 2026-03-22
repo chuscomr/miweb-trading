@@ -1,111 +1,95 @@
 """
-ESCÁNER SWING TRADING (versión clásica para carpeta swing_trading)
-Compatible con tu sistema original sin modificar nada más.
+ESCÁNER SWING TRADING
+Usa las clases BreakoutSwing y PullbackSwing de la nueva arquitectura.
 """
 
-import sys
-import os
-import time
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 
-# ------------------------------------------------------------
-# AÑADIR RUTA RAÍZ DEL PROYECTO (MiWeb)
-# ------------------------------------------------------------
-# Imports de nueva arquitectura
-from estrategias.swing.logica_breakout import detectar_breakout_swing
-from estrategias.swing.logica_pullback import detectar_pullback_swing
+from estrategias.swing.breakout import BreakoutSwing
+from estrategias.swing.pullback import PullbackSwing
 
-
-# =============================
-# LISTAS DE TICKERS
-# =============================
-
-IBEX35_TICKERS = [
-    "ACS.MC","AENA.MC","AMS.MC","ANA.MC","BBVA.MC","CABK.MC","ELE.MC","FER.MC",
-    "GRF.MC","IBE.MC","IAG.MC","IDR.MC","ITX.MC","MAP.MC","MRL.MC",
-    "NTGY.MC","RED.MC","REP.MC","ROVI.MC","SAB.MC","SAN.MC","SCYR.MC","SLR.MC",
-    "TEF.MC","UNI.MC","CLNX.MC","LOG.MC","ACX.MC","BKT.MC","COL.MC","ANE.MC",
-    "ENG.MC","FCC.MC","PUIG.MC","MTS.MC"
-]
-
-CONTINUO_LIQUIDO = [
-    "CIE.MC","VID.MC","TUB.MC","TRE.MC","CAF.MC","GEST.MC","APAM.MC",
-    "PHM.MC","OHLA.MC","DOM.MC","ENC.MC","GRE.MC",
-    "HOME.MC","CIRSA.MC","FAE.MC","NEA.MC","PSG.MC","LDA.MC",
-    "MEL.MC","VIS.MC","ECR.MC","ENO.MC","DIA.MC","IMC.MC","LIB.MC",
-    "A3M.MC","ATRY.MC","R4.MC","RLIA.MC","MVC.MC","EBROM.MC","AMP.MC",
-    "HBX.MC","CASH.MC","ADX.MC","IZER.MC","AEDAS.MC"
-]
+_breakout_inst = BreakoutSwing()
+_pullback_inst  = PullbackSwing()
 
 
-# =============================
+# ══════════════════════════════════════════════════════════════
 # ESCANEO INDIVIDUAL
-# =============================
+# ══════════════════════════════════════════════════════════════
 
-def escanear_ticker(ticker, tipo_scan='breakout'):
+def escanear_ticker(ticker: str, tipo_scan: str = "breakout", cache=None):
     """
-    Escanea un ticker buscando señal del tipo especificado.
-    tipo_scan: 'breakout' | 'pullback'  (nunca ambos)
+    Evalúa un ticker con la estrategia indicada.
+    tipo_scan: 'breakout' | 'pullback'
+    Devuelve dict formateado o None si no hay señal válida.
     """
-    if tipo_scan == 'pullback':
-        r = detectar_pullback_swing(ticker)
+    if tipo_scan == "pullback":
+        r = _pullback_inst.evaluar(ticker, cache)
     else:
-        r = detectar_breakout_swing(ticker)
+        r = _breakout_inst.evaluar(ticker, cache)
 
-    if not isinstance(r, dict):
+    if not isinstance(r, dict) or not r.get("valido", False):
         return None
 
-    if not r.get("valido", False):
-        return None
+    return _formatear(r)
 
-    return formatear_resultado(r)
 
-# =============================
+# ══════════════════════════════════════════════════════════════
 # ESCANEO MASIVO
-# =============================
+# ══════════════════════════════════════════════════════════════
 
-import copy
-
-def escanear_mercado(tickers, tipo_scan='breakout', max_workers=2):
+def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
+                     max_workers: int = 2, cache=None) -> list:
+    """
+    Escanea una lista de tickers en paralelo.
+    tipo_scan: 'breakout' | 'pullback' | 'ambos'
+    Devuelve lista de señales válidas ordenadas por score desc.
+    """
+    if tipo_scan == "ambos":
+        breakouts = escanear_mercado(tickers, "breakout", max_workers, cache)
+        pullbacks = escanear_mercado(tickers, "pullback", max_workers, cache)
+        vistos = set()
+        combinados = []
+        for r in sorted(breakouts + pullbacks,
+                        key=lambda x: x.get("score", 0), reverse=True):
+            if r["ticker_completo"] not in vistos:
+                vistos.add(r["ticker_completo"])
+                combinados.append(r)
+        return combinados
 
     resultados = []
     vistos = set()
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(escanear_ticker, t, tipo_scan): t for t in tickers}
-
+        futures = {
+            executor.submit(escanear_ticker, t, tipo_scan, cache): t
+            for t in tickers
+        }
         for future in as_completed(futures):
             r = future.result()
+            if isinstance(r, dict) and r.get("es_senal") and r["ticker_completo"] not in vistos:
+                vistos.add(r["ticker_completo"])
+                resultados.append(r)
 
-            # ⭐ SOLO señales válidas
-            if isinstance(r, dict) and r.get("es_senal", False):
-
-                # ⭐ evitar duplicados reales
-                if r["ticker"] not in vistos:
-                    vistos.add(r["ticker"])
-                    resultados.append(r)
-
-    resultados.sort(key=lambda x: (x["tipo"], x["score"]), reverse=True)
-
+    resultados.sort(key=lambda x: x.get("score", 0), reverse=True)
     return resultados
 
-# =============================
-# FORMATEO RESULTADOS
-# =============================
-def to_float_safe(x):
+
+# ══════════════════════════════════════════════════════════════
+# FORMATEO
+# ══════════════════════════════════════════════════════════════
+
+def _to_float(x):
     if hasattr(x, "item"):
         return float(x.item())
-    return float(x)
+    return float(x) if x is not None else 0.0
 
-def formatear_resultado(r):
 
-    ticker = r.get("ticker","")
+def _formatear(r: dict) -> dict:
+    from core.universos import get_nombre
+    ticker = r.get("ticker", "")
+    score  = _to_float(r.get("setup_score", 0))
 
-    # ⭐ score real
-    score = float(r.get("setup_score", 0))
-
-    # ⭐ confianza estilo TradingView
     if score >= 8:
         confianza = "muy_alto"
     elif score >= 6:
@@ -117,65 +101,50 @@ def formatear_resultado(r):
 
     tipo = r.get("tipo", "BREAKOUT")
     return {
-        "ticker": ticker.replace(".MC",""),
+        "ticker":          ticker.replace(".MC", ""),
         "ticker_completo": ticker,
-
-        # campos frontend
-        "precio": float(r.get("precio_actual", 0)),
-        "precio_actual": float(r.get("precio_actual", 0)),
-        "score": score,
-        "setup_score": score,
-        "confianza": confianza,
-        "variacion_1d": float(r.get("variacion_1d", 0)),
-        "es_senal": True,
-
-        # campos trading
-        "entrada": float(r.get("entrada", 0)),
-        "stop": float(r.get("stop", 0)),
-        "objetivo": float(r.get("objetivo", 0)),
-        "rr": float(r.get("rr", 0)),
-        "tipo": tipo,
-        "tipo_señal": tipo,  # alias para el HTML
+        "nombre":          get_nombre(ticker),
+        "precio":          _to_float(r.get("precio_actual")),
+        "precio_actual":   _to_float(r.get("precio_actual")),
+        "score":           score,
+        "setup_score":     score,
+        "setup_max":       10,
+        "confianza":       confianza,
+        "variacion_1d":    _to_float(r.get("variacion_1d")),
+        "es_senal":        True,
+        "entrada":         _to_float(r.get("entrada")),
+        "stop":            _to_float(r.get("stop")),
+        "objetivo":        _to_float(r.get("objetivo")),
+        "rr":              _to_float(r.get("rr")),
+        "tipo":            tipo,
+        "tipo_señal":      tipo,
     }
-
-# =============================
-# EXPORTACIÓN A JSON (para Flask)
-# =============================
-
-def formatear_para_json(resultados):
-    return resultados
-
-
-# =============================
-# EJECUCIÓN DIRECTA
-# =============================
-
-if __name__ == "__main__":
-    res = escanear_mercado(CONTINUO_LIQUIDO, tipo_scan="ambos")
-    print("\nTOP 5:")
-    for r in res[:5]:
-        print(r)
 
 
 # ══════════════════════════════════════════════════════════════
-# CLASE WRAPPER — para compatibilidad con swing_routes.py
+# CLASE WRAPPER — para swing_routes.py
 # ══════════════════════════════════════════════════════════════
 
 class ScannerSwing:
     """Wrapper OOP sobre las funciones del scanner."""
 
     def evaluar_ticker(self, ticker: str, cache=None) -> dict:
-        return escanear_ticker(ticker, tipo_scan='breakout')
+        b = _breakout_inst.evaluar(ticker, cache)
+        p = _pullback_inst.evaluar(ticker, cache)
+        from core.contexto_mercado import evaluar_contexto_ibex
+        return {
+            "breakout": b,
+            "pullback": p,
+            "contexto": evaluar_contexto_ibex(cache),
+        }
 
     def escanear_todo(self, tickers=None, cache=None, top_n: int = 20) -> dict:
         from core.universos import IBEX35, CONTINUO
-        from datetime import datetime
         if tickers is None:
             tickers = IBEX35 + CONTINUO
-        breakouts = escanear_mercado(tickers, tipo_scan='breakout', max_workers=2)
-        pullbacks = escanear_mercado(tickers, tipo_scan='pullback', max_workers=2)
-        señales = breakouts + pullbacks
-        señales = sorted(señales, key=lambda x: x.get("score", 0), reverse=True)[:top_n]
+        señales = escanear_mercado(tickers, tipo_scan="ambos",
+                                   max_workers=2, cache=cache)
+        señales = señales[:top_n]
         return {
             "señales":   señales,
             "total":     len(señales),

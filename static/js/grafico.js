@@ -169,7 +169,7 @@ class GraficoIndicadores {
             return;
         }
 
-        const fechas = data.data.map(d => new Date(d.Date));
+        const fechas = data.data.map(d => d.Date.substring(0, 10));
         const traces = [];
         const shapes = [];
         const annotations = [];
@@ -182,13 +182,12 @@ class GraficoIndicadores {
         const formatearFechaTooltip = (fecha) => {
             const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            
-            const d = new Date(fecha);
+            // Añadir T12:00:00 para evitar desfase UTC → hora local
+            const d = new Date((fecha + '').substring(0, 10) + 'T12:00:00');
             const dia = dias[d.getDay()];
             const numero = d.getDate();
             const mes = meses[d.getMonth()];
             const año = d.getFullYear();
-            
             return `${dia} ${numero} ${mes} ${año}`;
         };
         
@@ -895,7 +894,7 @@ class GraficoIndicadores {
                 font: { size: 10 }
             },
             xaxis: {
-                type: 'date',
+                type: 'category',
                 gridcolor: '#cbd5e1',
                 linecolor: '#94a3b8',
                 rangeslider: { visible: false },
@@ -905,9 +904,7 @@ class GraficoIndicadores {
                 spikecolor: '#64748b',
                 spikethickness: 1,
                 fixedrange: false,
-                rangebreaks: [
-                    { bounds: ['sat', 'mon'] }
-                ],
+                nticks: 12,
                 hoverformat: '%a %d %b %Y'
             }
         };
@@ -1642,25 +1639,82 @@ class GraficoIndicadores {
 
         const panelPatrones = document.getElementById('patrones');
         if (panelPatrones) {
+            const PATRONES_GIRO_ALCISTA = new Set([
+                'Martillo', 'Envolvente Alcista', 'Piercing Line',
+                'Estrella de Mañana', 'Tweezer Bottom'
+            ]);
+
             if (data.patrones && data.patrones.length > 0) {
-                const patronesRecientes = data.patrones.slice(0, 5);
-                panelPatrones.innerHTML = patronesRecientes.map(p => {
-                    const clasePatron = p.tipo === 'alcista' ? 'patron-alcista' :
-                        p.tipo === 'bajista' ? 'patron-bajista' : 'patron-neutral';
-                    const emoji = p.tipo === 'alcista' ? '📈' : p.tipo === 'bajista' ? '📉' : '⚖️';
-                    return `
-                        <div class="patron-vela ${clasePatron}">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <strong style="font-size: 11px;">${emoji} ${p.nombre}</strong>
-                                <span style="font-size: 10px; opacity: 0.7;">${Math.round(p.confianza * 100)}%</span>
+                // Buscar patrón prioritario de giro alcista
+                const patronPrioritario = data.patrones.find(p =>
+                    p.tipo === 'alcista' && PATRONES_GIRO_ALCISTA.has(p.nombre)
+                );
+
+                // Resto de patrones (excluir el prioritario si existe)
+                const resto = data.patrones.filter(p =>
+                    !(p.tipo === 'alcista' && PATRONES_GIRO_ALCISTA.has(p.nombre) &&
+                      patronPrioritario && p.nombre === patronPrioritario.nombre)
+                ).slice(0, 4);
+
+                let html = '';
+
+                // Línea destacada
+                if (patronPrioritario) {
+                    const ctx_p = data.contexto_patron || {};
+                    const calidad = ctx_p.calidad || '';
+                    const detalle = ctx_p.detalle || '';
+                    const condiciones = ctx_p.condiciones ?? -1;
+
+                    const colorCtx = condiciones >= 3 ? '#15803d' :
+                                     condiciones === 2 ? '#92400e' :
+                                     condiciones === 1 ? '#b45309' : '#b91c1c';
+                    const bgCtx    = condiciones >= 3 ? '#f0fdf4' :
+                                     condiciones === 2 ? '#fffbeb' :
+                                     condiciones === 1 ? '#fff7ed' : '#fef2f2';
+                    const iconCtx  = condiciones >= 3 ? '✔' :
+                                     condiciones === 2 ? '⚠' :
+                                     condiciones === 1 ? '⚠' : '❌';
+
+                    html += `
+                        <div style="background:${bgCtx}; border-left:3px solid ${colorCtx};
+                            padding:8px 10px; border-radius:6px; margin-bottom:8px;">
+                            <div style="font-size:0.85rem; font-weight:700; color:#15803d; margin-bottom:4px;">
+                                ✔ Giro detectado: ${patronPrioritario.nombre}
+                                <span style="font-size:0.75rem; color:#166534; margin-left:4px;">${Math.round(patronPrioritario.confianza * 100)}%</span>
                             </div>
-                            <div style="font-size: 10px; opacity: 0.8;">${p.descripcion}</div>
-                            ${p.fecha ? `<div style="font-size: 9px; opacity: 0.6; margin-top: 2px;">${p.fecha}</div>` : ''}
-                        </div>
-                    `;
-                }).join('');
+                            <div style="font-size:0.78rem; font-weight:600; color:${colorCtx};">
+                                ${iconCtx} Contexto ${calidad}${detalle ? ' — ' + detalle : ''}
+                            </div>
+                        </div>`;
+                } else {
+                    html += `
+                        <div style="background:#f8fafc; border-left:3px solid #94a3b8;
+                            padding:8px 10px; border-radius:6px; margin-bottom:10px;">
+                            <span style="font-size:0.85rem; font-weight:600; color:#475569;">
+                                ❌ Sin patrón de giro válido
+                            </span>
+                        </div>`;
+                }
+
+                // Resto de patrones en gris suave
+                if (resto.length > 0) {
+                    html += `<div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;">`;
+                    resto.forEach(p => {
+                        const emoji = p.tipo === 'alcista' ? '📈' : p.tipo === 'bajista' ? '📉' : '⚖️';
+                        html += `<div style="margin-bottom:3px;">${emoji} ${p.nombre} · ${Math.round(p.confianza * 100)}%</div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                panelPatrones.innerHTML = html;
             } else {
-                panelPatrones.innerHTML = '<p style="color: #94a3b8;">No detectados recientemente</p>';
+                panelPatrones.innerHTML = `
+                    <div style="background:#f8fafc; border-left:3px solid #94a3b8;
+                        padding:8px 10px; border-radius:6px;">
+                        <span style="font-size:0.85rem; font-weight:600; color:#475569;">
+                            ❌ Sin patrón de giro válido
+                        </span>
+                    </div>`;
             }
         }
 
@@ -1860,6 +1914,43 @@ class GraficoIndicadores {
                 panelChartistas.innerHTML = '<p style="color:#94a3b8;font-size:0.85em;">No detectados en ventana de 100 velas</p>';
             }
         }
+
+        // ── CONTEXTO DE TRADING ──────────────────────────────
+        const panelContexto = document.getElementById('contexto-trading');
+        if (panelContexto && data.contextoTrading && data.contextoTrading.tipo) {
+            const ctx = data.contextoTrading;
+            const iconos = {
+                breakout:  '🚀', pullback: '🔄',
+                reversion: '⚠️', neutral:  '📊'
+            };
+            const icono = iconos[ctx.tipo] || '📊';
+
+            const badgesMadurez = {
+                listo:       { txt: 'En vigilancia', bg: '#dbeafe', col: '#1d4ed8' },
+                formandose:  { txt: 'En formación',  bg: '#fef3c7', col: '#92400e' },
+                incipiente:  { txt: 'Incipiente',    bg: '#f1f5f9', col: '#475569' },
+                alerta:      { txt: 'Alerta',        bg: '#fee2e2', col: '#b91c1c' },
+                sin_setup:   { txt: 'Sin setup',     bg: '#f1f5f9', col: '#475569' },
+            };
+            const badge = badgesMadurez[ctx.madurez] || badgesMadurez.sin_setup;
+
+            panelContexto.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="font-size:1.3rem;">${icono}</span>
+                    <span style="font-size:1rem;font-weight:800;color:${ctx.color};">${ctx.titulo}</span>
+                    <span style="font-size:0.72rem;font-weight:700;padding:3px 9px;border-radius:10px;
+                        background:${badge.bg};color:${badge.col};">${badge.txt}</span>
+                </div>
+                ${ctx.frases && ctx.frases.length > 0 ? `
+                <ul style="margin:0;padding-left:16px;list-style:none;">
+                    ${ctx.frases.map(f => `
+                        <li style="font-size:0.82rem;font-weight:600;color:#1e293b;margin-bottom:5px;padding-left:4px;">
+                            ${f.startsWith('⚠️') ? f : '• ' + f}
+                        </li>
+                    `).join('')}
+                </ul>` : '<p style="color:#334155;font-size:0.82rem;font-weight:600;">Indicadores insuficientes</p>'}
+            `;
+        }
     }
 
     /**
@@ -2028,21 +2119,20 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
 
 const PESOS_SISTEMA = {
     swing: {
-        // 5 indicadores: RSI + MACD + Estocástico + MM20 + OBV
-        // Resto ignorados (peso 0)
+        // Swing: RSI + MACD + MM20 + MM50 + OBV como principales
         nombre: 'Swing Trading · Pullback en tendencia · 4-12 semanas',
-        RSI:         { extremo: 1.0, neutral: 0.0 },  // solo extremos cuentan
+        RSI:         { extremo: 1.0, neutral: 0.0 },
         MACD:        { cruce: 1.0 },
         OBV:         1.0,
-        Estocastico: { extremo: 1.0, neutral: 0.0 },  // solo extremos cuentan
+        Estocastico: { extremo: 0.5, neutral: 0.0 },
         BB:          0.0,
         ADX:         0.0,
         MFI:         0.0,
         MM20:        1.0,
-        MM50:        0.0,
-        MM200:       0.0,
-        MMs:         0.0,
-        Volumen:     0.0,
+        MM50:        0.8,   // relevante para tendencia en swing
+        MM200:       0.6,   // contexto macro
+        MMs:         0.7,   // señal agregada de medias
+        Volumen:     0.5,   // confirmación
     },
     medio: {
         // 5 indicadores: MM50 + MM20 + MACD + RSI + OBV

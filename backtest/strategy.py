@@ -89,19 +89,32 @@ def _sistema_trading(precios, volumenes, contexto_mercado=None,
 
     precio    = precios[-1]
     mm20      = sum(precios[-20:]) / 20
+    mm50      = sum(precios[-50:]) / 50 if len(precios) >= 50 else None
     mm20_ant  = sum(precios[-25:-5]) / 20
     pendiente = mm20 - mm20_ant
-    max20     = max(precios[-21:-1])   # excluir vela actual para evitar falsos breakouts
-    min20     = min(precios[-21:-1])
-    volatilidad = (max20 - min20) / min20 * 100 if min20 > 0 else 999
-    dist_mm   = abs(precio - mm20) / mm20 * 100
-    dist_max  = (max20 - precio) / max20 * 100
 
-    if not (precio > mm20 and pendiente > 0):
+    # Mejora 1: máximo 52d en vez de 20d
+    max52 = max(precios[-53:-1]) if len(precios) >= 53 else max(precios[-21:-1])
+    min20 = min(precios[-21:-1])
+    volatilidad = (max52 - min20) / min20 * 100 if min20 > 0 else 999
+    dist_mm   = abs(precio - mm20) / mm20 * 100
+    # Mejora 1: distancia al máximo 52d
+    dist_max  = (max52 - precio) / max52 * 100
+
+    # Mejora 2: precio > MM50 + pendiente MM20 positiva (antes precio > MM20)
+    if mm50 is not None:
+        estructura_ok = precio > mm50 and pendiente > 0
+    else:
+        estructura_ok = precio > mm20 and pendiente > 0
+    if not estructura_ok:
         return {"decision": "NO OPERAR"}
 
     rsi = _calcular_rsi_seguro(precios)
     if rsi is None:
+        return {"decision": "NO OPERAR"}
+
+    # Obligatorio: RSI en rango momentum
+    if not (55 <= rsi <= 70):
         return {"decision": "NO OPERAR"}
 
     if volatilidad > 10:
@@ -109,28 +122,30 @@ def _sistema_trading(precios, volumenes, contexto_mercado=None,
 
     eval_vol = _evaluar_volumen_profesional(volumenes)
 
-    setup_score = 0
-    if rsi >= 52:       setup_score += 1   # antes 55 → más señales
-    if 58 <= rsi <= 70: setup_score += 1   # zona momentum óptima
-    if 1.5 <= dist_max <= 5: setup_score += 1  # zona óptima post-breakout
-    if dist_mm <= 3:    setup_score += 1
-    if pendiente > 0:
-        setup_score += 1
-        setup_score += eval_vol.get("bonus_score", 0)
-        setup_score += eval_vol.get("penalizacion_score", 0)
-        setup_score = max(0, min(setup_score, 5))
+    # Volumen obligatorio — sin él no hay breakout válido
+    if not eval_vol["permitir_normal"] and not eval_vol["permitir_impulso"]:
+        return {"decision": "NO OPERAR"}
 
-    # Entrada al precio de cierre (modo_backtest=True)
+    # Mejora 3: score ponderado (max 10, umbral 5)
+    # OPCIONALES — suman puntos (volumen ya validado como obligatorio):
+    setup_score = 0.0
+    if dist_max <= 3.0:                                      setup_score += 2.0  # cerca máximo 52d
+    if precio > mm20:                                        setup_score += 2.5  # precio > MM20
+    if 55 <= rsi <= 70:                                      setup_score += 2.5  # RSI momentum fuerte
+    if volatilidad <= 6:                                     setup_score += 3.0  # baja volatilidad
+    if eval_vol.get("bonus_score", 0) > 0:                   setup_score += 0.5  # volumen excepcional
+    setup_score = round(min(setup_score, 10.0), 1)
+
+    SCORE_MINIMO = 5.0
     entrada = round(float(precio), 2)
 
-    # COMPRA NORMAL — dist_max relajado a 6% (antes 3%)
-    if (45 < rsi < 70 and dist_mm <= 4 and dist_max <= 6
-            and setup_score >= 3 and eval_vol["permitir_normal"]):
+    if setup_score < SCORE_MINIMO:
+        return {"decision": "NO OPERAR"}
+
+    if setup_score >= 7.0 and eval_vol["permitir_impulso"]:
         return {"decision": "COMPRA", "entrada": entrada, "setup_score": setup_score}
 
-    # COMPRA IMPULSO — dist_max relajado a 6% (antes 3%)
-    if (60 <= rsi <= 73 and dist_mm <= 6 and dist_max <= 6
-            and setup_score >= 4 and eval_vol["permitir_impulso"]):
+    if eval_vol["permitir_normal"]:
         return {"decision": "COMPRA", "entrada": entrada, "setup_score": setup_score}
 
     return {"decision": "NO OPERAR"}
@@ -203,12 +218,12 @@ class StrategyLogic:
         if not stop or stop <= 0 or stop >= entrada:
             return {"accion": "ESPERAR"}
 
-        # Solo validar que el stop sea razonable (1%-8%)
+        # Solo validar que el stop sea razonable (1%-10%)
         riesgo_pct_stop = (entrada - stop) / entrada * 100
         if riesgo_pct_stop < 1.0:
             stop = entrada * 0.99   # mínimo 1%
-        elif riesgo_pct_stop > 8.0:
-            return {"accion": "ESPERAR"}   # stop absurdo
+        elif riesgo_pct_stop > 10.0:
+            return {"accion": "ESPERAR"}   # stop demasiado amplio
 
         return {
             "accion":  "ENTRAR",

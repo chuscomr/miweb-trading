@@ -74,7 +74,7 @@
     <ul>
         {% for r in escaneo_continuo.compras %}
         <li class="alerta-compra">
-            {{ r.nombre }}
+            {{ r.nombre or r.ticker }}
             <span class="ticker">({{ r.ticker }})</span>
             <strong>({{ r.setup_score }}/{{ r.setup_max }})</strong>
         </li>
@@ -87,7 +87,7 @@
     <ul>
         {% for r in escaneo_continuo.vigilancia %}
         <li class="alerta-vigilancia">
-            {{ r.nombre }}
+            {{ r.nombre or r.ticker }}
             <span class="ticker">({{ r.ticker }})</span>
             <strong>({{ r.setup_score }}/{{ r.setup_max }})</strong>
             — {{ r.motivo }}

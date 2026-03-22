@@ -486,3 +486,53 @@ def detectar_patrones_velas(df, ultimas_n=50):
     
     # Limitar a los 10 más recientes
     return patrones_relevantes[:10]
+
+
+# ══════════════════════════════════════════════════════════════
+# CONFLUENCIA VELAS + SOPORTES/RESISTENCIAS
+# ══════════════════════════════════════════════════════════════
+
+def analizar_confluencia_velas_sr(patron: dict, distancia_soporte_pct) -> dict:
+    """
+    Combina la señal del patrón de velas con la distancia al soporte más cercano.
+
+    Args:
+        patron: dict resultado de detectar_patrones_velas()
+        distancia_soporte_pct: distancia al soporte más cercano en %
+
+    Returns:
+        dict con claves: confluencia (bool), mensaje, confianza_combinada, recomendacion
+    """
+    if patron.get("señal") == "NEUTRAL":
+        return {
+            "confluencia": False,
+            "mensaje": "Sin patrón de velas relevante",
+        }
+
+    if patron.get("señal") == "ALCISTA":
+        if distancia_soporte_pct is not None and 2 <= distancia_soporte_pct <= 5:
+            return {
+                "confluencia": True,
+                "confianza_combinada": min(95, patron.get("confianza", 70) + 15),
+                "mensaje": (
+                    f"✅ CONFLUENCIA FUERTE: {patron.get('patron','')} "
+                    f"+ Cerca soporte ({distancia_soporte_pct:.1f}%)"
+                ),
+                "recomendacion": "COMPRA PRIORITARIA",
+            }
+        return {
+            "confluencia": False,
+            "confianza_combinada": patron.get("confianza", 70),
+            "mensaje": "⚠️ Patrón alcista pero lejos de soporte",
+            "recomendacion": "ESPERAR MEJOR PRECIO",
+        }
+
+    if patron.get("señal") == "BAJISTA":
+        return {
+            "confluencia": False,
+            "confianza_combinada": 0,
+            "mensaje": f"🚫 EVITAR COMPRA: {patron.get('patron','')} detectado",
+            "recomendacion": "NO OPERAR",
+        }
+
+    return {"confluencia": False, "mensaje": "Sin confluencia clara"}

@@ -64,13 +64,23 @@ def _stats_y_grafico(ticker, cache, evaluacion=None):
         min_rec = min(closes[-20:])
         mm20    = sum(closes[-20:]) / 20
 
+        high_hoy = float(df["High"].iloc[-1])
+
+        # Trigger: si hay vela de giro en la evaluación, usar su high
+        # Si no, usar el high de la última vela (high_hoy)
+        vela_ok     = evaluacion.get("vela_ok", False) if evaluacion else False
+        vela_nombre = evaluacion.get("vela_nombre", "") if evaluacion else ""
+        trigger = round(high_hoy * 1.001, 2)  # default: high previo + 0.1%
+
         stats = {
-            "max_reciente": round(max_rec, 4),
-            "min_reciente": round(min_rec, 4),
-            "mm_actual":    round(mm20, 4),
-            "dist_max":     round((precio - max_rec) / max_rec * 100, 2),
-            "dist_min":     round((precio - min_rec) / min_rec * 100, 2),
-            "dist_mm":      round((precio - mm20) / mm20 * 100, 2),
+            "max_reciente":  round(max_rec, 4),
+            "min_reciente":  round(min_rec, 4),
+            "mm_actual":     round(mm20, 4),
+            "dist_max":      round((precio - max_rec) / max_rec * 100, 2),
+            "dist_min":      round((precio - min_rec) / min_rec * 100, 2),
+            "dist_mm":       round((precio - mm20) / mm20 * 100, 2),
+            "trigger":       trigger,
+            "trigger_tipo":  f"Vela de giro ({vela_nombre})" if vela_ok else "Máximo sesión anterior",
         }
 
         # ── Gráfico Plotly ──
@@ -142,11 +152,17 @@ def _render_swing(ticker, evaluacion, capital, riesgo, cache, tipo="BREAKOUT"):
     """Construye el contexto de template con variables planas."""
     contexto  = evaluar_contexto_ibex(cache)
     factor    = factor_riesgo_mercado(cache)
-    sizing    = resumen_operacion(
-        evaluacion.get("entrada", 0), evaluacion.get("stop", 0),
+    stats, grafico_html = _stats_y_grafico(ticker, cache, evaluacion)
+
+    # Trigger = high * 1.001 (ya calculado en stats)
+    trigger = stats.get("trigger", evaluacion.get("entrada", 0))
+
+    # Sizing calculado desde el trigger, no desde precio actual
+    sizing = resumen_operacion(
+        trigger, evaluacion.get("stop", 0),
         evaluacion.get("objetivo", 0), capital, riesgo, factor
     ) if evaluacion.get("valido") else {}
-    stats, grafico_html = _stats_y_grafico(ticker, cache, evaluacion)
+
     return render_template("swing.html",
         contexto_mercado = contexto,
         ticker           = ticker,
@@ -225,8 +241,20 @@ def panel():
                     error            = f"Error en backtest: {e}",
                 )
 
-        # ── ANÁLISIS NORMAL ──────────────────────────────
-        evaluacion = _breakout.evaluar(ticker, cache)
+        # ── ANÁLISIS NORMAL — evalúa BREAKOUT y PULLBACK ────────────────
+        eval_breakout = _breakout.evaluar(ticker, cache)
+        eval_pullback = _pullback.evaluar(ticker, cache)
+
+        # Elegir la señal válida con mayor score (breakout tiene preferencia si empatan)
+        if eval_breakout.get("valido") and eval_pullback.get("valido"):
+            evaluacion = eval_breakout if eval_breakout.get("setup_score", 0) >= eval_pullback.get("setup_score", 0) else eval_pullback
+        elif eval_breakout.get("valido"):
+            evaluacion = eval_breakout
+        elif eval_pullback.get("valido"):
+            evaluacion = eval_pullback
+        else:
+            # Ninguno válido — mostrar el que más score tenga para dar contexto
+            evaluacion = eval_breakout if eval_breakout.get("setup_score", 0) >= eval_pullback.get("setup_score", 0) else eval_pullback
         sizing     = resumen_operacion(
             evaluacion.get("entrada", 0), evaluacion.get("stop", 0),
             evaluacion.get("objetivo", 0), capital,
@@ -249,6 +277,15 @@ def panel():
             setup_score      = evaluacion.get("setup_score", 0),
             motivos          = evaluacion.get("motivos", []),
             sizing           = sizing,
+            capital_total    = capital,
+            riesgo_pct       = riesgo,
+            acciones           = sizing.get("acciones", 0),
+            capital_invertido  = sizing.get("capital_invertido", 0),
+            riesgo_por_accion  = sizing.get("riesgo_por_accion", 0),
+            riesgo_operacion   = sizing.get("riesgo_operacion", 0),
+            beneficio_potencial= sizing.get("beneficio_potencial", 0),
+            precio_activacion  = evaluacion.get("precio_activacion"),
+            vcp                = evaluacion.get("vcp", False),
             modo             = "analisis",
             grafico_file     = grafico_html,
             **stats,
@@ -374,6 +411,7 @@ def scanner_api():
             señales = [s for s in señales if s.get("tipo", "").upper() == "BREAKOUT"]
         elif tipo == "pullbacks":
             señales = [s for s in señales if s.get("tipo", "").upper() == "PULLBACK"]
+        # "ambos" → no filtrar, devolver todos
 
         breakouts = sum(1 for s in señales if s.get("tipo", "").upper() == "BREAKOUT")
         pullbacks = sum(1 for s in señales if s.get("tipo", "").upper() == "PULLBACK")
@@ -401,3 +439,9 @@ def scanner_api():
 
     except Exception as e:
         return jsonify({"error": str(e), "resultados": [], "total": 0}), 500
+
+
+@swing_bp.route("/config", methods=["GET"])
+def config():
+    """Página de configuración del sistema Swing Trading."""
+    return render_template("config_swing.html")

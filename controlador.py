@@ -88,7 +88,7 @@ def guardar_pantallazo_controlador(data):
     header, encoded = imagen_base64.split(",", 1)
     imagen_bytes = base64.b64decode(encoded)
 
-    carpeta = "MiWeb\pantallazos"
+    carpeta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pantallazos")
     os.makedirs(carpeta, exist_ok=True)
 
     nombre = f"{ticker}_{int(time.time())}.png"

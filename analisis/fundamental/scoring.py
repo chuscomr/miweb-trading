@@ -87,36 +87,36 @@ def _evaluar_valoracion(d: dict) -> dict:
     per = d.get("per")
     if per is not None:
         max_pts += 40
-        if   per <= 0:    pts, txt = 0,  f"PER negativo ({per:.1f}) — pérdidas"
-        elif per <= 12:   pts, txt = 40, f"PER bajo ({per:.1f}) — barato"
-        elif per <= 18:   pts, txt = 35, f"PER razonable ({per:.1f})"
-        elif per <= 25:   pts, txt = 20, f"PER elevado ({per:.1f})"
-        elif per <= 35:   pts, txt = 10, f"PER caro ({per:.1f})"
-        else:             pts, txt =  0, f"PER muy caro ({per:.1f})"
+        if   per <= 0:    pts, ok_per, txt = 0,  False, f"PER negativo ({per:.1f}) — pérdidas"
+        elif per <= 12:   pts, ok_per, txt = 40, True,  f"PER bajo ({per:.1f}) — barato"
+        elif per <= 18:   pts, ok_per, txt = 35, True,  f"PER razonable ({per:.1f})"
+        elif per <= 25:   pts, ok_per, txt = 20, True,  f"PER elevado ({per:.1f})"
+        elif per <= 35:   pts, ok_per, txt = 10, False, f"PER caro ({per:.1f})"
+        else:             pts, ok_per, txt =  0, False, f"PER muy caro ({per:.1f})"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_per))
 
     # EV/EBITDA
     ev = d.get("ev_ebitda")
     if ev is not None:
         max_pts += 30
-        if   ev <= 6:   pts, txt = 30, f"EV/EBITDA muy bajo ({ev:.1f})"
-        elif ev <= 10:  pts, txt = 25, f"EV/EBITDA razonable ({ev:.1f})"
-        elif ev <= 15:  pts, txt = 15, f"EV/EBITDA elevado ({ev:.1f})"
-        else:           pts, txt =  5, f"EV/EBITDA caro ({ev:.1f})"
+        if   ev <= 6:   pts, ok_ev, txt = 30, True,  f"EV/EBITDA muy bajo ({ev:.1f})"
+        elif ev <= 10:  pts, ok_ev, txt = 25, True,  f"EV/EBITDA razonable ({ev:.1f})"
+        elif ev <= 15:  pts, ok_ev, txt = 15, True,  f"EV/EBITDA elevado ({ev:.1f})"
+        else:           pts, ok_ev, txt =  5, False, f"EV/EBITDA caro ({ev:.1f})"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_ev))
 
     # P/Ventas
     pvs = d.get("precio_ventas")
     if pvs is not None:
         max_pts += 30
-        if   pvs <= 1.0:  pts, txt = 30, f"P/Ventas muy bajo ({pvs:.1f})"
-        elif pvs <= 2.5:  pts, txt = 20, f"P/Ventas razonable ({pvs:.1f})"
-        elif pvs <= 5.0:  pts, txt = 10, f"P/Ventas elevado ({pvs:.1f})"
-        else:             pts, txt =  0, f"P/Ventas caro ({pvs:.1f})"
+        if   pvs <= 1.0:  pts, ok_pvs, txt = 30, True,  f"P/Ventas muy bajo ({pvs:.1f})"
+        elif pvs <= 2.5:  pts, ok_pvs, txt = 20, True,  f"P/Ventas razonable ({pvs:.1f})"
+        elif pvs <= 5.0:  pts, ok_pvs, txt = 10, False, f"P/Ventas elevado ({pvs:.1f})"
+        else:             pts, ok_pvs, txt =  0, False, f"P/Ventas caro ({pvs:.1f})"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_pvs))
 
     return _cat(puntos, max_pts, detalles, "Valoración")
 
@@ -130,35 +130,35 @@ def _evaluar_rentabilidad(d: dict) -> dict:
     roe = d.get("roe")
     if roe is not None:
         max_pts += 40
-        if   roe >= 20:  pts, txt = 40, f"ROE excelente ({roe:.1f}%)"
-        elif roe >= 12:  pts, txt = 30, f"ROE bueno ({roe:.1f}%)"
-        elif roe >= 5:   pts, txt = 15, f"ROE moderado ({roe:.1f}%)"
-        else:            pts, txt =  0, f"ROE bajo ({roe:.1f}%)"
+        if   roe >= 20:  pts, ok_roe, txt = 40, True,  f"ROE excelente ({roe:.1f}%)"
+        elif roe >= 12:  pts, ok_roe, txt = 30, True,  f"ROE bueno ({roe:.1f}%)"
+        elif roe >= 5:   pts, ok_roe, txt = 15, False, f"ROE moderado ({roe:.1f}%)"
+        else:            pts, ok_roe, txt =  0, False, f"ROE bajo ({roe:.1f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_roe))
 
     # Margen neto
     mn = d.get("margen_neto")
     if mn is not None:
         max_pts += 35
-        if   mn >= 20:  pts, txt = 35, f"Margen neto excelente ({mn:.1f}%)"
-        elif mn >= 10:  pts, txt = 25, f"Margen neto bueno ({mn:.1f}%)"
-        elif mn >= 5:   pts, txt = 15, f"Margen neto moderado ({mn:.1f}%)"
-        elif mn >= 0:   pts, txt =  5, f"Margen neto bajo ({mn:.1f}%)"
-        else:           pts, txt =  0, f"Pérdidas ({mn:.1f}%)"
+        if   mn >= 20:  pts, ok_mn, txt = 35, True,  f"Margen neto excelente ({mn:.1f}%)"
+        elif mn >= 10:  pts, ok_mn, txt = 25, True,  f"Margen neto bueno ({mn:.1f}%)"
+        elif mn >= 5:   pts, ok_mn, txt = 15, True,  f"Margen neto moderado ({mn:.1f}%)"
+        elif mn >= 0:   pts, ok_mn, txt =  5, False, f"Margen neto bajo ({mn:.1f}%)"
+        else:           pts, ok_mn, txt =  0, False, f"Pérdidas ({mn:.1f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_mn))
 
     # ROA
     roa = d.get("roa")
     if roa is not None:
         max_pts += 25
-        if   roa >= 10:  pts, txt = 25, f"ROA excelente ({roa:.1f}%)"
-        elif roa >= 5:   pts, txt = 18, f"ROA bueno ({roa:.1f}%)"
-        elif roa >= 2:   pts, txt = 10, f"ROA moderado ({roa:.1f}%)"
-        else:            pts, txt =  3, f"ROA bajo ({roa:.1f}%)"
+        if   roa >= 10:  pts, ok_roa, txt = 25, True,  f"ROA excelente ({roa:.1f}%)"
+        elif roa >= 5:   pts, ok_roa, txt = 18, True,  f"ROA bueno ({roa:.1f}%)"
+        elif roa >= 2:   pts, ok_roa, txt = 10, False, f"ROA moderado ({roa:.1f}%)"
+        else:            pts, ok_roa, txt =  3, False, f"ROA bajo ({roa:.1f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_roa))
 
     return _cat(puntos, max_pts, detalles, "Rentabilidad")
 
@@ -172,25 +172,25 @@ def _evaluar_crecimiento(d: dict) -> dict:
     bpa_g = d.get("crecimiento_bpa")
     if bpa_g is not None:
         max_pts += 60
-        if   bpa_g >= 20:  pts, txt = 60, f"Crecimiento BPA excelente ({bpa_g:.1f}%)"
-        elif bpa_g >= 10:  pts, txt = 45, f"Crecimiento BPA bueno ({bpa_g:.1f}%)"
-        elif bpa_g >= 5:   pts, txt = 30, f"Crecimiento BPA moderado ({bpa_g:.1f}%)"
-        elif bpa_g >= 0:   pts, txt = 15, f"Crecimiento BPA bajo ({bpa_g:.1f}%)"
-        else:              pts, txt =  0, f"BPA decreciendo ({bpa_g:.1f}%)"
+        if   bpa_g >= 20:  pts, ok_bpa, txt = 60, True,  f"Crecimiento BPA excelente ({bpa_g:.1f}%)"
+        elif bpa_g >= 10:  pts, ok_bpa, txt = 45, True,  f"Crecimiento BPA bueno ({bpa_g:.1f}%)"
+        elif bpa_g >= 5:   pts, ok_bpa, txt = 30, True,  f"Crecimiento BPA moderado ({bpa_g:.1f}%)"
+        elif bpa_g >= 0:   pts, ok_bpa, txt = 15, False, f"Crecimiento BPA bajo ({bpa_g:.1f}%)"
+        else:              pts, ok_bpa, txt =  0, False, f"BPA decreciendo ({bpa_g:.1f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_bpa))
 
     # Crecimiento ingresos
     ing_g = d.get("crecimiento_ingresos")
     if ing_g is not None:
         max_pts += 40
-        if   ing_g >= 15:  pts, txt = 40, f"Ingresos creciendo fuerte ({ing_g:.1f}%)"
-        elif ing_g >= 8:   pts, txt = 30, f"Ingresos creciendo bien ({ing_g:.1f}%)"
-        elif ing_g >= 3:   pts, txt = 15, f"Ingresos creciendo ({ing_g:.1f}%)"
-        elif ing_g >= 0:   pts, txt =  5, f"Ingresos estables ({ing_g:.1f}%)"
-        else:              pts, txt =  0, f"Ingresos cayendo ({ing_g:.1f}%)"
+        if   ing_g >= 15:  pts, ok_ing, txt = 40, True,  f"Ingresos creciendo fuerte ({ing_g:.1f}%)"
+        elif ing_g >= 8:   pts, ok_ing, txt = 30, True,  f"Ingresos creciendo bien ({ing_g:.1f}%)"
+        elif ing_g >= 3:   pts, ok_ing, txt = 15, True,  f"Ingresos creciendo ({ing_g:.1f}%)"
+        elif ing_g >= 0:   pts, ok_ing, txt =  5, False, f"Ingresos estables ({ing_g:.1f}%)"
+        else:              pts, ok_ing, txt =  0, False, f"Ingresos cayendo ({ing_g:.1f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_ing))
 
     return _cat(puntos, max_pts, detalles, "Crecimiento")
 
@@ -200,28 +200,28 @@ def _evaluar_balance(d: dict) -> dict:
     max_pts = 0
     detalles = []
 
-    # Deuda/Equity (menor = mejor)
+    # Deuda/Equity (menor = mejor) — ok solo si es razonable o mejor
     de = d.get("deuda_equity")
     if de is not None:
         max_pts += 60
-        if   de <= 30:   pts, txt = 60, f"Deuda/Equity muy bajo ({de:.0f}%)"
-        elif de <= 60:   pts, txt = 45, f"Deuda/Equity razonable ({de:.0f}%)"
-        elif de <= 100:  pts, txt = 25, f"Deuda/Equity elevado ({de:.0f}%)"
-        elif de <= 200:  pts, txt = 10, f"Deuda/Equity alto ({de:.0f}%)"
-        else:            pts, txt =  0, f"Deuda/Equity muy alto ({de:.0f}%)"
+        if   de <= 30:   pts, ok_de, txt = 60, True,  f"Deuda/Equity muy bajo ({de:.0f}%)"
+        elif de <= 60:   pts, ok_de, txt = 45, True,  f"Deuda/Equity razonable ({de:.0f}%)"
+        elif de <= 100:  pts, ok_de, txt = 25, False, f"Deuda/Equity elevado ({de:.0f}%)"
+        elif de <= 200:  pts, ok_de, txt = 10, False, f"Deuda/Equity alto ({de:.0f}%)"
+        else:            pts, ok_de, txt =  0, False, f"Deuda/Equity muy alto ({de:.0f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_de))
 
-    # Ratio corriente (liquidez)
+    # Ratio corriente (liquidez) — ok solo si >= 1.5
     rc = d.get("ratio_corriente")
     if rc is not None:
         max_pts += 40
-        if   rc >= 2.0:  pts, txt = 40, f"Liquidez excelente ({rc:.1f}x)"
-        elif rc >= 1.5:  pts, txt = 30, f"Liquidez buena ({rc:.1f}x)"
-        elif rc >= 1.0:  pts, txt = 15, f"Liquidez ajustada ({rc:.1f}x)"
-        else:            pts, txt =  0, f"Liquidez preocupante ({rc:.1f}x)"
+        if   rc >= 2.0:  pts, ok_rc, txt = 40, True,  f"Liquidez excelente ({rc:.1f}x)"
+        elif rc >= 1.5:  pts, ok_rc, txt = 30, True,  f"Liquidez buena ({rc:.1f}x)"
+        elif rc >= 1.0:  pts, ok_rc, txt = 15, False, f"Liquidez ajustada ({rc:.1f}x)"
+        else:            pts, ok_rc, txt =  0, False, f"Liquidez preocupante ({rc:.1f}x)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_rc))
 
     return _cat(puntos, max_pts, detalles, "Balance")
 
@@ -236,22 +236,22 @@ def _evaluar_dividendo(d: dict) -> dict:
 
     if div is not None:
         max_pts += 60
-        if   div >= 5.0:  pts, txt = 60, f"Dividendo alto ({div:.1f}%)"
-        elif div >= 3.0:  pts, txt = 45, f"Dividendo atractivo ({div:.1f}%)"
-        elif div >= 1.5:  pts, txt = 25, f"Dividendo moderado ({div:.1f}%)"
-        elif div > 0:     pts, txt = 10, f"Dividendo bajo ({div:.1f}%)"
-        else:             pts, txt =  0, "Sin dividendo"
+        if   div >= 5.0:  pts, ok_div, txt = 60, True,  f"Dividendo alto ({div:.1f}%)"
+        elif div >= 3.0:  pts, ok_div, txt = 45, True,  f"Dividendo atractivo ({div:.1f}%)"
+        elif div >= 1.5:  pts, ok_div, txt = 25, True,  f"Dividendo moderado ({div:.1f}%)"
+        elif div > 0:     pts, ok_div, txt = 10, False, f"Dividendo bajo ({div:.1f}%)"
+        else:             pts, ok_div, txt =  0, False, "Sin dividendo"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_div))
 
     if payout is not None and div and div > 0:
         max_pts += 40
-        if   payout <= 50:   pts, txt = 40, f"Payout sostenible ({payout:.0f}%)"
-        elif payout <= 70:   pts, txt = 25, f"Payout razonable ({payout:.0f}%)"
-        elif payout <= 90:   pts, txt = 10, f"Payout elevado ({payout:.0f}%)"
-        else:                pts, txt =  0, f"Payout insostenible ({payout:.0f}%)"
+        if   payout <= 50:   pts, ok_pay, txt = 40, True,  f"Payout sostenible ({payout:.0f}%)"
+        elif payout <= 70:   pts, ok_pay, txt = 25, True,  f"Payout razonable ({payout:.0f}%)"
+        elif payout <= 90:   pts, ok_pay, txt = 10, False, f"Payout elevado ({payout:.0f}%)"
+        else:                pts, ok_pay, txt =  0, False, f"Payout insostenible ({payout:.0f}%)"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_pay))
 
     return _cat(puntos, max_pts, detalles, "Dividendo")
 
@@ -272,19 +272,20 @@ def _evaluar_analistas(d: dict) -> dict:
         "sell": 0, "strong_sell": 0,
     }
     pts = mapa.get(rec, 10)
+    ok_rec = rec in ("strong_buy", "buy", "outperform")
     txt = f"Analistas: {rec or 'N/A'}"
     puntos += pts
-    detalles.append(txt)
+    detalles.append((txt, ok_rec))
 
     # Upside vs precio objetivo
     if precio_obj and precio_act and precio_act > 0:
         upside = ((precio_obj - precio_act) / precio_act) * 100
-        if   upside >= 20:  pts, txt = 30, f"Upside {upside:.1f}% vs precio objetivo"
-        elif upside >= 10:  pts, txt = 20, f"Upside {upside:.1f}%"
-        elif upside >= 0:   pts, txt = 10, f"Upside limitado ({upside:.1f}%)"
-        else:               pts, txt =  0, f"Downside {upside:.1f}%"
+        if   upside >= 20:  pts, ok_up, txt = 30, True,  f"Upside {upside:.1f}% vs precio objetivo"
+        elif upside >= 10:  pts, ok_up, txt = 20, True,  f"Upside {upside:.1f}%"
+        elif upside >= 0:   pts, ok_up, txt = 10, False, f"Upside limitado ({upside:.1f}%)"
+        else:               pts, ok_up, txt =  0, False, f"Downside {upside:.1f}%"
         puntos += pts
-        detalles.append(txt)
+        detalles.append((txt, ok_up))
     else:
         max_pts = 30  # ajustar si no hay precio objetivo
 
@@ -302,7 +303,9 @@ def _cat(puntos: int, max_pts: int, detalles: list, nombre: str) -> dict:
         resumen = f"{nombre}: sin datos"
     else:
         norm    = round(max(0, min(100, (puntos / max_pts) * 100)), 1)
-        resumen = f"{nombre}: {detalles[0]}" if detalles else f"{nombre}: evaluado"
+        # detalles es lista de tuplas (txt, ok) — extraer texto para resumen
+        primer_txt = detalles[0][0] if detalles and isinstance(detalles[0], tuple) else (detalles[0] if detalles else "evaluado")
+        resumen = f"{nombre}: {primer_txt}"
 
     return {
         "nombre":            nombre,

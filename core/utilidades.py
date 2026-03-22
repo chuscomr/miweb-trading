@@ -144,7 +144,7 @@ def respuesta_invalida(
 ) -> dict:
     """
     Construye respuesta de señal inválida con estructura estándar.
-    Reemplaza los dicts inline en logica_breakout y logica_pullback.
+    Utilidad compartida para construir respuestas estándar de estrategia.
 
     Args:
         ticker:       Ticker del valor

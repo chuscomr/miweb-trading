@@ -412,7 +412,9 @@ def _detectar_patrones_chartistas(df, n=200):
                 consol = closes[fin_asta:]
                 rango_consol = (max(consol) - min(consol)) / min(consol) * 100
                 if rango_consol <= 4:
-                    objetivo = round(float(precio_actual + (closes[fin_asta] - closes[inicio_asta])), 2)
+                    # Proyectar amplitud del asta HACIA ABAJO desde precio actual
+                    amplitud_asta = closes[inicio_asta] - closes[fin_asta]  # positivo
+                    objetivo = round(float(precio_actual - amplitud_asta), 2)
                     confirmado = precio_actual < min(consol[:-1]) if len(consol) > 1 else False
                     patrones.append({
                         "tipo": "bandera_bajista",
@@ -452,6 +454,197 @@ def _detectar_patrones_chartistas(df, n=200):
                 patrones_validos.append(pat)
 
     return patrones_validos
+
+
+def _detectar_contexto_trading(df, soportes, resistencias, patrones_velas) -> dict:
+    """
+    Detecta si el precio está en un setup de Breakout, Pullback o Reversión.
+    Devuelve un dict con tipo_setup, madurez, descripcion y frases de contexto.
+    """
+    try:
+        import math
+        from core.indicadores import calcular_rsi, calcular_atr
+
+        close  = df["Close"]
+        precio = float(close.iloc[-1])
+
+        # ── Indicadores base ──────────────────────────────────
+        mm20_s = close.rolling(20).mean()
+        mm50_s = close.rolling(50).mean()
+        mm200_s= close.rolling(200).mean()
+        rsi_s  = calcular_rsi(close, 14)
+        vol_s  = df["Volume"]
+
+        mm20  = float(mm20_s.iloc[-1])  if not mm20_s.isna().iloc[-1]  else None
+        mm50  = float(mm50_s.iloc[-1])  if not mm50_s.isna().iloc[-1]  else None
+        mm200 = float(mm200_s.iloc[-1]) if not mm200_s.isna().iloc[-1] else None
+        rsi   = float(rsi_s.dropna().iloc[-1]) if not rsi_s.dropna().empty else None
+
+        max_52  = float(close.tail(252).max())
+        dist_max_pct = ((precio - max_52) / max_52) * 100  # negativo = por debajo
+
+        # Retroceso desde máximo reciente 60 días
+        max_60  = float(close.tail(60).max())
+        retroceso_pct = ((max_60 - precio) / max_60) * 100
+
+        # Volumen: ¿creciente o decreciente en los últimos 5 días?
+        vol_media20 = float(vol_s.rolling(20).mean().iloc[-1])
+        vol_5d      = float(vol_s.tail(5).mean())
+        vol_ratio   = vol_5d / vol_media20 if vol_media20 > 0 else 1.0
+        vol_decreciente = vol_s.tail(5).is_monotonic_decreasing
+
+        # Consolidación: rango de las últimas 10 velas
+        rango_10 = (float(df["High"].tail(10).max()) - float(df["Low"].tail(10).min()))
+        rango_10_pct = rango_10 / precio * 100
+
+        # Pendiente MM20
+        mm20_serie = mm20_s.dropna()
+        mm20_pendiente = (float(mm20_serie.iloc[-1]) >= float(mm20_serie.iloc[-4])
+                         if len(mm20_serie) >= 4 else True)
+
+        # Patrón de vela de giro alcista en últimas 5 velas
+        PATRONES_GIRO = {"Martillo","Envolvente Alcista","Estrella de Mañana",
+                         "Piercing Line","Harami Alcista"}
+        vela_giro = any(p.get("tipo") == "alcista" and p.get("nombre") in PATRONES_GIRO
+                       for p in patrones_velas)
+
+        # Soporte más cercano por debajo
+        sop_cercano = None
+        for s in sorted(soportes, key=lambda x: abs(x["precio"] - precio)):
+            if s["precio"] < precio:
+                sop_cercano = s
+                break
+
+        # Resistencia más cercana por encima
+        res_cercana = None
+        for r in sorted(resistencias, key=lambda x: abs(x["precio"] - precio)):
+            if r["precio"] > precio:
+                res_cercana = r
+                break
+
+        dist_soporte   = ((precio - sop_cercano["precio"]) / precio * 100) if sop_cercano else None
+        dist_resistencia = ((res_cercana["precio"] - precio) / precio * 100) if res_cercana else None
+
+        # ── SCORING DE SETUPS ─────────────────────────────────
+        score_breakout  = 0
+        score_pullback  = 0
+        score_reversion = 0
+        frases = []
+
+        # ─ BREAKOUT ─
+        if dist_max_pct >= -3.0:
+            score_breakout += 2
+            frases.append(f"Precio cerca del máximo anual ({dist_max_pct:.1f}%)")
+        if rango_10_pct <= 5.0:
+            score_breakout += 2
+            frases.append(f"Consolidación estrecha ({rango_10_pct:.1f}% rango 10d)")
+        if vol_decreciente:
+            score_breakout += 1
+            frases.append("Volumen decreciente en consolidación (VCP)")
+        if rsi and 55 <= rsi <= 70:
+            score_breakout += 1
+            frases.append(f"RSI en zona de momentum ({rsi:.0f})")
+        if mm20 and mm50 and mm20 > mm50:
+            score_breakout += 1
+            frases.append("MM20 > MM50 — estructura alcista")
+        if res_cercana and dist_resistencia and dist_resistencia <= 3.0:
+            score_breakout += 2
+            frases.append(f"Resistencia a {dist_resistencia:.1f}% — zona clave próxima")
+
+        # ─ PULLBACK ─
+        if 5.0 <= retroceso_pct <= 12.0:
+            score_pullback += 2
+            frases.append(f"Retroceso saludable {retroceso_pct:.1f}% desde máximos")
+        if rsi and rsi <= 50:
+            score_pullback += 2
+            frases.append(f"RSI en sobreventa moderada ({rsi:.0f})")
+        if mm50 and precio > mm50:
+            score_pullback += 1
+            frases.append(f"Por encima de MM50 ({mm50:.2f}€) — tendencia intacta")
+        if mm20_pendiente:
+            score_pullback += 1
+            frases.append("MM20 con pendiente positiva")
+        if sop_cercano and dist_soporte and 2.0 <= dist_soporte <= 8.0:
+            score_pullback += 2
+            frases.append(f"Soporte cercano a {dist_soporte:.1f}% — zona de rebote")
+        if vela_giro:
+            score_pullback += 2
+            frases.append("Patrón de vela de giro alcista detectado")
+
+        # ─ REVERSIÓN ─
+        if retroceso_pct > 15.0:
+            score_reversion += 2
+            frases.append(f"⚠️ Caída del {retroceso_pct:.1f}% — posible cambio de tendencia")
+        if mm50 and precio < mm50:
+            score_reversion += 2
+            frases.append(f"⚠️ Por debajo de MM50 ({mm50:.2f}€) — estructura deteriorada")
+        if rsi and rsi < 30:
+            score_reversion += 1
+            frases.append(f"⚠️ RSI en sobreventa extrema ({rsi:.0f})")
+        if vol_ratio > 1.5:
+            score_reversion += 1
+            frases.append(f"⚠️ Volumen de venta elevado ({vol_ratio:.1f}x media)")
+        if mm200 and precio < mm200:
+            score_reversion += 2
+            frases.append(f"⚠️ Por debajo de MM200 — tendencia bajista macro")
+
+        # ── DECISIÓN ─────────────────────────────────────────
+        max_score = max(score_breakout, score_pullback, score_reversion)
+
+        if max_score == 0:
+            tipo    = "neutral"
+            madurez = "sin_setup"
+            titulo  = "Sin setup claro"
+            color   = "#64748b"
+        elif score_reversion >= 4 and score_reversion >= score_pullback:
+            tipo    = "reversion"
+            madurez = "alerta" if score_reversion >= 5 else "formandose"
+            titulo  = "Posible reversión bajista"
+            color   = "#ef4444"
+        elif score_breakout > score_pullback:
+            if score_breakout >= 7:
+                madurez, titulo = "listo",       "Breakout casi listo"
+                color = "#22c55e"
+            elif score_breakout >= 4:
+                madurez, titulo = "formandose",  "Breakout en formación"
+                color = "#f59e0b"
+            else:
+                madurez, titulo = "incipiente",  "Posible breakout"
+                color = "#94a3b8"
+            tipo = "breakout"
+        else:
+            if score_pullback >= 7:
+                madurez, titulo = "listo", "Pullback en vigilancia"
+                color = "#3b82f6"
+            elif score_pullback >= 4:
+                madurez, titulo = "formandose", "Pullback en desarrollo"
+                color = "#f59e0b"
+            else:
+                madurez, titulo = "incipiente", "Posible pullback"
+                color = "#94a3b8"
+            tipo = "pullback"
+
+        # Limitar frases a las más relevantes (máx 5)
+        frases_unicas = list(dict.fromkeys(frases))[:5]
+
+        return {
+            "tipo":         tipo,
+            "titulo":       titulo,
+            "madurez":      madurez,
+            "color":        color,
+            "score":        max_score,
+            "frases":       frases_unicas,
+            "scores": {
+                "breakout":  score_breakout,
+                "pullback":  score_pullback,
+                "reversion": score_reversion,
+            }
+        }
+
+    except Exception as e:
+        return {"tipo": "neutral", "titulo": "Sin datos suficientes",
+                "madurez": "sin_setup", "color": "#64748b",
+                "frases": [], "scores": {}}
 
 
 def _calcular_fibonacci(df, n=100):
@@ -1065,6 +1258,41 @@ def api_datos():
         except Exception as e:
             print(f"Patrones chartistas error: {e}")
 
+    # ── Contexto de trading ──
+    contexto_trading = {}
+    try:
+        contexto_trading = _detectar_contexto_trading(
+            df, soportes_json, resistencias_json, patrones_json
+        )
+    except Exception:
+        pass
+
+    # ── Contexto del patrón (para patrones de vela) ──
+    contexto_patron = {}
+    try:
+        from estrategias.swing.pullback import _evaluar_contexto_patron
+        closes = df["Close"].values
+        lows   = df["Low"].values
+        mm50_s = pd.Series(closes).rolling(50).mean()
+        mm20_s = pd.Series(closes).rolling(20).mean()
+        rsi_s  = pd.Series(closes).diff()
+        avg_g  = rsi_s.clip(lower=0).ewm(com=13, adjust=False).mean()
+        avg_p  = (-rsi_s).clip(lower=0).ewm(com=13, adjust=False).mean()
+        rsi_val = float(100 - 100 / (1 + avg_g.iloc[-1] / avg_p.iloc[-1])) if float(avg_p.iloc[-1]) > 0 else 50.0
+        precio  = float(closes[-1])
+        mm50_v  = float(mm50_s.iloc[-1]) if not pd.isna(mm50_s.iloc[-1]) else None
+        mm20_v  = float(mm20_s.iloc[-1]) if not pd.isna(mm20_s.iloc[-1]) else None
+        mm20_ant = float(mm20_s.iloc[-6]) if len(mm20_s) >= 6 and not pd.isna(mm20_s.iloc[-6]) else None
+        min30   = float(pd.Series(lows).tail(30).min())
+
+        soporte_ok   = 2.0 <= ((precio - min30) / precio * 100) <= 8.0
+        rsi_ok       = 38 <= rsi_val <= 57
+        estructura_ok = (mm50_v is not None and precio > mm50_v and
+                         mm20_v is not None and mm20_ant is not None and mm20_v >= mm20_ant)
+        contexto_patron = _evaluar_contexto_patron(soporte_ok, rsi_ok, estructura_ok)
+    except Exception as e:
+        print(f"[CONTEXTO_PATRON ERROR] {e}")
+
     return jsonify({
         "data":                data_json,
         "soportes":            soportes_json,
@@ -1074,6 +1302,8 @@ def api_datos():
         "resumenTecnico":      resumen,
         "fibonacci":           fibonacci_json,
         "patrones_chartistas": patrones_chartistas_json,
+        "contextoTrading":     contexto_trading,
+        "contexto_patron":     contexto_patron,
     })
 
 

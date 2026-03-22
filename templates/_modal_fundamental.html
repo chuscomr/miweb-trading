@@ -192,12 +192,19 @@
         </div>
         {% for detalle in cat.detalles %}
         <div style="font-size:0.72rem;color:#64748b;padding-left:4px;">
-          {% if 'bajo' in detalle.lower() or 'cayendo' in detalle.lower() or 'inconsist' in detalle.lower() or 'negat' in detalle.lower() or 'débil' in detalle.lower() %}
-            <span style="color:#f06060;">✗</span>
+          {% if detalle is iterable and detalle is not string %}
+            {% set txt = detalle[0] %}
+            {% set ok  = detalle[1] %}
           {% else %}
-            <span style="color:#4ade80;">✓</span>
+            {% set txt = detalle %}
+            {% set ok  = 'bajo' not in detalle.lower() and 'cayendo' not in detalle.lower() %}
           {% endif %}
-          {{ detalle }}
+          {% if ok %}
+            <span style="color:#4ade80;">✓</span>
+          {% else %}
+            <span style="color:#f06060;">✗</span>
+          {% endif %}
+          {{ txt }}
         </div>
         {% endfor %}
       </div>

@@ -1200,7 +1200,14 @@
                 <strong>Tipo de entrada:</strong> {{ tipo_entrada | default(tipo_estrategia | default("N/A")) }}
             </div>
             <div class="plan-item">
-                <strong>Entrada recomendada:</strong> {{ "%.2f"|format(entrada | default(0)) }} €
+                <strong>Precio actual:</strong> {{ "%.2f"|format(precio_actual | default(0)) }} €
+            </div>
+            <div class="plan-item" style="background:#f0f9ff; border-left:3px solid #3b82f6; padding:8px 12px; border-radius:4px;">
+                <strong>Entrada (trigger):</strong>
+                <span style="font-size:1.1em; font-weight:700; color:#1d4ed8;">
+                    {{ "%.2f"|format(trigger | default(entrada | default(0))) }} €
+                </span>
+                <br><small style="color:#1e40af;">{{ trigger_tipo | default("Máximo sesión anterior") }} + 0.1% — Coloca Buy Stop en tu broker</small>
             </div>
             <div class="plan-item">
                 <strong>Stop loss técnico:</strong> {{ "%.2f"|format(stop | default(0)) }} €

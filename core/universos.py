@@ -9,13 +9,13 @@
 # ─────────────────────────────────────────────────────────────
 
 IBEX35 = [
-    "ACS.MC", "AENA.MC", "AMS.MC", "ANA.MC", "BBVA.MC",
-    "CABK.MC", "ELE.MC", "FER.MC", "GRF.MC", "IBE.MC",
-    "IAG.MC", "IDR.MC", "ITX.MC", "MAP.MC", "MRL.MC",
-    "NTGY.MC", "RED.MC", "REP.MC", "ROVI.MC", "SAB.MC",
+    "ACX.MC", "ACS.MC", "AENA.MC", "AMS.MC", "ANA.MC",
+    "ANE.MC", "BBVA.MC", "BKT.MC", "CABK.MC", "CLNX.MC",
+    "COL.MC", "ELE.MC", "ENG.MC", "FCC.MC", "FER.MC",
+    "GRF.MC", "IAG.MC", "IBE.MC", "IDR.MC", "ITX.MC",
+    "LOG.MC", "MAP.MC", "MRL.MC", "MTS.MC", "NTGY.MC",
+    "PUIG.MC", "RED.MC", "REP.MC", "ROVI.MC", "SAB.MC",
     "SAN.MC", "SCYR.MC", "SLR.MC", "TEF.MC", "UNI.MC",
-    "CLNX.MC", "LOG.MC", "ACX.MC", "BKT.MC", "COL.MC",
-    "ANE.MC", "ENG.MC", "FCC.MC", "PUIG.MC", "MTS.MC",
 ]
 
 NOMBRES_IBEX = {

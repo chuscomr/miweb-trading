@@ -754,7 +754,7 @@
                         <span class="indicador-name">Patrones Chartistas</span>
                     </div>
                     
-                    <div class="indicador-option" data-value="DIVERGENCIAS" checked>
+                    <div class="indicador-option" data-value="DIVERGENCIAS">
                         <div class="indicador-checkbox"></div>
                         <span class="indicador-name">Divergencias</span>
                     </div>
@@ -779,11 +779,11 @@
                 <label class="indicator-label"><input type="checkbox" value="BB"> BB</label>
                 <label class="indicator-label"><input type="checkbox" value="ATR"> ATR</label>
                 <label class="indicator-label"><input type="checkbox" value="KELTNER"> KELTNER</label>
-                <label class="indicator-label"><input type="checkbox" value="SR" checked> SR</label>
+                <label class="indicator-label"><input type="checkbox" value="SR"> SR</label>
                 <label class="indicator-label"><input type="checkbox" value="FIBO"> FIBO</label>
                 <label class="indicator-label"><input type="checkbox" value="PIVOT"> PIVOT</label>
-                <label class="indicator-label"><input type="checkbox" value="PATRONES" checked> PATRONES</label>
-                <label class="indicator-label"><input type="checkbox" value="DIVERGENCIAS" checked> DIVERGENCIAS</label>
+                <label class="indicator-label"><input type="checkbox" value="PATRONES"> PATRONES</label>
+                <label class="indicator-label"><input type="checkbox" value="DIVERGENCIAS"> DIVERGENCIAS</label>
                 <label class="indicator-label"><input type="checkbox" value="VOLUMEN"> VOLUMEN</label>
                 <label class="indicator-label"><input type="checkbox" value="OBV"> OBV</label>
                 <label class="indicator-label"><input type="checkbox" value="VWAP"> VWAP</label>
@@ -944,6 +944,14 @@
                 </div>
             </div>
 
+            <!-- CONTEXTO DE TRADING -->
+            <div class="info-card" style="border-left: 5px solid #3b82f6; background:#f0f7ff;">
+                <h3 style="color:#1e3a5f; font-weight:800;">🧭 Contexto de Trading</h3>
+                <div class="info-content" id="contexto-trading">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando análisis...</p>
+                </div>
+            </div>
+
             <!-- SOPORTES -->
             <div class="info-card">
                 <h3>🟢 Soportes</h3>
@@ -960,19 +968,19 @@
                 </div>
             </div>
 
-            <!-- PATRONES DE VELAS -->
+            <!-- PATRONES CHARTISTAS -->
             <div class="info-card">
-                <h3>🕯️ Patrones</h3>
-                <div class="info-content" id="patrones">
-                    <p style="color: #94a3b8;">No implementado aún</p>
+                <h3>📊 Patrones Chartistas</h3>
+                <div class="info-content" id="patrones_chartistas">
+                    <p style="color: #94a3b8; font-size: 0.85em;">No detectados en ventana de 100 velas</p>
                 </div>
             </div>
 
-            <!-- DIVERGENCIAS -->
+            <!-- PATRONES DE VELAS -->
             <div class="info-card">
-                <h3>🔀 Divergencias</h3>
-                <div class="info-content" id="divergencias">
-                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando...</p>
+                <h3>🕯️ Patrones de Velas</h3>
+                <div class="info-content" id="patrones">
+                    <p style="color: #94a3b8;">No implementado aún</p>
                 </div>
             </div>
 
@@ -984,11 +992,11 @@
                 </div>
             </div>
 
-            <!-- PATRONES CHARTISTAS -->
+            <!-- DIVERGENCIAS -->
             <div class="info-card">
-                <h3>📊 Patrones Chartistas</h3>
-                <div class="info-content" id="patrones_chartistas">
-                    <p style="color: #94a3b8; font-size: 0.85em;">No detectados en ventana de 100 velas</p>
+                <h3>🔀 Divergencias</h3>
+                <div class="info-content" id="divergencias">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando...</p>
                 </div>
             </div>
         </div>
@@ -1718,8 +1726,8 @@
             }
         }
         
-        // Inicializar con valores por defecto (los que estaban checked)
-        const defaultIndicators = ['RSI', 'MACD', 'SR', 'PATRONES', 'VOLUMEN', 'OBV'];
+        // Inicializar sin ningún indicador seleccionado por defecto
+        const defaultIndicators = [];
         defaultIndicators.forEach(value => {
             selectedIndicadores.push(value);
             options.forEach(opt => {

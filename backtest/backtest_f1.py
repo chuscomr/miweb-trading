@@ -4,7 +4,152 @@
 # ══════════════════════════════════════════════════════════════
 
 import logging
+import datetime
+import pandas as pd
+
 logger = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────
+# FILTRO DE MERCADO — IBEX MM200 barra a barra
+# ─────────────────────────────────────────────────────────────
+
+def _cargar_ibex_mm200(periodo="5y"):
+    """
+    Descarga el IBEX35 para el filtro de mercado barra a barra.
+    Pipeline: yfinance → FMP → desactivado
+    EODHD rechaza tickers con '^', por eso se bypasea get_df.
+    Devuelve dict {fecha: {close, mm200, mm50}}.
+    """
+    df_ibex = None
+
+    # ── 1. yfinance (siempre disponible, gratuito) ────────
+    try:
+        import yfinance as yf
+        df_raw = yf.download("^IBEX", period=periodo, progress=False, auto_adjust=True)
+        if df_raw is None or df_raw.empty or len(df_raw) < 50:
+            raise ValueError("yfinance devolvió datos insuficientes para ^IBEX")
+        # Aplanar MultiIndex si yfinance lo genera
+        if isinstance(df_raw.columns, pd.MultiIndex):
+            df_raw.columns = df_raw.columns.get_level_values(0)
+        # Verificar que tiene columna Close
+        if "Close" not in df_raw.columns:
+            raise ValueError(f"Columnas disponibles: {list(df_raw.columns)}")
+        df_ibex = df_raw.copy()
+        logger.info(f"IBEX cargado via yfinance: {len(df_ibex)} barras")
+    except Exception as e:
+        logger.warning(f"yfinance IBEX falló: {e}")
+
+    # ── 2. yfinance con ticker alternativo ───────────────
+    if df_ibex is None:
+        try:
+            import yfinance as yf
+            # EWP es el ETF del IBEX35, muy correlacionado y más estable en yfinance
+            for ticker_alt in ["EWP", "SX5E=F"]:
+                df_raw = yf.download(ticker_alt, period=periodo, progress=False, auto_adjust=True)
+                if df_raw is not None and not df_raw.empty and len(df_raw) >= 50:
+                    if isinstance(df_raw.columns, pd.MultiIndex):
+                        df_raw.columns = df_raw.columns.get_level_values(0)
+                    if "Close" in df_raw.columns:
+                        df_ibex = df_raw.copy()
+                        logger.info(f"IBEX proxy cargado via {ticker_alt}: {len(df_ibex)} barras")
+                        break
+        except Exception as e:
+            logger.warning(f"yfinance proxy IBEX falló: {e}")
+
+    # ── 3. FMP (fallback para producción / Render) ────────
+    if df_ibex is None or df_ibex.empty:
+        try:
+            import os, requests
+            from datetime import datetime as _dt, timedelta
+            fmp_key = os.getenv("FMP_API_KEY")
+            if fmp_key:
+                # Calcular fecha inicio según periodo
+                anos = int(periodo.replace("y", "")) if "y" in periodo else 2
+                fecha_ini = (_dt.today() - timedelta(days=anos * 365)).strftime("%Y-%m-%d")
+                fecha_fin = _dt.today().strftime("%Y-%m-%d")
+                r = requests.get(
+                    "https://financialmodelingprep.com/api/v3/historical-price-full/%5EIBEX",
+                    params={"apikey": fmp_key, "from": fecha_ini, "to": fecha_fin},
+                    timeout=30,
+                )
+                if r.status_code == 200:
+                    hist = r.json().get("historical", [])
+                    if len(hist) >= 50:
+                        hist = sorted(hist, key=lambda x: x["date"])
+                        df_ibex = pd.DataFrame({
+                            "Close":  [float(h["close"])  for h in hist],
+                            "High":   [float(h.get("high",  h["close"])) for h in hist],
+                            "Low":    [float(h.get("low",   h["close"])) for h in hist],
+                            "Volume": [float(h.get("volume", 0)) for h in hist],
+                        }, index=pd.DatetimeIndex(
+                            [_dt.strptime(h["date"], "%Y-%m-%d") for h in hist]
+                        ))
+                        logger.info(f"IBEX cargado via FMP: {len(df_ibex)} barras")
+        except Exception as e:
+            logger.warning(f"FMP IBEX falló: {e}")
+
+    # ── Sin datos → filtro desactivado ───────────────────
+    if df_ibex is None or df_ibex.empty or len(df_ibex) < 50:
+        logger.warning("No se pudo cargar IBEX (yfinance ni FMP) — filtro desactivado")
+        return {}
+
+    df_ibex["MM200"] = df_ibex["Close"].rolling(200).mean()
+    df_ibex["MM50"]  = df_ibex["Close"].rolling(50).mean()
+
+    filtro = {}
+    for fecha, row in df_ibex.iterrows():
+        fecha_d = fecha.date() if hasattr(fecha, "date") else fecha
+        filtro[fecha_d] = {
+            "close": float(row["Close"]),
+            "mm200": float(row["MM200"]) if pd.notna(row["MM200"]) else None,
+            "mm50":  float(row["MM50"])  if pd.notna(row["MM50"])  else None,
+        }
+    logger.info(f"Filtro IBEX listo: {len(filtro)} barras")
+    return filtro
+
+
+def _estado_mercado(fecha, filtro_ibex):
+    """
+    Devuelve el estado del mercado en esa fecha:
+      'ALCISTA'    → IBEX > MM200              → breakout + pullback
+      'TRANSICION' → IBEX entre MM200 y -5%    → solo pullback
+      'BAJISTA'    → IBEX < MM200 * 0.95       → no operar
+
+    Sin datos → 'ALCISTA' (no bloquea).
+    """
+    if not filtro_ibex:
+        return "ALCISTA"
+
+    fecha_d = fecha.date() if hasattr(fecha, "date") else fecha
+    datos = filtro_ibex.get(fecha_d)
+    if datos is None:
+        for delta in range(1, 6):
+            fecha_ant = fecha_d - datetime.timedelta(days=delta)
+            datos = filtro_ibex.get(fecha_ant)
+            if datos:
+                break
+
+    if datos is None:
+        return "ALCISTA"
+
+    close = datos["close"]
+    mm200 = datos["mm200"]
+    mm50  = datos["mm50"]
+
+    # Usar MM50 como fallback si MM200 no disponible aún
+    referencia = mm200 if mm200 is not None else mm50
+    if referencia is None:
+        return "ALCISTA"
+
+    ratio = close / referencia
+
+    if ratio >= 1.0:
+        return "ALCISTA"       # IBEX sobre MM200 → todo permitido
+    elif ratio >= 0.95:
+        return "TRANSICION"    # IBEX hasta -5% bajo MM200 → solo pullback
+    else:
+        return "BAJISTA"       # IBEX > -5% bajo MM200 → no operar
 
 
 # ─────────────────────────────────────────────────────────────
@@ -78,55 +223,72 @@ def _evaluar_señal(precios, volumenes):
 
     precio   = precios[-1]
     mm20     = sum(precios[-20:]) / 20
+    mm50     = sum(precios[-50:]) / 50 if len(precios) >= 50 else None
     mm20_ant = sum(precios[-25:-5]) / 20
-    pendiente = mm20 - mm20_ant
+    pendiente_mm20 = mm20 - mm20_ant
+
+    # Mejora 1: máximo 52 días en vez de 20
+    max52    = max(precios[-52:]) if len(precios) >= 52 else max(precios[-20:])
     max20    = max(precios[-20:])
     min20    = min(precios[-20:])
     volatilidad = (max20 - min20) / min20 * 100 if min20 > 0 else 999
 
-    # Condiciones básicas
-    if precio <= mm20 or pendiente <= 0:
+    # OBLIGATORIO 1: precio sobre MM50 con pendiente MM20 positiva
+    # (Mejora 2: relajar estructura — precio>MM50 + MM20 pendiente alcista)
+    if mm50 is not None:
+        estructura_ok = precio > mm50 and pendiente_mm20 > 0
+    else:
+        estructura_ok = precio > mm20 and pendiente_mm20 > 0
+    if not estructura_ok:
         return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": 0}
 
     rsi = _calcular_rsi(precios)
     if rsi is None:
         return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": 0}
 
+    # OBLIGATORIO 2: RSI en rango momentum
+    if not (45 < rsi < 82):
+        return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": 0}
+
     if volatilidad > 10:
         return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": 0}
 
-    dist_mm  = abs(precio - mm20) / mm20 * 100
-    dist_max = (max20 - precio) / max20 * 100
+    dist_mm   = abs(precio - mm20) / mm20 * 100
+    # Mejora 1: distancia al máximo 52d (antes max20)
+    dist_max52 = (max52 - precio) / max52 * 100
 
     eval_vol = _evaluar_volumen(volumenes)
 
-    # Setup score (igual que el original)
-    setup_score = 0
-    if rsi >= 55:          setup_score += 1
-    if 60 <= rsi <= 68:    setup_score += 1
-    if dist_max <= 1:      setup_score += 1
-    if dist_mm <= 3:       setup_score += 1
-    if pendiente > 0:
-        setup_score += 1
-        setup_score += eval_vol.get("bonus_score", 0)
-        setup_score += eval_vol.get("penalizacion_score", 0)
-        setup_score = max(0, min(setup_score, 5))
+    # Volumen obligatorio
+    if not eval_vol["permitir_normal"] and not eval_vol["permitir_impulso"]:
+        return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": 0}
 
-    # Compra normal
-    if (45 < rsi < 70 and dist_mm <= 4 and dist_max <= 3
-            and setup_score >= 3 and eval_vol["permitir_normal"]):
+    # Score ponderado (sincronizado con breakout.py)
+    setup_score = 0.0
+    if dist_max52 <= 3.0:                        setup_score += 2.0
+    if precio > mm20:                            setup_score += 2.5
+    if 55 <= rsi <= 70:                          setup_score += 2.5
+    if volatilidad <= 6:                         setup_score += 3.0
+    if eval_vol.get("bonus_score", 0) > 0:       setup_score += 0.5
+    setup_score = round(min(setup_score, 10.0), 1)
+
+    SCORE_MINIMO = 5.0
+
+    if setup_score < SCORE_MINIMO:
+        return {"decision": "NO OPERAR", "entrada_tecnica": None, "setup_score": setup_score}
+
+    # Entrada calculada sobre máximo 52d
+    if setup_score >= 7.0 and eval_vol["permitir_impulso"]:
         return {
             "decision":        "COMPRA",
-            "entrada_tecnica": _calcular_entrada(precio, max20, dist_max),
+            "entrada_tecnica": _calcular_entrada(precio, max52, dist_max52),
             "setup_score":     setup_score,
         }
 
-    # Compra impulso
-    if (60 <= rsi <= 73 and dist_mm <= 6 and dist_max <= 3
-            and setup_score >= 4 and eval_vol["permitir_impulso"]):
+    if eval_vol["permitir_normal"]:
         return {
             "decision":        "COMPRA",
-            "entrada_tecnica": _calcular_entrada(precio, max20, dist_max),
+            "entrada_tecnica": _calcular_entrada(precio, max52, dist_max52),
             "setup_score":     setup_score,
         }
 
@@ -203,7 +365,8 @@ def _calcular_metricas(trades, equity_curve, capital_inicial, capital_final):
 def ejecutar_backtest_f1(precios, volumenes, fechas,
                          capital_inicial=10_000,
                          riesgo_pct_trade=0.01,
-                         highs=None, lows=None):
+                         highs=None, lows=None,
+                         filtro_ibex=None):
     if not precios or len(precios) < 50:
         return {"capital_inicial": capital_inicial, "capital_final": capital_inicial,
                 "trades": [], "equity_curve": [],
@@ -232,28 +395,60 @@ def ejecutar_backtest_f1(precios, volumenes, fechas,
         # ── Gestión posición abierta ─────────────────────
         if en_posicion and pos_actual:
             pos_actual["max_precio"] = max(pos_actual["max_precio"], high_hoy)
-            R_unit   = pos_actual["entrada"] - pos_actual["stop_inicial"]
-            R_actual = (high_hoy - pos_actual["entrada"]) / R_unit if R_unit > 0 else 0
-            atr      = pos_actual.get("atr")
+            R_unit     = pos_actual["entrada"] - pos_actual["stop_inicial"]
+            R_actual   = (high_hoy - pos_actual["entrada"]) / R_unit if R_unit > 0 else 0
+            atr        = pos_actual.get("atr")
+            R_unit_pos = R_unit  # alias legible
 
-            # Break-even en +1R (igual que position.py original)
+            # ── Break-even en +1R
             if R_actual >= 1.0 and pos_actual["stop_actual"] < pos_actual["entrada"]:
                 pos_actual["stop_actual"] = pos_actual["entrada"]
                 pos_actual["gestion"]     = "BE (+1R)"
 
-            # TARGET en +3R usando high (igual que position.py original)
-            R_unit_pos = pos_actual["entrada"] - pos_actual["stop_inicial"]
-            target     = pos_actual["entrada"] + 3.0 * R_unit_pos if R_unit_pos > 0 else None
+            # ── Salida parcial 50% en +2R (si aún no se ejecutó)
+            target_parcial = pos_actual["entrada"] + 2.0 * R_unit_pos if R_unit_pos > 0 else None
+            if (target_parcial
+                    and not pos_actual.get("parcial_ejecutada")
+                    and high_hoy >= target_parcial):
+                acc_parcial = max(1, pos_actual["acciones"] // 2)
+                beneficio_parcial = (target_parcial - pos_actual["entrada"]) * acc_parcial
+                capital    += beneficio_parcial
+                max_capital = max(max_capital, capital)
+                pos_actual["acciones"]         -= acc_parcial
+                pos_actual["parcial_ejecutada"] = True
+                pos_actual["gestion"]           = "PARCIAL 50%@2R"
+                # Mover stop a break-even tras salida parcial
+                if pos_actual["stop_actual"] < pos_actual["entrada"]:
+                    pos_actual["stop_actual"] = pos_actual["entrada"]
+                trades.append({
+                    "fecha_entrada": pos_actual["fecha_entrada"].strftime("%Y-%m-%d"),
+                    "fecha_salida":  fecha_hoy.strftime("%Y-%m-%d"),
+                    "entrada":       round(pos_actual["entrada"], 2),
+                    "salida":        round(target_parcial, 2),
+                    "beneficio":     round(beneficio_parcial, 2),
+                    "R_alcanzado":   2.0,
+                    "gestion":       "PARCIAL +2R",
+                    "setup_score":   pos_actual["setup_score"],
+                })
 
+            # ── Trailing stop ATR en el 50% restante (tras salida parcial)
+            if pos_actual.get("parcial_ejecutada") and atr:
+                trailing_nivel = pos_actual["max_precio"] - 1.5 * atr
+                if trailing_nivel > pos_actual["stop_actual"]:
+                    pos_actual["stop_actual"] = trailing_nivel
+                    pos_actual["gestion"]     = "TRAILING ATR"
+
+            # ── Target final +3R (50% restante) o STOP
+            target_final  = pos_actual["entrada"] + 3.0 * R_unit_pos if R_unit_pos > 0 else None
             precio_salida = None
             motivo_salida = None
 
-            if target and high_hoy >= target:
-                precio_salida = target
+            if target_final and high_hoy >= target_final:
+                precio_salida = target_final
                 motivo_salida = "TARGET +3R"
             elif low_hoy <= pos_actual["stop_actual"]:
                 precio_salida = pos_actual["stop_actual"]
-                motivo_salida = "STOP"
+                motivo_salida = "STOP" if not pos_actual.get("parcial_ejecutada") else "STOP (trailing)"
 
             if precio_salida is not None:
                 R_cerrado = (precio_salida - pos_actual["entrada"]) / R_unit_pos if R_unit_pos > 0 else 0
@@ -277,6 +472,18 @@ def ejecutar_backtest_f1(precios, volumenes, fechas,
 
         # ── Buscar entrada ───────────────────────────────
         if not en_posicion:
+            # Filtro de mercado:
+            #   ALCISTA    → breakout + pullback
+            #   TRANSICION → solo pullback (score >= 7 exigido)
+            #   BAJISTA    → no operar
+            estado_mkt = _estado_mercado(fecha_hoy, filtro_ibex) if filtro_ibex else "ALCISTA"
+
+            if estado_mkt == "BAJISTA":
+                dd = (max_capital - capital) / max_capital if max_capital > 0 else 0
+                equity_curve.append({"fecha": fecha_hoy.strftime("%Y-%m-%d"),
+                                     "capital": round(capital, 2), "drawdown": round(dd*100, 2)})
+                continue
+
             señal = _evaluar_señal(precios[:i+1], volumenes[:i+1])
             if señal["decision"] != "COMPRA":
                 dd = (max_capital - capital) / max_capital if max_capital > 0 else 0
@@ -286,6 +493,13 @@ def ejecutar_backtest_f1(precios, volumenes, fechas,
 
             entrada     = señal["entrada_tecnica"]
             setup_score = señal.get("setup_score", 3)
+
+            # En TRANSICION solo permitir setups de alta calidad (score >= 7)
+            if estado_mkt == "TRANSICION" and setup_score < 7.0:
+                dd = (max_capital - capital) / max_capital if max_capital > 0 else 0
+                equity_curve.append({"fecha": fecha_hoy.strftime("%Y-%m-%d"),
+                                     "capital": round(capital, 2), "drawdown": round(dd*100, 2)})
+                continue
 
             if ultimo_max and entrada <= ultimo_max:
                 dd = (max_capital - capital) / max_capital if max_capital > 0 else 0
@@ -305,7 +519,7 @@ def ejecutar_backtest_f1(precios, volumenes, fechas,
 
             riesgo_acc = entrada - stop
             riesgo_pct = riesgo_acc / entrada * 100
-            if not (1.0 <= riesgo_pct <= 3.0):
+            if not (1.0 <= riesgo_pct <= 10.0):
                 dd = (max_capital - capital) / max_capital if max_capital > 0 else 0
                 equity_curve.append({"fecha": fecha_hoy.strftime("%Y-%m-%d"),
                                      "capital": round(capital, 2), "drawdown": round(dd*100, 2)})
@@ -391,6 +605,21 @@ def ejecutar_backtest_f1_sistema(tickers, cache=None, capital_inicial=10_000,
     from core.data_provider import get_df
     from core.universos import get_nombre
 
+    # ── Filtro de mercado: cargar IBEX una sola vez ──────────
+    print(">>> Cargando filtro IBEX MM200...")
+    filtro_ibex = _cargar_ibex_mm200(periodo=periodo)
+    if filtro_ibex:
+        fechas_muestra = sorted(filtro_ibex.keys())
+        primera = fechas_muestra[0]
+        ultima  = fechas_muestra[-1]
+        dato_ej = filtro_ibex[ultima]
+        print(f">>> Filtro IBEX OK: {len(filtro_ibex)} barras ({primera} → {ultima})")
+        print(f">>> Último dato IBEX: close={dato_ej['close']:.0f} MM200={dato_ej['mm200']}")
+        alcista = dato_ej['mm200'] and dato_ej['close'] >= dato_ej['mm200']
+        print(f">>> Estado hoy: {'ALCISTA' if alcista else 'BAJISTA/TRANSICION'}")
+    else:
+        print(">>> ADVERTENCIA: Filtro IBEX vacío — backtest SIN filtro de mercado")
+
     tickers_operados = []
     tickers_excluidos = []
     todos_trades = []
@@ -435,6 +664,7 @@ def ejecutar_backtest_f1_sistema(tickers, cache=None, capital_inicial=10_000,
                 capital_inicial=capital_inicial,
                 riesgo_pct_trade=riesgo_pct_trade,
                 highs=highs, lows=lows,
+                filtro_ibex=filtro_ibex,
             )
 
             trades = resultado.get("trades", [])

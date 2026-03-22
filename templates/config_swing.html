@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Sistema Swing Trading</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 { color: #e74c3c; font-size: 2em; margin-bottom: 10px; }
+        .header p  { color: #666; font-size: 1em; }
+
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .nav a:hover { background: #c0392b; }
+        .nav a.active { background: #c0392b; }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 { font-size: 1.4em; color: #333; margin-bottom: 20px; }
+
+        .config-section { margin-bottom: 30px; }
+
+        .config-section h3 {
+            color: #e74c3c;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f5e6e6;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .config-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #e74c3c;
+        }
+
+        .config-item label {
+            display: block;
+            color: #888;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .config-item value {
+            display: block;
+            color: #333;
+            font-size: 1.25em;
+            font-weight: 700;
+        }
+
+        /* Cajas informativas */
+        .box {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .box-purple {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+        .box-purple h4 { color: #7b1fa2; margin-bottom: 12px; }
+
+        .box-blue {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .box-blue h4 { color: #1565c0; margin-bottom: 12px; }
+
+        .box-green {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        .box-green h4 { color: #2e7d32; margin-bottom: 12px; }
+
+        .box-orange {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+        .box-orange h4 { color: #e65100; margin-bottom: 12px; }
+
+        .box p, .box li {
+            color: #444;
+            line-height: 1.7;
+            font-size: 0.95em;
+            margin: 4px 0;
+        }
+
+        .box ul { margin-left: 18px; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .badge-red    { background: #fde8e8; color: #c0392b; }
+        .badge-green  { background: #e8f5e9; color: #2e7d32; }
+        .badge-blue   { background: #e3f2fd; color: #1565c0; }
+
+        /* Tabla de condiciones */
+        .conditions-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .conditions-table th {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.85em;
+        }
+        .conditions-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+            color: #444;
+        }
+        .conditions-table tr:nth-child(even) td { background: #fafafa; }
+        .conditions-table tr:last-child td { border-bottom: none; }
+
+        .obligatorio { color: #c0392b; font-weight: 700; }
+        .opcional    { color: #2980b9; }
+
+        .peso-bar {
+            display: inline-block;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 4px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 600px) {
+            .config-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>⚡ Configuración del Sistema</h1>
+        <p>Parámetros y estrategia de Swing Trading</p>
+    </div>
+
+    <!-- NAV -->
+    <div class="nav">
+        <a href="/swing/">🔍 Analizar</a>
+        <a href="/swing/config" class="active">⚙️ Configuración</a>
+    </div>
+
+    <!-- PARÁMETROS GENERALES -->
+    <div class="card">
+        <h2>Parámetros del Sistema</h2>
+
+        <div class="config-section">
+            <h3>📊 Información General</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Timeframe</label>
+                    <value>Diario</value>
+                </div>
+                <div class="config-item">
+                    <label>Estrategia</label>
+                    <value>Breakout + Pullback</value>
+                </div>
+                <div class="config-item">
+                    <label>Holding Period</label>
+                    <value>1 – 3 semanas</value>
+                </div>
+                <div class="config-item">
+                    <label>Universo</label>
+                    <value>IBEX 35 + Continuo</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>🎯 Parámetros de Entrada — Breakout</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Máximo referencia</label>
+                    <value>52 días</value>
+                </div>
+                <div class="config-item">
+                    <label>Distancia a resistencia</label>
+                    <value>-2% / +2%</value>
+                </div>
+                <div class="config-item">
+                    <label>Consolidación mínima</label>
+                    <value>8 días</value>
+                </div>
+                <div class="config-item">
+                    <label>Volumen ruptura (IBEX)</label>
+                    <value>≥ 1.2× media</value>
+                </div>
+                <div class="config-item">
+                    <label>Volumen ruptura (Continuo)</label>
+                    <value>≥ 1.1× media</value>
+                </div>
+                <div class="config-item">
+                    <label>RSI momentum</label>
+                    <value>55 – 70</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>🎯 Parámetros de Entrada — Pullback</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Retroceso válido</label>
+                    <value>5% – 15%</value>
+                </div>
+                <div class="config-item">
+                    <label>RSI pullback sano</label>
+                    <value>38–57</value>
+                </div>
+                <div class="config-item">
+                    <label>Distancia a soporte</label>
+                    <value>2% – 8%</value>
+                </div>
+                <div class="config-item">
+                    <label>Estructura alcista</label>
+                    <value>Precio > MM50</value>
+                </div>
+                <div class="config-item">
+                    <label>Tendencia macro</label>
+                    <value>Precio > MM200</value>
+                </div>
+                <div class="config-item">
+                    <label>Pendiente MM20</label>
+                    <value>Positiva</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>🛡️ Gestión de Riesgo</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Riesgo por operación</label>
+                    <value>1% del capital</value>
+                </div>
+                <div class="config-item">
+                    <label>Ratio R/R mínimo</label>
+                    <value>2.0</value>
+                </div>
+                <div class="config-item">
+                    <label>Stop loss</label>
+                    <value>Estructura + ATR</value>
+                </div>
+                <div class="config-item">
+                    <label>Stop máximo</label>
+                    <value>10% del precio</value>
+                </div>
+                <div class="config-item">
+                    <label>Objetivo</label>
+                    <value>2× riesgo (2R)</value>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>📈 Score Ponderado</h3>
+
+            <!-- BREAKOUT -->
+            <p style="font-weight:600; color:#555; margin-bottom:8px;">
+                Breakout <span class="badge badge-red">Umbral 5.0/10</span>
+            </p>
+            <table class="conditions-table">
+                <thead>
+                    <tr>
+                        <th>Condición</th>
+                        <th>Tipo</th>
+                        <th>Peso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Resistencia identificada</td>
+                        <td><span class="obligatorio">Obligatorio</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>RSI momentum (55–70)</td>
+                        <td><span class="obligatorio">Obligatorio</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Volumen ruptura ≥ 1.2×</td>
+                        <td><span class="obligatorio">Obligatorio</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Precio cerca máximo 52d (≤3%)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:15px"></span>1.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Consolidación ≥ 8 días</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:20px"></span>2.0 pts</td>
+                    </tr>
+                    <tr>
+                        <td>VCP — volumen decreciente en consolidación</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:15px"></span>1.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Precio ≥ MM20</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:25px"></span>2.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>MM20 ≥ MM50</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:25px"></span>2.5 pts</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- PULLBACK -->
+            <p style="font-weight:600; color:#555; margin:20px 0 8px;">
+                Pullback <span class="badge badge-blue">Umbral 5.5/10</span>
+            </p>
+            <table class="conditions-table">
+                <thead>
+                    <tr>
+                        <th>Condición</th>
+                        <th>Tipo</th>
+                        <th>Peso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Tendencia macro (Precio &gt; MM200 + MM50 &gt; MM200)</td>
+                        <td><span class="obligatorio">Obligatorio</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>Retroceso 5–15% desde máximo 60 días</td>
+                        <td><span class="obligatorio">Obligatorio</span></td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>RSI pullback sano (38–57, +0.5 si rebotando)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:15px"></span>1.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Soporte cercano (2–8%)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:25px"></span>2.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Patrón alta fiabilidad (martillo, envolvente, estrella mañana, piercing)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:15px"></span>1.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Patrón media fiabilidad (harami alcista, doji)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:10px"></span>1.0 pts</td>
+                    </tr>
+                    <tr>
+                        <td>Estructura alcista (precio > MM50 + MM20↗)</td>
+                        <td><span class="opcional">Opcional</span></td>
+                        <td><span class="peso-bar" style="width:40px"></span>4.0 pts</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top:12px; padding:10px 14px; background:#f8f8f8; border-radius:6px; font-size:0.82em; color:#555; border-left:3px solid #aaa;">
+                <strong>Combinaciones que pasan (≥ 5.5):</strong>
+                Estructura + RSI (5.5) · Estructura + RSI + rebote (6.0) · Soporte + RSI + patrón alta (5.5) · Estructura + soporte (6.5)
+                <br><strong style="color:#c62828;">Filtros duros adicionales</strong> (se aplican tras el score):
+                Stop &gt; 1.5× ATR → descartado · Stop &gt; 10% precio → descartado
+            </div>
+        </div>
+
+        <!-- FILOSOFÍA -->
+        <div class="box box-purple">
+            <h4>📚 Filosofía de la Estrategia</h4>
+            <ul>
+                <li><strong>Timeframe Diario:</strong> Captura movimientos de 1-3 semanas con señales limpias y gestión activa</li>
+                <li><strong>Dos estrategias complementarias:</strong> Breakout para momentum y Pullback para mean reversion</li>
+                <li><strong>Score ponderado:</strong> Criterios obligatorios + opcionales. Evita falsas señales con una sola condición</li>
+                <li><strong>VCP (Volatility Contraction Pattern):</strong> Filtro institucional de Minervini/O'Neil — volumen decreciente en consolidación indica acumulación real</li>
+                <li><strong>Buy Stop — entrada confirmada:</strong> Orden en el broker al máximo de consolidación +0.2%. Solo entras si el precio rompe de verdad</li>
+                <li><strong>Volumen obligatorio en Breakout:</strong> Sin confirmación de volumen no hay ruptura real</li>
+                <li><strong>Riesgo controlado:</strong> Stop siempre definido antes de entrar, 1% del capital por operación</li>
+            </ul>
+        </div>
+
+        <!-- MODO ENTRADA PULLBACK -->
+        <div style="margin-top:16px; background:white; border-radius:10px; border:1px solid #e0e0e0; overflow:hidden;">
+            <div style="background:#0891b2; color:white; padding:12px 18px;">
+                <h4 style="margin:0; font-size:0.9em;">🎯 Modo Entrada — Pullback</h4>
+            </div>
+            <div style="padding:16px 18px;">
+                <p style="font-size:0.84em; color:#555; margin-bottom:14px;">El backtest permite comparar dos modos de entrada para pullback. Los resultados sobre IBEX 35 · 5 años son:</p>
+                <table style="width:100%; border-collapse:collapse; font-size:0.85em; margin-bottom:14px;">
+                    <thead>
+                        <tr style="background:#f5f5f5;">
+                            <th style="padding:8px 12px; text-align:left;">Métrica</th>
+                            <th style="padding:8px 12px; text-align:center;">📍 Zona</th>
+                            <th style="padding:8px 12px; text-align:center;">🎯 Trigger</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="padding:7px 12px;">Trades</td><td style="text-align:center;">215</td><td style="text-align:center;"><strong>124</strong></td></tr>
+                        <tr style="background:#f9f9f9;"><td style="padding:7px 12px;">Win Rate</td><td style="text-align:center;">33.0%</td><td style="text-align:center;"><strong>37.1%</strong></td></tr>
+                        <tr><td style="padding:7px 12px;">Expectativa</td><td style="text-align:center; color:#e53935;">+0.22R</td><td style="text-align:center; color:#2e7d32;"><strong>+0.36R</strong></td></tr>
+                        <tr style="background:#f9f9f9;"><td style="padding:7px 12px;">Max DD</td><td style="text-align:center; color:#e53935;">12.9%</td><td style="text-align:center; color:#2e7d32;"><strong>10.4%</strong></td></tr>
+                        <tr><td style="padding:7px 12px;">Tickers aprobados</td><td style="text-align:center;">11</td><td style="text-align:center;"><strong>16</strong></td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:0.82em; color:#555;"><strong>📍 Zona:</strong> Entra al cierre del día que detecta el setup — más operaciones, menor calidad.</p>
+                <p style="font-size:0.82em; color:#555; margin-top:6px;"><strong>🎯 Trigger:</strong> Detecta setup al cierre del día N, entra el día N+1 solo si el precio supera <code>high_N × 1.001</code>. Si no confirma, descarta — menos operaciones, mayor calidad.</p>
+                <p style="font-size:0.82em; color:#0891b2; margin-top:8px;"><strong>Recomendado: Trigger</strong> — expectativa +64% mejor (+0.22R → +0.36R), WR +4pp, DD -2.5pp, más tickers aprobados (11 → 16).</p>
+            </div>
+        </div>
+
+        <!-- FILTRO DE MERCADO -->
+        <div style="margin-top:16px; background:white; border-radius:10px; border:1px solid #e0e0e0; overflow:hidden;">
+            <div style="background:#37474f; color:white; padding:12px 18px;">
+                <h4 style="margin:0; font-size:0.9em;">🌍 Filtro de Mercado — IBEX vs MM200</h4>
+            </div>
+            <div style="padding:16px 18px;">
+                <p style="font-size:0.84em; color:#555; margin-bottom:14px;">El sistema consulta la posición del IBEX respecto a su MM200 antes de cada entrada. Tres estados posibles:</p>
+                <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+                    <thead>
+                        <tr style="background:#f5f5f5;">
+                            <th style="padding:8px 12px; text-align:left; font-weight:700; color:#333;">Estado</th>
+                            <th style="padding:8px 12px; text-align:left; font-weight:700; color:#333;">Condición IBEX</th>
+                            <th style="padding:8px 12px; text-align:left; font-weight:700; color:#333;">Estrategias permitidas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:9px 12px;"><span style="background:#e8f5e9; color:#2e7d32; font-weight:700; padding:3px 10px; border-radius:20px;">✅ ALCISTA</span></td>
+                            <td style="padding:9px 12px; color:#444;">IBEX &gt; MM200</td>
+                            <td style="padding:9px 12px; color:#444;">Breakout + Pullback (todo permitido)</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:9px 12px;"><span style="background:#fff8e1; color:#f57f17; font-weight:700; padding:3px 10px; border-radius:20px;">⚠️ TRANSICIÓN</span></td>
+                            <td style="padding:9px 12px; color:#444;">IBEX entre MM200 y −5%</td>
+                            <td style="padding:9px 12px; color:#444;">Solo Pullback con score ≥ 7.0</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:9px 12px;"><span style="background:#ffebee; color:#c62828; font-weight:700; padding:3px 10px; border-radius:20px;">🚫 BAJISTA</span></td>
+                            <td style="padding:9px 12px; color:#444;">IBEX &lt; MM200 × 0.95</td>
+                            <td style="padding:9px 12px; color:#444;">No operar — cash</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top:12px; font-size:0.82em; color:#777;">En transición se exige score ≥ 7 para filtrar setups marginales — sin estructura sólida (4 pts) + soporte (2.5 pts) no se entra.</p>
+            </div>
+        </div>
+
+        <!-- CONDICIONES BREAKOUT -->
+        <div class="box box-blue" style="margin-top:16px;">
+            <h4>🚀 Condiciones de Entrada — Breakout</h4>
+            <p><strong>1. Precio cerca del máximo 52d:</strong> Distancia ≤ 3% al máximo anual</p>
+            <p><strong>2. Resistencia identificada:</strong> Nivel técnico entre -2% y +2% del precio actual</p>
+            <p><strong>3. Consolidación:</strong> Rango estrecho ≥ 8 días antes de la ruptura</p>
+            <p><strong>4. VCP (Volatility Contraction Pattern):</strong> Volumen decreciente en consolidación — segunda mitad al menos 15% menor que la primera. Patrón Minervini/O'Neil de acumulación institucional</p>
+            <p><strong>5. Volumen confirmatorio:</strong> ≥ 1.2× media 20 días (IBEX) / ≥ 1.1× (Continuo) — <strong>obligatorio</strong></p>
+            <p><strong>6. RSI momentum:</strong> Entre 55 y 70 — momentum alcista sin sobrecompra extrema — <strong>obligatorio</strong></p>
+            <p><strong>7. Estructura:</strong> Precio ≥ MM20, MM20 ≥ MM50 — alineación de medias</p>
+            <p><strong>8. Buy Stop:</strong> Coloca orden en tu broker a máximo consolidación × 1.002 — solo entras si hay ruptura real</p>
+        </div>
+
+        <!-- CONDICIONES PULLBACK -->
+        <div class="box box-green" style="margin-top:16px;">
+            <h4>🔄 Condiciones de Entrada — Pullback</h4>
+            <p><strong>1. Tendencia macro:</strong> Precio > MM200 × 0.95 <strong>Y</strong> MM50 > MM200 — doble confirmación alcista — <strong>obligatorio</strong></p>
+            <p><strong>2. Retroceso válido:</strong> Corrección 5–15% desde el máximo de los últimos 60 días — <strong>obligatorio</strong></p>
+            <p><strong>3. RSI pullback sano:</strong> RSI entre 38–57 — retroceso ordenado sin sobreventa. +0.5 bonus si el RSI lleva 3 días rebotando.</p>
+            <p><strong>4. Soporte cercano:</strong> Nivel de soporte entre 2% y 8% por debajo del precio</p>
+            <p><strong>5. Patrón de giro alcista:</strong> Martillo, Envolvente, Estrella de mañana, Piercing Line (1.5 pts) o Harami alcista / Doji (1.0 pts) en las últimas 5 velas</p>
+            <p><strong>6. Estructura alcista:</strong> Precio > MM50 + MM20 con pendiente positiva — criterio más pesado (4.0 pts)</p>
+            <p style="margin-top:10px;"><strong>🎯 Trigger de entrada (orden en broker):</strong></p>
+            <p>&nbsp;&nbsp;→ <strong>Principal:</strong> Buy Stop al máximo de la vela de giro + 0.1% — si hay patrón de vela alcista detectado</p>
+            <p>&nbsp;&nbsp;→ <strong>Alternativo:</strong> Buy Stop al máximo de la sesión anterior + 0.1% — si no hay vela de giro clara</p>
+            <p>&nbsp;&nbsp;→ Nunca entrar antes de confirmación: pierdes winrate y entras demasiado pronto</p>
+            <p style="margin-top:10px;"><strong>🛑 Stop Loss — reglas precisas:</strong></p>
+            <p>&nbsp;&nbsp;→ <strong>Base:</strong> mínimo de las últimas 5 velas del pullback (suelo real del retroceso)</p>
+            <p>&nbsp;&nbsp;→ <strong>Buffer:</strong> × 0.98 (−2%) para evitar stop-hunts en niveles obvios</p>
+            <p>&nbsp;&nbsp;→ <strong>Validación ATR:</strong> si el stop queda a más de 1.5× ATR del precio de entrada, el setup está sobreextendido y se descarta</p>
+            <p>&nbsp;&nbsp;→ <strong>Máximo absoluto:</strong> 10% del precio de entrada</p>
+            <p style="margin-top:10px; padding:8px 12px; background:#fffbf0; border-left:3px solid #f39c12; border-radius:0 6px 6px 0; font-size:0.9em;">
+                ⚠️ <strong>Score como filtro orientativo:</strong> El umbral general es 5.5 (mercado alcista) y 7.0 en transición. No es verdad absoluta — un setup con estructura perfecta puede ser mejor que uno con criterios dispersos. Valora siempre el contexto de mercado.
+            </p>
+        </div>
+
+        <!-- GESTIÓN DE LA OPERACIÓN -->
+        <div class="box box-orange" style="margin-top:16px;">
+            <h4>💰 Gestión de la Operación</h4>
+            <p><strong>Entrada Breakout — Buy Stop:</strong> Máximo de la consolidación × 1.002. Orden en broker — solo entras si el precio rompe de verdad, evitando falsas rupturas y ruido intradía</p>
+            <p><strong>Entrada Pullback — Buy Stop:</strong> Máximo de la vela de giro + 0.1% (si hay patrón). Si no hay vela de giro, máximo de la sesión anterior + 0.1%</p>
+            <p><strong>Stop Loss Breakout:</strong> Mínimo de la consolidación × 0.98</p>
+            <p><strong>Stop Loss Pullback:</strong> Mínimo de las últimas 5 velas × 0.98 — buffer −2% para evitar stop-hunts. Descartado si supera 1.5× ATR o 10% del precio de entrada</p>
+            <p><strong>Objetivo:</strong> 2× el riesgo asumido (ratio R/R = 2.0)</p>
+            <p><strong>Tamaño posición:</strong> Capital × 1% ÷ riesgo por acción</p>
+            <p><strong>Factor mercado (IBEX MM200):</strong> Alcista → breakout + pullback | Transición (±5%) → solo pullback score ≥ 7.0 | Bajista → no operar</p>
+            <p><strong>Señal preferente:</strong> Si breakout y pullback coinciden, se muestra la señal con mayor score</p>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

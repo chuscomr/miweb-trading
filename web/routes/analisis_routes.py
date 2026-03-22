@@ -10,10 +10,13 @@ from core.data_provider import get_df
 from core.indicadores import calcular_rsi, calcular_atr, calcular_macd
 from analisis.tecnico import (
     detectar_soportes_resistencias, calcular_confirmaciones,
-    detectar_patrones_velas,
+    detectar_patrones_velas, analizar_confluencia_velas_sr,
     crear_grafico_analisis_tecnico, obtener_sr_mas_cercanos,
 )
-from analisis.fundamental import obtener_datos_fundamentales, calcular_score_fundamental
+from analisis.fundamental import (
+    obtener_datos_fundamentales, calcular_score_fundamental,
+    obtener_noticias_del_dia,
+)
 
 analisis_bp = Blueprint("analisis", __name__, url_prefix="/analisis")
 
@@ -160,6 +163,14 @@ def completo():
     datos_fund     = obtener_datos_fundamentales(ticker, cache)
     score_fund     = calcular_score_fundamental(datos_fund)
 
+    # Garantizar campos opcionales
+    for campo in ["cagr_ingresos_3y","cagr_beneficios_3y","aceleracion_ingresos",
+                  "aceleracion_beneficios","momentum_score","momentum_nivel",
+                  "momentum_detalles","fcf_positivo_anos","fcf_ultimo_ano",
+                  "deuda_neta","deuda_ebitda"]:
+        if campo not in datos_fund:
+            datos_fund[campo] = None
+
     return render_template(
         "analisis_completo.html",
         ticker       = ticker,
@@ -194,6 +205,39 @@ def api_fundamental(ticker):
 
 
 # ─────────────────────────────────────────────────────────────
+# NOTICIAS DEL DÍA
+# GET  /analisis/noticias         → página HTML
+# GET  /analisis/api/noticias     → JSON para fetch()
+# ─────────────────────────────────────────────────────────────
+
+@analisis_bp.route("/noticias", methods=["GET"])
+def noticias_panel():
+    """Página de noticias financieras del día."""
+    cache = _get_cache()
+    noticias = cache.get("noticias_del_dia") if cache else None
+    if noticias is None:
+        noticias = obtener_noticias_del_dia()
+        if cache:
+            cache.set("noticias_del_dia", noticias, timeout=1800)
+    return render_template("noticias.html", noticias=noticias)
+
+
+@analisis_bp.route("/api/noticias", methods=["GET"])
+def api_noticias():
+    """JSON con noticias del día. Cache 30 min."""
+    cache = _get_cache()
+    noticias = cache.get("noticias_del_dia") if cache else None
+    if noticias is None:
+        try:
+            noticias = obtener_noticias_del_dia()
+            if cache:
+                cache.set("noticias_del_dia", noticias, timeout=1800)
+        except Exception as e:
+            return jsonify({"noticias": [], "error": str(e)}), 500
+    return jsonify({"noticias": noticias, "total": len(noticias)})
+
+
+# ─────────────────────────────────────────────────────────────
 # MODAL FUNDAMENTAL — fragmento HTML para fetch() desde swing.html
 # GET /analisis/modal/fundamental/<ticker>
 # ─────────────────────────────────────────────────────────────
@@ -206,6 +250,20 @@ def modal_fundamental(ticker):
     try:
         datos = obtener_datos_fundamentales(ticker, cache)
         score = calcular_score_fundamental(datos)
+
+        # Garantizar que todos los campos opcionales existen en el dict
+        # (pueden faltar si _enriquecer_con_financials falla a mitad)
+        campos_opcionales = [
+            "cagr_ingresos_3y", "cagr_beneficios_3y",
+            "aceleracion_ingresos", "aceleracion_beneficios",
+            "momentum_score", "momentum_nivel", "momentum_detalles",
+            "fcf_positivo_anos", "fcf_ultimo_ano",
+            "deuda_neta", "deuda_ebitda",
+        ]
+        for campo in campos_opcionales:
+            if campo not in datos:
+                datos[campo] = None
+
         return render_template("_modal_fundamental.html", ticker=ticker, datos=datos, score=score)
     except Exception as e:
         import traceback

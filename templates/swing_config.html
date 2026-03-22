@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚙️ Configuración Swing Trading</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 720px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #2c3e50; }
+        .nav { display: flex; gap: 16px; margin-bottom: 1.5rem; }
+        .nav a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 13px; }
+        .nav a:hover { color: white; }
+        .page-title { color: white; font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .page-subtitle { color: rgba(255,255,255,0.75); font-size: 13px; margin-bottom: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        label.field-label { font-size: 12px; color: #7f8c8d; display: block; margin-bottom: 4px; }
+        input[type="number"] { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #f8f9fa; color: #2c3e50; }
+        input[type="number"]:focus { outline: none; border-color: #e74c3c; }
+        .hint { font-size: 11px; color: #95a5a6; margin-top: 4px; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; }
+        .t-title { font-size: 14px; font-weight: 500; color: #2c3e50; margin: 0; }
+        .t-sub { font-size: 11px; color: #95a5a6; margin: 2px 0 0; }
+        .toggle-control { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #7f8c8d; cursor: pointer; }
+        input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #e74c3c; }
+        hr { border: none; border-top: 1px solid #f0f0f0; margin: 1rem 0; }
+        .btn-save { flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-save:hover { background: #229954; }
+        .btn-reset { padding: 12px 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; color: #7f8c8d; }
+        .btn-row { display: flex; gap: 12px; }
+        .summary { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.875rem 1rem; font-size: 12px; color: rgba(255,255,255,0.9); margin-top: 1rem; line-height: 1.6; }
+        .summary strong { color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="nav">
+        <a href="/swing/">← Volver al Swing</a>
+        <a href="/">← Inicio</a>
+    </div>
+    <h1 class="page-title">⚙️ Configuración del Sistema</h1>
+    <p class="page-subtitle">Parámetros de capital, riesgo y gestión de posición</p>
+
+    <form method="POST" action="/swing/config/guardar">
+        <div class="card">
+            <h2>💰 Capital y Riesgo</h2>
+            <div class="grid-2">
+                <div>
+                    <label class="field-label">Capital total (€)</label>
+                    <input type="number" name="capital" value="{{ config.capital }}" min="1000" step="500">
+                    <p class="hint">Capital disponible para operar</p>
+                </div>
+                <div>
+                    <label class="field-label">Riesgo por operación (%)</label>
+                    <input type="number" name="riesgo_pct" value="{{ config.riesgo_pct }}" min="0.1" max="5" step="0.1">
+                    <p class="hint">Recomendado: 1–2% del capital</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📐 Gestión de Posición</h2>
+            <div class="grid-2">
+                <div>
+                    <label class="field-label">Objetivo R/R</label>
+                    <input type="number" name="rr_objetivo" value="{{ config.rr_objetivo }}" min="1" max="5" step="0.5">
+                    <p class="hint">Target = entrada + (riesgo × R/R)</p>
+                </div>
+                <div>
+                    <label class="field-label">Breakeven en (R)</label>
+                    <input type="number" name="breakeven_r" value="{{ config.breakeven_r }}" min="0.5" max="2" step="0.5">
+                    <p class="hint">Mover stop a entrada al subir este R</p>
+                </div>
+            </div>
+            <hr>
+            <div class="toggle-row">
+                <div>
+                    <p class="t-title">Trailing stop</p>
+                    <p class="t-sub">Se activa cuando el precio sube 2R</p>
+                </div>
+                <label class="toggle-control">
+                    <input type="checkbox" name="trailing_stop" {% if config.trailing_stop %}checked{% endif %}>
+                    Activar
+                </label>
+            </div>
+            <div style="padding:0.5rem 0">
+                <label class="field-label">% trailing desde máximo</label>
+                <input type="number" name="trailing_pct" value="{{ config.trailing_pct }}" min="2" max="15" step="0.5" style="max-width:200px">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 Filtros y Costes</h2>
+            <div class="toggle-row">
+                <div>
+                    <p class="t-title">Filtro mercado general</p>
+                    <p class="t-sub">No operar si el IBEX está bajo su MM50</p>
+                </div>
+                <label class="toggle-control">
+                    <input type="checkbox" name="filtrar_mercado" {% if config.filtrar_mercado %}checked{% endif %}>
+                    Activar
+                </label>
+            </div>
+            <hr>
+            <div class="grid-2">
+                <div>
+                    <label class="field-label">Slippage (%)</label>
+                    <input type="number" name="slippage_pct" value="{{ config.slippage_pct }}" min="0" max="1" step="0.05">
+                    <p class="hint">Deslizamiento en ejecución</p>
+                </div>
+                <div>
+                    <label class="field-label">Comisión (%)</label>
+                    <input type="number" name="comision_pct" value="{{ config.comision_pct }}" min="0" max="1" step="0.05">
+                    <p class="hint">Coste de broker por operación</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button type="submit" class="btn-save">💾 Guardar configuración</button>
+            <button type="button" class="btn-reset" onclick="document.getElementById('form-reset').submit()">↺ Defaults</button>
+        </div>
+    </form>
+
+    <form id="form-reset" method="POST" action="/swing/config/reset" style="display:none"></form>
+
+    <div class="summary">
+        <strong>Activo ahora:</strong>
+        Capital {{ config.capital }}€ · Riesgo {{ config.riesgo_pct }}% · R/R {{ config.rr_objetivo }} ·
+        BE en {{ config.breakeven_r }}R · Trailing {% if config.trailing_stop %}{{ config.trailing_pct }}%{% else %}off{% endif %} ·
+        Filtro mercado {% if config.filtrar_mercado %}✓{% else %}✗{% endif %}
+    </div>
+</div>
+</body>
+</html>

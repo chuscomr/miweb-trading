@@ -19,9 +19,11 @@ from typing import Optional
 # ─────────────────────────────────────────────────────────────
 
 def _to_series(data) -> pd.Series:
-    """Convierte lista o Series a pd.Series float limpia."""
+    """Convierte lista, array, Series o DataFrame 1-col a pd.Series float limpia."""
+    if isinstance(data, pd.DataFrame):
+        data = data.squeeze()  # DataFrame de 1 columna (yfinance MultiIndex) → Series
     if isinstance(data, pd.Series):
-        return data.astype(float).reset_index(drop=True)
+        return data.astype(float)  # preservar índice original
     return pd.Series(data, dtype=float)
 
 
@@ -39,10 +41,7 @@ def _scalar(val) -> float:
 def calcular_rsi(close, periodo: int = 14) -> pd.Series:
     """
     RSI de Wilder sobre una serie de cierres.
-
-    Args:
-        close: lista de precios o pd.Series
-        periodo: ventana (default 14)
+    Robusto ante divisiones por cero (solo subidas o solo bajadas).
 
     Returns:
         pd.Series con valores RSI (0-100). NaN en las primeras `periodo` velas.
@@ -50,14 +49,17 @@ def calcular_rsi(close, periodo: int = 14) -> pd.Series:
     s = _to_series(close)
     delta = s.diff()
     ganancias = delta.clip(lower=0)
-    perdidas = (-delta).clip(lower=0)
+    perdidas  = (-delta).clip(lower=0)
 
     avg_g = ganancias.ewm(alpha=1 / periodo, adjust=False).mean()
     avg_p = perdidas.ewm(alpha=1 / periodo, adjust=False).mean()
 
-    rs = avg_g / avg_p.replace(0, np.nan)
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    # avg_p == 0 → solo subidas → RSI = 100
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rs  = np.where(avg_p == 0, np.inf, avg_g / avg_p)
+        rsi = 100 - (100 / (1 + rs))
+
+    return pd.Series(rsi, index=s.index)
 
 
 def rsi_actual(close, periodo: int = 14) -> Optional[float]:

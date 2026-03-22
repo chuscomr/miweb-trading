@@ -1,4 +1,4 @@
 from .soportes_resistencias import detectar_soportes_resistencias, obtener_sr_mas_cercanos
 from .confirmaciones import calcular_confirmaciones
-from .patrones_velas import detectar_patrones_velas
+from .patrones_velas import detectar_patrones_velas, analizar_confluencia_velas_sr
 from .grafico_avanzado import crear_grafico_analisis_tecnico, crear_grafico_simple_sr

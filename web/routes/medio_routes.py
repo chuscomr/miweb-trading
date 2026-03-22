@@ -256,4 +256,19 @@ def backtest_sistema():
 
 @medio_bp.route("/config", methods=["GET"])
 def config():
-    return render_template("medio.html", contexto_mercado=evaluar_contexto_ibex(_get_cache()))
+    from estrategias.medio import config_medio as cfg
+    config_data = {
+        "timeframe":       "Semanal",
+        "estrategia":      "Pullback en tendencia alcista",
+        "min_semanas":     cfg.MIN_SEMANAS_HISTORICO,
+        "volatilidad_min": f"{cfg.VOL_MIN_PCT}%",
+        "pullback_min":    f"{cfg.PULLBACK_MIN_PCT}%",
+        "pullback_max":    f"{cfg.PULLBACK_MAX_PCT}%",
+        "riesgo_min":      f"{cfg.RIESGO_MIN_PCT}%",
+        "riesgo_max":      f"{cfg.RIESGO_MAX_PCT}%",
+        "r_proteger":      f"+{cfg.R_PARA_PROTEGER}R",
+        "r_trailing":      f"+{cfg.R_PARA_TRAILING}R",
+        "capital_inicial": f"{cfg.CAPITAL_INICIAL:,} \u20ac",
+        "riesgo_trade":    f"{cfg.RIESGO_POR_TRADE_PCT}%",
+    }
+    return render_template("config_medio.html", config=config_data)

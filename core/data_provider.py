@@ -171,15 +171,37 @@ def _vela_hoy_yf(ticker: str, ultima: date) -> Optional[pd.DataFrame]:
 
 
 def _completar_con_hoy(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
-    """Añade la vela de hoy si falta (FMP → yfinance)."""
+    """
+    Añade velas que faltan desde el último día del df hasta hoy.
+    Cubre el caso lunes: el histórico tiene el viernes, el lunes
+    aún no está en el histórico pero sí en yfinance (period='5d').
+    """
     try:
         ultima = df.index[-1].date()
-        if ultima >= date.today():
+        hoy    = date.today()
+        if ultima >= hoy:
             return df
-        vela = _vela_hoy_fmp(ticker, ultima) or _vela_hoy_yf(ticker, ultima)
-        if vela is not None:
-            df = pd.concat([df, vela])
-            df = df[~df.index.duplicated(keep="last")]
+
+        # Descargar las últimas 5 velas y añadir las que faltan
+        vela = yf.Ticker(ticker).history(period="5d", interval="1d")
+        if vela.empty:
+            return df
+        # Normalizar MultiIndex y nombres de columnas
+        vela = _limpiar_df(vela)
+        if vela.empty:
+            return df
+        if vela.index.tz is not None:
+            vela.index = vela.index.tz_localize(None)
+        vela = vela[vela["Close"] > 0].dropna(subset=["Close"])
+        # Filtrar solo las velas posteriores a la última que tenemos
+        vela = vela[vela.index.date > ultima]
+        if vela.empty:
+            return df
+        vela = vela[["Open", "High", "Low", "Close", "Volume"]]
+        df = pd.concat([df, vela])
+        df = df[~df.index.duplicated(keep="last")]
+        df.sort_index(inplace=True)
+        logger.info(f"[completar_hoy] {ticker}: +{len(vela)} vela(s) añadida(s) hasta {df.index[-1].date()}")
     except Exception as e:
         logger.warning(f"[completar_hoy] {ticker}: {e}")
     return df
@@ -188,9 +210,11 @@ def _completar_con_hoy(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
 def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
     """Histórico diario desde yfinance. Devuelve DataFrame o None."""
     try:
+        # yfinance excluye el end — sumamos 1 día para incluir fecha_fin
+        fecha_fin_yf = fecha_fin + timedelta(days=1)
         df = yf.Ticker(ticker).history(
             start=fecha_inicio.strftime("%Y-%m-%d"),
-            end=fecha_fin.strftime("%Y-%m-%d"),
+            end=fecha_fin_yf.strftime("%Y-%m-%d"),
             interval="1d",
         )
         if df is None or df.empty:

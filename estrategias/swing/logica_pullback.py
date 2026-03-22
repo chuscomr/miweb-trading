@@ -85,19 +85,41 @@ def detectar_pullback_swing(ticker, periodo='1y'):
         maximo_60 = float(df['Close'].tail(60).max().item())
         retroceso_pct = ((maximo_60 - precio_actual) / maximo_60) * 100
 
-        retroceso_ok = 5 <= retroceso_pct <= 20
+        retroceso_ok = 5 <= retroceso_pct <= 15  # >15% = debilidad, no pullback
         motivos.append({
             "ok": retroceso_ok,
             "texto": f"Retroceso {retroceso_pct:.2f}% desde máximo"
         })
 
         # ─────────────────────────────
-        # 3️⃣ RSI sobreventa moderada
-              # ─────────────────────────────
-        rsi_ok = rsi_actual <= 50
+        # 3️⃣ RSI pullback sano (38-57)
+        # No queremos sobreventa sino retroceso ordenado
+        # Zona ideal: 38-57, mejor si está rebotando
+        # ─────────────────────────────
+        rsi_zona_ok = 38 <= rsi_actual <= 57
+
+        # Detectar si el RSI está rebotando (subiendo los últimos 3 días)
+        rsi_serie = df['RSI'].dropna()
+        rsi_rebotando = False
+        if len(rsi_serie) >= 4:
+            rsi_hace_3 = f(rsi_serie.iloc[-4])
+            rsi_hace_1 = f(rsi_serie.iloc[-2])
+            rsi_rebotando = rsi_actual > rsi_hace_1 > rsi_hace_3
+
+        rsi_ok = rsi_zona_ok
+        if rsi_zona_ok and rsi_rebotando:
+            rsi_texto = f"RSI {rsi_actual:.1f} ↗ rebotando (zona óptima)"
+        elif rsi_zona_ok:
+            rsi_texto = f"RSI {rsi_actual:.1f} (zona pullback)"
+        elif rsi_actual < 38:
+            rsi_texto = f"RSI {rsi_actual:.1f} (sobreventa — evitar entrada)"
+        else:
+            rsi_texto = f"RSI {rsi_actual:.1f} (momentum alto — no es pullback)"
+
         motivos.append({
             "ok": rsi_ok,
-            "texto": f"RSI {rsi_actual:.1f}"
+            "texto": rsi_texto,
+            "rsi_rebotando": rsi_rebotando
         })
 
         # ─────────────────────────────
@@ -161,7 +183,7 @@ def detectar_pullback_swing(ticker, periodo='1y'):
             "riesgo_pct": round(riesgo_pct, 2),
             "beneficio_pct": round(beneficio_pct, 2),
             "rr": round(rr, 2),
-            "setup_score": sum([m["ok"] for m in motivos]),
+            "setup_score": sum([m["ok"] for m in motivos]) + (1 if any(m.get("rsi_rebotando") for m in motivos) else 0),
             "tipo": "PULLBACK",
             "motivos": motivos
         }

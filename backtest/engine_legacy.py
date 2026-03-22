@@ -47,12 +47,14 @@ class BacktestEngineLegacy:
     Requiere Portfolio/Position de portfolio_legacy (no el nuevo Portfolio).
     """
 
-    def __init__(self, data, strategy, execution, risk, portfolio):
-        self.data      = data
-        self.strategy  = strategy
-        self.execution = execution
-        self.risk      = risk
-        self.portfolio = portfolio
+    def __init__(self, data, strategy, execution, risk, portfolio,
+                 filtro_ibex=None):
+        self.data        = data
+        self.strategy    = strategy
+        self.execution   = execution
+        self.risk        = risk
+        self.portfolio   = portfolio
+        self.filtro_ibex = filtro_ibex  # dict {fecha: {close, mm200, mm50}}
 
     def run(self):
         last_df   = None
@@ -81,6 +83,20 @@ class BacktestEngineLegacy:
 
             # 2️⃣ Evaluar entrada si no hay posición
             if not self.portfolio.position:
+                # Filtro de mercado IBEX MM200
+                if self.filtro_ibex:
+                    from backtest.backtest_f1 import _estado_mercado
+                    estado_mkt = _estado_mercado(fecha, self.filtro_ibex)
+                    if estado_mkt == "BAJISTA":
+                        self.portfolio.mark_to_market()
+                        continue
+                    # TRANSICION: solo permite señales con score >= 7
+                    # StrategyLogic no tiene score directo aquí, así que
+                    # en transición se evalúa pero se exige score alto
+                    _solo_calidad = (estado_mkt == "TRANSICION")
+                else:
+                    _solo_calidad = False
+
                 decision = self.strategy.evaluate(
                     df,
                     contexto,
@@ -88,7 +104,12 @@ class BacktestEngineLegacy:
                     ultima_barra=True
                 )
                 if decision["accion"] == "ENTRAR":
-                    self._enter(df, decision, fecha)
+                    # En TRANSICION solo entrar si setup_score >= 7
+                    score = decision.get("setup_score", 10)
+                    if _solo_calidad and score < 7.0:
+                        pass  # bloquear entrada de baja calidad
+                    else:
+                        self._enter(df, decision, fecha)
 
             # ✅ mark_to_market en cada barra (igual que original)
             self.portfolio.mark_to_market()
