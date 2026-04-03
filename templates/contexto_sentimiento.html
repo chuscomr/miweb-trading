@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - MiWeb Trading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 2em;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+        
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-row input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .resultados {
+            display: none;
+        }
+        
+        .resultados.visible {
+            display: block;
+        }
+        
+        .sentimiento-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .sentimiento-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        
+        .sentimiento-badge {
+            display: inline-block;
+            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .score-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+        
+        .analistas-info {
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        
+        .precio-objetivo-section {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .precio-objetivo-section h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .precio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .precio-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .precio-card .label {
+            color: #718096;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+        
+        .precio-card .value {
+            color: #2d3748;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        
+        .upside-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .upside-card.negativo {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .upside-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .upside-card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4a5568;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #2d3748;
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .loading.visible {
+            display: block;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Volver al Hub</a>
+        
+        <div class="header">
+            <h1>📈 {{ titulo }}</h1>
+            <p>{{ descripcion }}</p>
+        </div>
+        
+        <div class="panel">
+            <div class="input-group">
+                <label for="ticker">Ticker del valor:</label>
+                <div class="input-row">
+                    <input type="text" 
+                           id="ticker" 
+                           placeholder="SAN, BBVA, TEF, IBE..."
+                           autocomplete="off">
+                    <button class="btn" onclick="analizarSentimiento()">🔍 Analizar</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <p>⏳ Analizando sentimiento del mercado...</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="resultados" id="resultados">
+                <!-- Sentimiento general -->
+                <div class="sentimiento-header" id="sentimiento-header">
+                    <h2 id="nombre-empresa">-</h2>
+                    <div class="sentimiento-badge" id="sentimiento-badge">-</div>
+                    <div class="score-bar">
+                        <div class="score-fill" id="score-fill" style="width: 0%">0%</div>
+                    </div>
+                    <div class="analistas-info">
+                        Basado en <strong id="num-analistas">0</strong> analistas
+                    </div>
+                </div>
+                
+                <!-- Precios objetivo -->
+                <div class="precio-objetivo-section">
+                    <h3>🎯 Precios Objetivo</h3>
+                    <div class="precio-grid">
+                        <div class="precio-card">
+                            <div class="label">Precio Actual</div>
+                            <div class="value" id="precio-actual">-</div>
+                        </div>
+                        <div class="precio-card">
+                            <div class="label">Objetivo Medio</div>
+                            <div class="value" id="precio-objetivo-medio">-</div>
+                        </div>
+                        <div class="precio-card">
+                            <div class="label">Objetivo Alto</div>
+                            <div class="value" id="precio-objetivo-alto">-</div>
+                        </div>
+                        <div class="precio-card">
+                            <div class="label">Objetivo Bajo</div>
+                            <div class="value" id="precio-objetivo-bajo">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="upside-card" id="upside-card">
+                        <div class="label">Potencial Upside</div>
+                        <div class="value" id="upside-value">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Analizar sentimiento
+        async function analizarSentimiento() {
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            
+            if (!ticker) {
+                mostrarError('Por favor, introduce un ticker');
+                return;
+            }
+            
+            // Ocultar resultados previos y error
+            document.getElementById('resultados').classList.remove('visible');
+            document.getElementById('error').classList.remove('visible');
+            document.getElementById('loading').classList.add('visible');
+            
+            try {
+                const response = await fetch(`/contexto/api/sentimiento/${ticker}`);
+                const data = await response.json();
+                
+                document.getElementById('loading').classList.remove('visible');
+                
+                if (data.success) {
+                    mostrarResultados(data.datos);
+                } else {
+                    mostrarError(data.error || 'Error al obtener datos');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('visible');
+                mostrarError('Error de conexión: ' + error.message);
+            }
+        }
+        
+        function mostrarResultados(datos) {
+            // Nombre empresa
+            document.getElementById('nombre-empresa').textContent = datos.nombre;
+            
+            // Sentimiento
+            document.getElementById('sentimiento-badge').textContent = datos.sentimiento;
+            document.getElementById('num-analistas').textContent = datos.num_analistas;
+            
+            // Score
+            const scoreFill = document.getElementById('score-fill');
+            scoreFill.style.width = datos.score + '%';
+            scoreFill.textContent = datos.score + '%';
+            
+            // Color del header según sentimiento
+            const header = document.getElementById('sentimiento-header');
+            if (datos.score >= 70) {
+                header.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            } else if (datos.score >= 50) {
+                header.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+            } else if (datos.score >= 30) {
+                header.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+            } else {
+                header.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            }
+            
+            // Precios
+            document.getElementById('precio-actual').textContent = formatPrecio(datos.precio_actual);
+            document.getElementById('precio-objetivo-medio').textContent = formatPrecio(datos.precio_objetivo_medio);
+            document.getElementById('precio-objetivo-alto').textContent = formatPrecio(datos.precio_objetivo_alto);
+            document.getElementById('precio-objetivo-bajo').textContent = formatPrecio(datos.precio_objetivo_bajo);
+            
+            // Upside
+            const upsideCard = document.getElementById('upside-card');
+            const upsideValue = document.getElementById('upside-value');
+            
+            if (datos.upside_pct > 0) {
+                upsideCard.classList.remove('negativo');
+                upsideValue.textContent = '+' + datos.upside_pct.toFixed(2) + '%';
+            } else {
+                upsideCard.classList.add('negativo');
+                upsideValue.textContent = datos.upside_pct.toFixed(2) + '%';
+            }
+            
+            // Mostrar resultados
+            document.getElementById('resultados').classList.add('visible');
+        }
+        
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + mensaje;
+            errorDiv.classList.add('visible');
+        }
+        
+        function formatPrecio(num) {
+            if (!num || num === 0) return 'N/A';
+            return num.toFixed(2) + ' €';
+        }
+        
+        // Enter para buscar
+        document.getElementById('ticker').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analizarSentimiento();
+            }
+        });
+    </script>
+</body>
+</html>

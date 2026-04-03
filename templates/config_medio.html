@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Sistema Medio Plazo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .config-section {
+            margin-bottom: 30px;
+        }
+        
+        .config-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .config-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .config-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .config-item value {
+            display: block;
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .info-box {
+            padding: 20px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #424242;
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+        
+        .estrategia-box {
+            padding: 20px;
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .estrategia-box h4 {
+            color: #7b1fa2;
+            margin-bottom: 10px;
+        }
+        
+        .estrategia-box ul {
+            margin-left: 20px;
+            color: #424242;
+        }
+        
+        .estrategia-box li {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configuración del Sistema</h1>
+            <p>Parámetros y estrategia de medio plazo</p>
+        </div>
+        
+        <a href="/medio/" style="display:inline-block; color:white; text-decoration:none; margin-bottom:10px; margin-left:10px; font-size:0.9em; opacity:0.85;">← Volver al panel</a>
+
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest</a>
+            <a href="/medio/escaner">🔍 Escáner IBEX</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Parámetros del Sistema</h2>
+            
+            <div class="config-section">
+                <h3>📊 Información General</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Timeframe</label>
+                        <value>{{ config.timeframe }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Estrategia</label>
+                        <value>{{ config.estrategia }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Histórico Mínimo</label>
+                        <value>{{ config.min_semanas }} semanas</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Volatilidad Mínima</label>
+                        <value>{{ config.volatilidad_min }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>🎯 Parámetros de Entrada</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Pullback Mínimo</label>
+                        <value>{{ config.pullback_min }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Pullback Máximo</label>
+                        <value>{{ config.pullback_max }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Riesgo Mínimo</label>
+                        <value>{{ config.riesgo_min }}</value>
+                    </div>
+                    <div class="config-item">
+                        <label>Riesgo Máximo</label>
+                        <value>{{ config.riesgo_max }}</value>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>🏆 Universo de Operación</h3>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>🟢 🟢 IBEX35 — Prioridad principal</label>
+                        <value>Riesgo {{ config.tier1_riesgo }} (completo)</value>
+                    </div>
+                    <div class="config-item">
+                        <label>🟡 🟡 Mercado Continuo — Secundario</label>
+                        <value>Riesgo {{ config.tier2_riesgo }} (reducido)</value>
+                    </div>
+                </div>
+                <div style="margin-top:10px; padding:10px 14px; background:#f8f9fa; border-radius:6px; font-size:0.82em; color:#555; border-left:3px solid #667eea;">
+                    <strong>Reglas operativas:</strong>
+                    Si hay señal IBEX → prioridad absoluta ·
+                    Si no hay IBEX → mirar Continuo ·
+                    Si hay señal IBEX activa → no abrir Continuo hasta que cierre
+                </div>
+            </div>
+
+            <!-- CALIDAD DEL SETUP -->
+            <div style="margin-top:16px; background:white; border-radius:10px; border:1px solid #e0e0e0; overflow:hidden;">
+                <div style="background:#667eea; color:white; padding:12px 18px;">
+                    <h4 style="margin:0; font-size:0.9em;">⭐ Calidad del Setup</h4>
+                </div>
+                <div style="padding:16px 18px;">
+                    <p style="font-size:0.84em; color:#555; margin-bottom:14px;">
+                        Cada señal de compra se clasifica por calidad según el score (0-10).
+                        Las confirmaciones son informativas — no filtran, ayudan a priorizar cuando hay varias señales.
+                    </p>
+                    <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+                        <thead>
+                            <tr style="background:#f8f9fa;">
+                                <th style="padding:8px 12px; text-align:left; border-bottom:2px solid #e0e0e0;">Calidad</th>
+                                <th style="padding:8px 12px; text-align:left; border-bottom:2px solid #e0e0e0;">Score</th>
+                                <th style="padding:8px 12px; text-align:left; border-bottom:2px solid #e0e0e0;">Significado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid #f0f0f0; background:#fef9c3;">
+                                <td style="padding:8px 12px;"><strong>⭐ Setup Excelente</strong></td>
+                                <td style="padding:8px 12px;">≥ 8.5</td>
+                                <td style="padding:8px 12px;">Todas las confirmaciones alineadas</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #f0f0f0; background:#dbeafe;">
+                                <td style="padding:8px 12px;"><strong>🔵 Setup Sólido</strong></td>
+                                <td style="padding:8px 12px;">7.0 – 8.4</td>
+                                <td style="padding:8px 12px;">Setup robusto, falta alguna confirmación</td>
+                            </tr>
+                            <tr style="background:#f8f9fa;">
+                                <td style="padding:8px 12px;"><strong>🟡 Setup Básico</strong></td>
+                                <td style="padding:8px 12px;">5.5 – 6.9</td>
+                                <td style="padding:8px 12px;">Filtros obligatorios cumplidos, pocas confirmaciones</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top:12px; padding:10px 14px; background:#f8f9fa; border-radius:6px; font-size:0.82em; color:#555; border-left:3px solid #667eea;">
+                        <strong>Confirmaciones evaluadas:</strong>
+                        RSI semanal 40-55 (zona pullback sano) ·
+                        Volumen decreciente en pullback (corrección sin pánico) ·
+                        Precio cerca MM20 ≤3% (buen timing de entrada)
+                    </div>
+                </div>
+            </div>
+            
+            <div class="estrategia-box">
+                <h4>📚 Filosofía de la Estrategia</h4>
+                <ul>
+                    <li><strong>Timeframe Semanal:</strong> Reduce ruido del mercado, permite stops más amplios y operaciones más selectivas</li>
+                    <li><strong>Pullback en Tendencia:</strong> Compramos retrocesos en valores que mantienen tendencia alcista</li>
+                    <li><strong>Confirmación de Giro:</strong> Esperamos señal de vuelta alcista antes de entrar</li>
+                    <li><strong>Gestión progresiva:</strong> El stop evoluciona en 3 fases según el beneficio acumulado</li>
+                    <li><strong>Riesgo Controlado:</strong> Stop siempre definido antes de entrar, riesgo 1.5-8% (timeframe semanal)</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>🎯 Condiciones de Entrada</h4>
+                <p><strong>1. Tendencia Alcista:</strong> Precio > MM20 semanal con pendiente positiva</p>
+                <p><strong>2. Pullback Válido:</strong> Retroceso 3-8% desde máximo reciente (10 semanas) — evita ruido (<3%) y correcciones profundas (>8%)</p>
+                <p><strong>3. Giro Semanal (Trigger):</strong> Buy Stop al máximo de la semana actual × 1.001 — entra la semana siguiente solo si confirma</p>
+                <p><strong>4. Tendencia Macro:</strong> MM20↑ + MM50 &gt; MM200 — doble confirmación alcista obligatoria</p>
+                <p><strong>5. Riesgo Controlado:</strong> Stop = max(estructura×0.98, entrada - ATR×2), riesgo 1.5-8% (adaptado a semanal)</p>
+            </div>
+            
+            <div class="info-box">
+                <h4>📊 Diferencias con Sistema Swing</h4>
+                <p><strong>Swing:</strong> 1-3 semanas, datos diarios, breakouts + pullbacks en tendencia</p>
+                <p><strong>Medio Plazo:</strong> 4-24 semanas, datos semanales, pullbacks/mean reversion</p>
+                <p><strong>Ventaja:</strong> Menos operaciones, más selectivas, mayor holding period</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

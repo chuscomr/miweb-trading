@@ -1,0 +1,29 @@
+# ── Web framework ──────────────────────────────────────────────
+Flask==3.1.0
+Flask-Caching==2.3.0
+gunicorn==23.0.0
+
+# ── Datos de mercado ───────────────────────────────────────────
+yfinance==0.2.50
+curl_cffi>=0.7.0
+
+# ── Datos / cálculo ────────────────────────────────────────────
+pandas==2.2.3
+numpy==2.2.1
+python-dateutil==2.9.0
+
+# ── Visualización ──────────────────────────────────────────────
+matplotlib==3.10.0
+plotly
+
+# ── HTTP / noticias ────────────────────────────────────────────
+requests==2.32.3
+certifi==2025.1.31
+feedparser
+
+# ── IA / traducción ────────────────────────────────────────────
+anthropic
+deep-translator>=1.11.4
+
+# ── Utilidades ─────────────────────────────────────────────────
+python-dotenv>=1.0.0

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentimiento de Mercado · MiWeb</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #e8edf5 0%, #d0daea 50%, #c2d0e8 100%);
+    min-height: 100vh; padding: 24px 20px;
+}
+.container { max-width: 980px; margin: 0 auto; }
+a.back { color:#334155;text-decoration:none;font-size:.85rem;display:inline-block;margin-bottom:16px;background:rgba(255,255,255,0.6);padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,0.1); }
+a.back:hover { background:rgba(255,255,255,0.9); }
+.page-title { font-size:1.8rem;color:#1e293b;margin-bottom:4px;font-weight:700; }
+.page-sub   { color:#475569;font-size:.95rem;margin-bottom:24px; }
+.card { background:white;border-radius:14px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.card-title { font-size:1rem;font-weight:700;color:#334155;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #f1f5f9;display:flex;align-items:center;gap:8px; }
+.gauge-wrap { display:flex;flex-direction:column;align-items:center;gap:10px; }
+.gauge-svg { overflow:visible; }
+.gauge-label-bear { font-size:13px;fill:#ef4444;font-weight:700; }
+.gauge-label-bull  { font-size:13px;fill:#22c55e;font-weight:700; }
+.gauge-score-txt   { font-size:28px;font-weight:800; }
+.gauge-verdict-txt { font-size:13px;font-weight:600;letter-spacing:1px; }
+.ibex-stats { display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:16px; }
+.ibex-stat { text-align:center;background:#f8fafc;border-radius:10px;padding:14px 24px;min-width:100px; }
+.ibex-stat-num  { font-size:1.8rem;font-weight:800; }
+.ibex-stat-lbl  { font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:2px; }
+.ibex-stat.bull .ibex-stat-num { color:#22c55e; }
+.ibex-stat.bear .ibex-stat-num { color:#ef4444; }
+.ibex-stat.neut .ibex-stat-num { color:#94a3b8; }
+.ibex-table { width:100%;border-collapse:collapse;font-size:.88rem;margin-top:16px; }
+.ibex-table th { background:#f8fafc;color:#64748b;padding:8px 12px;text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e2e8f0; }
+.ibex-table td { padding:9px 12px;border-bottom:1px solid #f1f5f9; }
+.ibex-table tr:hover td { background:#f8fafc; }
+.score-pill { display:inline-block;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;min-width:50px;text-align:center; }
+.score-pill.bull { background:#dcfce7;color:#16a34a; }
+.score-pill.bear { background:#fee2e2;color:#dc2626; }
+.score-pill.neut { background:#f1f5f9;color:#64748b; }
+.empresa-selector { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px; }
+.empresa-selector select { padding:10px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:.9rem;color:#334155;background:white;min-width:200px;cursor:pointer; }
+.empresa-selector select:focus { outline:none;border-color:#6366f1; }
+.btn-analizar { padding:10px 22px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s; }
+.btn-analizar:hover { transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.35); }
+.btn-analizar:disabled { opacity:.5;cursor:not-allowed;transform:none; }
+.empresa-header { display:flex;gap:24px;align-items:center;padding:20px;background:#f8fafc;border-radius:10px;margin-bottom:20px;flex-wrap:wrap; }
+.empresa-nombre { font-size:1.3rem;font-weight:700;color:#1e293b; }
+.empresa-precio { font-size:1rem;color:#64748b;margin-top:2px; }
+.indicadores-grid { display:grid;gap:12px; }
+.ind-row { display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:10px;border-left:4px solid #e2e8f0;background:#fafafa;transition:background .2s; }
+.ind-row:hover { background:#f1f5f9; }
+.ind-emoji  { font-size:1.4rem;flex-shrink:0; }
+.ind-info   { flex:1; }
+.ind-nombre  { font-size:.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px; }
+.ind-valor   { font-size:1.1rem;font-weight:800;color:#1e293b;margin:1px 0; }
+.ind-detalle { font-size:.82rem;color:#64748b; }
+.ind-score-badge { padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700;white-space:nowrap;flex-shrink:0; }
+.spinner { display:none;text-align:center;padding:40px;color:#64748b;font-size:.9rem; }
+.spinner-ring { width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-box { display:none;padding:20px;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:.9rem;text-align:center; }
+.sent-filter-btn {
+  padding:3px 10px; border-radius:3px; font-size:9px; letter-spacing:2px;
+  border:1px solid #2a3f54; background:transparent; color:#7a8fa6;
+  cursor:pointer; font-family:monospace; transition:all 0.2s;
+}
+.sent-filter-active {
+  border-color:#0af !important; background:#0af2 !important; color:#0af !important;
+}
+.sent-company-row {
+  padding:8px 14px; border-bottom:1px solid #0af1; cursor:pointer;
+  transition:background 0.15s;
+}
+.sent-company-row:hover { background:#050d1a; }
+.sent-score-bar-bg { background:#0a0f1a; border-radius:2px; height:4px; overflow:hidden; margin-top:4px; }
+.sent-score-bar-fill { height:100%; border-radius:2px; transition:width 0.6s ease; }
+.sent-detail { display:none; padding:10px 0 6px; border-top:1px solid #0af2; margin-top:6px; }
+.sent-news-item {
+  font-size:11px; color:#99b8cc; padding:6px 8px; margin-bottom:4px;
+  border-left:2px solid #0af5; background:#050f1a;
+  border-radius:0 4px 4px 0; line-height:1.4;
+}
+.sent-news-item a {
+  color:#99b8cc; text-decoration:none;
+}
+.sent-news-item a:hover {
+  color:#ffffff; text-decoration:underline;
+}
+.sent-news-item:hover { background:#071520; color:#cce; }
+.sent-deep-btn {
+  margin-top:10px; width:100%; padding:6px 0; font-size:9px; letter-spacing:2px;
+  background:#001a0d; border:1px solid #00ff8866; color:#00ff88;
+  border-radius:3px; cursor:pointer; font-family:monospace; transition:all 0.2s;
+}
+.sent-deep-btn:hover { background:#002a15; border-color:#00ff88; box-shadow:0 0 8px #00ff8833; }
+.sent-deep-btn:disabled { opacity:0.4; cursor:default; }
+.sent-deep-result {
+  margin-top:8px; padding:8px 10px; background:#030d08;
+  border:1px solid #00ff8833; border-radius:4px;
+  font-size:11px; color:#aaccbb; line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="javascript:history.back()" class="back">← Volver</a>
+<div class="page-title">📊 Sentimiento de Mercado</div>
+<div class="page-sub">Análisis técnico del sentimiento alcista/bajista basado en indicadores de mercado reales</div>
+
+<!-- BLOQUE 1: RESUMEN IBEX -->
+<div class="card">
+    <div class="card-title">🏛️ Sentimiento Global IBEX 35</div>
+    <div style="display:flex;gap:40px;align-items:center;flex-wrap:wrap;justify-content:center;">
+        <div class="gauge-wrap">
+            <svg class="gauge-svg" width="260" height="150" viewBox="0 0 260 150">
+                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="#f1f5f9" stroke-width="22" stroke-linecap="round"/>
+                <defs>
+                    <linearGradient id="gaugeGradIbex" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#ef4444"/>
+                        <stop offset="40%" stop-color="#f59e0b"/>
+                        <stop offset="60%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#22c55e"/>
+                    </linearGradient>
+                </defs>
+                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="url(#gaugeGradIbex)" stroke-width="22" stroke-linecap="round"/>
+                <g id="ibex-needle" transform="rotate(0, 130, 130)">
+                    <line x1="130" y1="130" x2="130" y2="32" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="130" cy="130" r="7" fill="#1e293b"/>
+                </g>
+                <text x="10"  y="148" class="gauge-label-bear">🐻</text>
+                <text x="222" y="148" class="gauge-label-bull">🐂</text>
+                <text id="ibex-score-txt"   x="130" y="105" text-anchor="middle" class="gauge-score-txt" fill="#1e293b">—</text>
+                <text id="ibex-verdict-txt" x="130" y="124" text-anchor="middle" class="gauge-verdict-txt" fill="#64748b">Pulsa Analizar</text>
+            </svg>
+        </div>
+        <div>
+            <div class="ibex-stats">
+                <div class="ibex-stat bull"><div class="ibex-stat-num" id="ibex-n-bull">—</div><div class="ibex-stat-lbl">🐂 Alcistas</div></div>
+                <div class="ibex-stat neut"><div class="ibex-stat-num" id="ibex-n-neut">—</div><div class="ibex-stat-lbl">➡️ Neutras</div></div>
+                <div class="ibex-stat bear"><div class="ibex-stat-num" id="ibex-n-bear">—</div><div class="ibex-stat-lbl">🐻 Bajistas</div></div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn-analizar" id="btn-ibex" onclick="cargarIbex()">🔍 Analizar IBEX 35</button>
+            </div>
+        </div>
+    </div>
+    <div id="ibex-tabla-wrap" style="display:none;margin-top:24px;max-height:320px;overflow-y:auto;">
+        <table class="ibex-table">
+            <thead><tr><th>Empresa</th><th>Score</th><th>Veredicto</th></tr></thead>
+            <tbody id="ibex-tbody"></tbody>
+        </table>
+    </div>
+    <div class="spinner" id="ibex-spinner"><div class="spinner-ring"></div>Analizando IBEX 35... (puede tardar unos segundos)</div>
+</div>
+
+<!-- BLOQUE 2: DETALLE EMPRESA -->
+<div class="card">
+    <div class="card-title">🔍 Análisis por Empresa</div>
+    <div class="empresa-selector">
+        <select id="sel-ticker">
+            <option value="">— Selecciona empresa —</option>
+            <optgroup label="─ IBEX 35 ─">
+                <option value="ACX.MC">ACX — Acerinox</option><option value="ACS.MC">ACS — ACS</option>
+                <option value="AENA.MC">AENA — Aena</option><option value="AMS.MC">AMS — Amadeus</option>
+                <option value="ANA.MC">ANA — Acciona</option><option value="ANE.MC">ANE — Acciona Energía</option>
+                <option value="BBVA.MC">BBVA — BBVA</option><option value="BKT.MC">BKT — Bankinter</option>
+                <option value="CABK.MC">CABK — CaixaBank</option><option value="CLNX.MC">CLNX — Cellnex</option>
+                <option value="COL.MC">COL — Colonial</option><option value="ELE.MC">ELE — Endesa</option>
+                <option value="ENG.MC">ENG — Enagás</option><option value="FCC.MC">FCC — FCC</option>
+                <option value="FER.MC">FER — Ferrovial</option><option value="GRF.MC">GRF — Grifols</option>
+                <option value="IAG.MC">IAG — IAG Iberia</option><option value="IBE.MC">IBE — Iberdrola</option>
+                <option value="IDR.MC">IDR — Indra</option><option value="ITX.MC">ITX — Inditex</option>
+                <option value="LOG.MC">LOG — Logista</option><option value="MAP.MC">MAP — Mapfre</option>
+                <option value="MRL.MC">MRL — Merlin</option><option value="MTS.MC">MTS — ArcelorMittal</option>
+                <option value="NTGY.MC">NTGY — Naturgy</option><option value="PUIG.MC">PUIG — Puig</option>
+                <option value="RED.MC">RED — Redeia</option><option value="REP.MC">REP — Repsol</option>
+                <option value="ROVI.MC">ROVI — Rovi</option><option value="SAB.MC">SAB — Sabadell</option>
+                <option value="SAN.MC">SAN — Santander</option><option value="SCYR.MC">SCYR — Sacyr</option>
+                <option value="SLR.MC">SLR — Solaria</option><option value="TEF.MC">TEF — Telefónica</option>
+                <option value="UNI.MC">UNI — Unicaja</option>
+            </optgroup>
+            <optgroup label="─ M. Continuo ─">
+                <option value="CIE.MC">CIE — CIE Automotive</option><option value="VID.MC">VID — Vidrala</option>
+                <option value="TUB.MC">TUB — Tubacex</option><option value="TRE.MC">TRE — Técnicas Reunidas</option>
+                <option value="CAF.MC">CAF — CAF</option><option value="PHM.MC">PHM — Pharma Mar</option>
+                <option value="OHLA.MC">OHLA — OHLA</option><option value="GRE.MC">GRE — Grenergy</option>
+                <option value="MEL.MC">MEL — Meliá Hotels</option><option value="VIS.MC">VIS — Viscofan</option>
+                <option value="ADX.MC">ADX — Audax</option><option value="AEDAS.MC">AEDAS — Aedas Homes</option>
+            </optgroup>
+        </select>
+        <button class="btn-analizar" id="btn-empresa" onclick="analizarEmpresa()">🔍 Analizar</button>
+    </div>
+    <div class="spinner" id="empresa-spinner"><div class="spinner-ring"></div>Calculando sentimiento...</div>
+    <div class="error-box" id="empresa-error"></div>
+    <div id="empresa-resultado" style="display:none;"></div>
+</div>
+
+    <!-- BLOQUE 3: SENTIMIENTO RSS / PRENSA -->
+    <div class="card">
+        <div class="card-title">📰 Sentimiento de Prensa — IBEX 35</div>
+        <p style="font-size:.88rem;color:#64748b;margin-bottom:16px;">
+            Análisis de titulares de noticias financieras en tiempo real. 
+            Clasifica cada empresa del IBEX según el tono positivo/negativo de las noticias recientes.
+        </p>
+
+        <!-- Botón analizar -->
+        <button id="sent-btn-analizar" onclick="iniciarAnalisisSentimiento()" style="
+            background:linear-gradient(135deg,#f7971e,#ffd200);
+            color:#fff;border:none;padding:10px 24px;border-radius:8px;
+            font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:16px;
+        ">🚀 Analizar Sentimiento Prensa</button>
+
+        <!-- Resumen global IBEX -->
+        <div id="sent-ibex-global" style="display:none;padding:14px 16px;background:#f8fafc;border-radius:10px;margin-bottom:14px;">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;">
+                <div id="sent-score-circle" style="width:52px;height:52px;border-radius:50%;border:2px solid #ffcc00;
+                    display:flex;align-items:center;justify-content:center;background:rgba(255,204,0,0.08);">
+                    <span id="sent-score-num" style="color:#ffcc00;font-size:13px;font-weight:700;">--</span>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;">IBEX 35 · Sentimiento Prensa</div>
+                    <div id="sent-ibex-summary" style="font-size:.9rem;color:#334155;line-height:1.5;">—</div>
+                    <div style="display:flex;gap:12px;margin-top:6px;">
+                        <span style="font-size:.8rem;"><span id="sent-n-bull" style="color:#22c55e;font-weight:700;">-</span> <span style="color:#64748b;">alcistas</span></span>
+                        <span style="font-size:.8rem;"><span id="sent-n-neut" style="color:#f59e0b;font-weight:700;">-</span> <span style="color:#64748b;">neutras</span></span>
+                        <span style="font-size:.8rem;"><span id="sent-n-bear" style="color:#ef4444;font-weight:700;">-</span> <span style="color:#64748b;">bajistas</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sent-progress-wrap" style="display:none; padding:8px 14px; background:#050d1a; border-bottom:1px solid #0af2;">
+    <div style="display:flex; justify-content:space-between; font-size:9px; color:#0af; margin-bottom:4px; letter-spacing:2px;">
+      <span id="sent-progress-label">ANALIZANDO...</span>
+      <span id="sent-progress-pct">0%</span>
+    </div>
+    <div style="background:#0a0f1a; border-radius:2px; height:3px;">
+      <div id="sent-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#0af,#00ff88); transition:width 0.4s ease;"></div>
+    </div>
+  </div>
+
+  <!-- Resumen IBEX global -->
+  <div id="sent-ibex-global" style="display:none; padding:12px 14px; background:#050d1a; border-bottom:1px solid #0af2;">
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:center;">
+      <div id="sent-score-circle" style="width:52px; height:52px; border-radius:50%; border:2px solid #ffcc00;
+        display:flex; align-items:center; justify-content:center; background:rgba(255,204,0,0.08);
+        box-shadow:0 0 12px rgba(255,204,0,0.2);">
+        <span id="sent-score-num" style="color:#ffcc00; font-size:13px; font-weight:700;">--</span>
+      </div>
+      <div>
+        <div style="font-size:9px; color:#0af; letter-spacing:2px; margin-bottom:4px;">IBEX 35 · SENTIMIENTO GLOBAL</div>
+        <div id="sent-ibex-summary" style="font-size:11px; color:#aac; line-height:1.5;">Pulsa ANALIZAR para obtener el análisis en tiempo real con IA</div>
+        <div style="display:flex; gap:12px; margin-top:6px;">
+          <span style="font-size:10px;"><span id="sent-n-bull" style="color:#00ff88; font-weight:700;">-</span> <span style="color:#7a8fa6;">alcistas</span></span>
+          <span style="font-size:10px;"><span id="sent-n-neut" style="color:#ffcc00; font-weight:700;">-</span> <span style="color:#7a8fa6;">neutras</span></span>
+          <span style="font-size:10px;"><span id="sent-n-bear" style="color:#ff4466; font-weight:700;">-</span> <span style="color:#7a8fa6;">bajistas</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div id="sent-filters" style="display:none; padding:8px 14px; border-bottom:1px solid #0af2; display:flex; gap:6px; flex-wrap:wrap;">
+    <button onclick="setSentFilter(this,all)" class="sent-filter-btn sent-filter-active" data-filter="all">TODAS</button>
+    <button onclick="setSentFilter(this,bull)" class="sent-filter-btn" data-filter="bull">ALCISTAS</button>
+    <button onclick="setSentFilter(this,bear)" class="sent-filter-btn" data-filter="bear">BAJISTAS</button>
+    <button onclick="setSentFilter(this,alert)" class="sent-filter-btn" data-filter="alert">ALERTAS</button>
+  </div>
+
+  <!-- Estado inicial -->
+  <div id="sent-empty" style="text-align:center; padding:50px 20px; color:#6b7f93;">
+    <div style="font-size:36px; margin-bottom:10px; opacity:0.3;">◈</div>
+    <div style="font-size:11px; letter-spacing:2px; color:#6b7f93;">PULSA ANALIZAR PARA ESCANEAR EL IBEX 35</div>
+    <div style="font-size:10px; color:#6b7f93; margin-top:6px; letter-spacing:1px;">LA IA BUSCA NOTICIAS EN TIEMPO REAL POR EMPRESA</div>
+  </div>
+
+  <!-- Lista de empresas -->
+  <div id="sent-list" style="padding:8px 0;"></div>
+
+        <!-- Lista de empresas -->
+        <div id="sent-filters-wrap" style="display:none;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                <button onclick="setSentFilter(this,'all')"   class="sent-filter-btn sent-filter-active" data-filter="all">TODAS</button>
+                <button onclick="setSentFilter(this,'bull')"  class="sent-filter-btn" data-filter="bull">ALCISTAS</button>
+                <button onclick="setSentFilter(this,'bear')"  class="sent-filter-btn" data-filter="bear">BAJISTAS</button>
+                <button onclick="setSentFilter(this,'alert')" class="sent-filter-btn" data-filter="alert">ALERTAS</button>
+            </div>
+        </div>
+        <div id="sent-empty" style="text-align:center;padding:30px;color:#94a3b8;font-size:.9rem;">
+            Pulsa el botón para analizar el sentimiento de prensa del IBEX 35
+        </div>
+        <div id="sent-list" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+
+</div>
+<script>
+function scoreToAngle(score) { return (score / 100) * 90; }
+
+function animateNeedle(needleId, score, duration) {
+    duration = duration || 900;
+    const needle = document.getElementById(needleId);
+    if (!needle) return;
+    const targetAngle = scoreToAngle(score);
+    const start = performance.now();
+    function step(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = targetAngle * ease;
+        needle.setAttribute('transform', 'rotate(' + current + ', 130, 130)');
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+function scoreClass(s) { return s >= 15 ? 'bull' : s <= -15 ? 'bear' : 'neut'; }
+function scoreColor(s) {
+    if (s >= 40)  return '#16a34a';
+    if (s >= 15)  return '#22c55e';
+    if (s >= -15) return '#94a3b8';
+    if (s >= -40) return '#ef4444';
+    return '#dc2626';
+}
+
+async function cargarIbex() {
+    const btn = document.getElementById('btn-ibex');
+    btn.disabled = true; btn.textContent = '⏳ Analizando...';
+    document.getElementById('ibex-spinner').style.display = 'block';
+    document.getElementById('ibex-tabla-wrap').style.display = 'none';
+    try {
+        const resp = await fetch('/analisis/api/sentimiento_ibex');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const score = data.score_ibex;
+        const color = scoreColor(score);
+        document.getElementById('ibex-score-txt').textContent = (score >= 0 ? '+' : '') + score;
+        document.getElementById('ibex-score-txt').setAttribute('fill', color);
+        document.getElementById('ibex-verdict-txt').textContent =
+            score >= 40 ? '🐂 ALCISTA' : score >= 15 ? '🐂 LIGER. ALCISTA' :
+            score >= -15 ? '➡️ NEUTRO' : score >= -40 ? '🐻 LIGER. BAJISTA' : '🐻 BAJISTA';
+        document.getElementById('ibex-verdict-txt').setAttribute('fill', color);
+        animateNeedle('ibex-needle', score);
+        document.getElementById('ibex-n-bull').textContent = data.alcistas;
+        document.getElementById('ibex-n-neut').textContent = data.neutras;
+        document.getElementById('ibex-n-bear').textContent = data.bajistas;
+        const tbody = document.getElementById('ibex-tbody');
+        tbody.innerHTML = data.empresas.map(function(e) {
+            var cls = scoreClass(e.score);
+            var col = scoreColor(e.score);
+            return '<tr><td><strong>' + e.nombre + '</strong> <span style="color:#94a3b8;font-size:.8rem;">' + e.ticker + '</span></td>' +
+                   '<td><span class="score-pill ' + cls + '">' + (e.score >= 0 ? '+' : '') + e.score + '</span></td>' +
+                   '<td style="color:' + col + ';font-weight:600;">' + e.emoji + ' ' + e.veredicto + '</td></tr>';
+        }).join('');
+        document.getElementById('ibex-tabla-wrap').style.display = 'block';
+        btn.textContent = '↺ Actualizar';
+    } catch(e) {
+        btn.textContent = '⚠️ Error — Reintentar';
+    } finally {
+        document.getElementById('ibex-spinner').style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+async function analizarEmpresa() {
+    const sel = document.getElementById('sel-ticker');
+    const ticker = sel.value;
+    if (!ticker) { alert('Selecciona una empresa primero'); return; }
+    const btn = document.getElementById('btn-empresa');
+    btn.disabled = true; btn.textContent = '⏳ Calculando...';
+    document.getElementById('empresa-spinner').style.display = 'block';
+    document.getElementById('empresa-resultado').style.display = 'none';
+    document.getElementById('empresa-error').style.display = 'none';
+    try {
+        const resp = await fetch('/analisis/api/sentimiento_real/' + encodeURIComponent(ticker));
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        const score = data.score;
+        const color = scoreColor(score);
+        const nombre = sel.options[sel.selectedIndex].text.split('—')[1] ? sel.options[sel.selectedIndex].text.split('—')[1].trim() : ticker;
+        var html = '<div class="empresa-header">' +
+            '<div class="gauge-wrap"><svg class="gauge-svg" width="240" height="140" viewBox="0 0 260 150">' +
+            '<path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="#f1f5f9" stroke-width="22" stroke-linecap="round"/>' +
+            '<defs><linearGradient id="gaugeGradEmp" x1="0%" y1="0%" x2="100%" y2="0%">' +
+            '<stop offset="0%" stop-color="#ef4444"/><stop offset="40%" stop-color="#f59e0b"/>' +
+            '<stop offset="60%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/>' +
+            '</linearGradient></defs>' +
+            '<path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="url(#gaugeGradEmp)" stroke-width="22" stroke-linecap="round"/>' +
+            '<g id="emp-needle" transform="rotate(0, 130, 130)">' +
+            '<line x1="130" y1="130" x2="130" y2="32" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>' +
+            '<circle cx="130" cy="130" r="7" fill="#1e293b"/></g>' +
+            '<text x="10" y="148" class="gauge-label-bear">🐻</text>' +
+            '<text x="222" y="148" class="gauge-label-bull">🐂</text>' +
+            '<text x="130" y="105" text-anchor="middle" class="gauge-score-txt" fill="' + color + '">' + (score >= 0 ? '+' : '') + score + '</text>' +
+            '<text x="130" y="124" text-anchor="middle" class="gauge-verdict-txt" fill="' + color + '">' + data.emoji + ' ' + data.veredicto + '</text>' +
+            '</svg></div>' +
+            '<div><div class="empresa-nombre">' + data.emoji + ' ' + nombre + ' <span style="color:#94a3b8;font-size:.85rem;">(' + ticker + ')</span></div>' +
+            '<div class="empresa-precio">Precio: <strong>' + data.precio + '€</strong></div>' +
+            '<div style="margin-top:10px;font-size:.85rem;color:#64748b;max-width:320px;line-height:1.5;">Análisis basado en <strong>' + data.componentes.length + ' indicadores técnicos</strong>: medias móviles, RSI, MACD, volumen y posición en rango anual.</div>' +
+            '</div></div><div class="indicadores-grid">';
+
+        data.componentes.forEach(function(ind) {
+            var si = ind.score;
+            var bg = si > 0 ? 'rgba(34,197,94,0.08)' : si < 0 ? 'rgba(239,68,68,0.08)' : 'rgba(148,163,184,0.08)';
+            var bd = ind.color || '#e2e8f0';
+            var cls = scoreClass(si);
+            html += '<div class="ind-row" style="border-left-color:' + bd + ';background:' + bg + ';">' +
+                    '<div class="ind-emoji">' + ind.emoji + '</div>' +
+                    '<div class="ind-info">' +
+                    '<div class="ind-nombre">' + ind.nombre + '</div>' +
+                    '<div class="ind-valor" style="color:' + bd + ';">' + ind.valor + '</div>' +
+                    '<div class="ind-detalle">' + ind.texto + '</div>' +
+                    '</div>' +
+                    '<div class="ind-score-badge score-pill ' + cls + '">' + (si >= 0 ? '+' : '') + si.toFixed(0) + '</div>' +
+                    '</div>';
+        });
+        html += '</div>';
+
+        // Noticias recientes de prensa
+        const compNoticias = data.componentes.find(c => c.nombre && c.nombre.includes('Prensa'));
+        if (compNoticias && compNoticias.noticias && compNoticias.noticias.length) {
+            html += '<div style="margin-top:16px;padding:16px;background:#f8fafc;border-radius:10px;">';
+            html += '<div style="font-size:.78rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📰 Noticias recientes en prensa financiera</div>';
+            compNoticias.noticias.forEach(function(n) {
+                const titulo = typeof n === 'string' ? n : (n.titulo || n);
+                const url    = typeof n === 'object' ? (n.url || '#') : '#';
+                const fuente = typeof n === 'object' ? (n.fuente || '') : '';
+                html += '<div style="font-size:.85rem;color:#334155;padding:6px 0;border-bottom:1px solid #e2e8f0;">';
+                html += '<a href="' + url + '" target="_blank" style="color:#334155;text-decoration:none;">';
+                html += '• ' + titulo + '</a>';
+                if (fuente) html += '<span style="font-size:.75rem;color:#6366f1;margin-left:6px;">' + fuente + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Datos de analistas si están disponibles
+        if (data.objetivo || data.rec_key || data.n_analistas) {
+            html += '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">';
+            if (data.n_analistas) html += '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 14px;font-size:.82rem;color:#0369a1;"><strong>' + data.n_analistas + '</strong> analistas cubren este valor</div>';
+            if (data.objetivo)    html += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;font-size:.82rem;color:#15803d;">Precio objetivo: <strong>' + data.objetivo.toFixed(2) + '€</strong></div>';
+            if (data.rec_key)     html += '<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:8px 14px;font-size:.82rem;color:#92400e;">Consenso: <strong>' + data.rec_key.replace('_', ' ') + '</strong></div>';
+            html += '</div>';
+        }
+
+        document.getElementById('empresa-resultado').innerHTML = html;
+        document.getElementById('empresa-resultado').style.display = 'block';
+        setTimeout(function() { animateNeedle('emp-needle', score); }, 100);
+    } catch(e) {
+        document.getElementById('empresa-error').textContent = '⚠️ Error: ' + e.message;
+        document.getElementById('empresa-error').style.display = 'block';
+    } finally {
+        document.getElementById('empresa-spinner').style.display = 'none';
+        btn.disabled = false; btn.textContent = '🔍 Analizar';
+    }
+}
+
+document.getElementById('sel-ticker').addEventListener('change', function() {
+    if (this.value) analizarEmpresa();
+});
+
+let sentResults = [];
+let sentFilter = "all";
+let sentRunning = false;
+
+
+function setSentFilter(btn, filter) {
+  sentFilter = filter;
+  document.querySelectorAll(".sent-filter-btn").forEach(b => b.classList.remove("sent-filter-active"));
+  btn.classList.add("sent-filter-active");
+  renderSentList();
+}
+
+function sentScoreColor(s) {
+  return s > 0.2 ? "#00ff88" : s < -0.2 ? "#ff4466" : "#ffcc00";
+}
+
+function sentTrendLabel(s) {
+  if (s > 0.5) return "ALCISTA";
+  if (s > 0.2) return "POSITIVO";
+  if (s < -0.5) return "BAJISTA";
+  if (s < -0.2) return "NEGATIVO";
+  return "NEUTRO";
+}
+
+function renderSentList() {
+  const list = document.getElementById("sent-list");
+  if (!sentResults.length) return;
+
+  let filtered = sentResults.filter(r => {
+    if (sentFilter === "bull") return r.score > 0.2;
+    if (sentFilter === "bear") return r.score < -0.2;
+    if (sentFilter === "alert") return !!r.alert;
+    return true;
+  });
+
+  list.innerHTML = filtered.map((r, i) => {
+    const color = sentScoreColor(r.score);
+    const pct = ((r.score + 1) / 2 * 100).toFixed(0);
+    const scoreNum = (r.score >= 0 ? "+" : "") + (r.score * 100).toFixed(0);
+    const alertBadge = r.alert
+      ? `<span style="font-size:9px;padding:1px 5px;border-radius:2px;border:1px solid ${color};color:${color};background:${color}18;margin-left:6px;">${r.alert}</span>`
+      : "";
+    const sinDatos = r.sin_datos
+      ? `<div style="font-size:9px;color:#7a8fa6;font-style:italic;margin-top:4px;">Sin noticias recientes</div>`
+      : "";
+    const newsHtml = (r.noticias || []).map(n => {
+              // n es un objeto { titulo, url }
+              const titulo = n.titulo || "";
+              const url = n.url || "#";
+              if (!titulo) return "";
+              return `
+                  <div class="sent-news-item">
+                      › <a href="${url}" target="_blank" rel="noopener noreferrer">
+                          ${titulo}
+                        </a>
+                  </div>
+              `;
+}).join("");
+
+
+    const deepBtn = `<button class="sent-deep-btn" onclick="event.stopPropagation();analizarProfundo('${r.ticker}',${i})" id="deep-btn-${i}">
+        🤖 ANÁLISIS PROFUNDO IA · ${r.ticker}
+      </button>
+      <div id="deep-result-${i}" class="sent-deep-result" style="display:none;"></div>`;
+
+    return `<div class="sent-company-row" onclick="toggleSentDetail(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:1px;">${r.ticker}</span>
+          <span style="font-size:10px;color:#667;margin-left:6px;">${r.nombre}</span>
+          ${alertBadge}
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:14px;font-weight:700;color:${color};">${scoreNum}</span>
+          <span style="font-size:9px;color:#7a8fa6;display:block;letter-spacing:1px;">${sentTrendLabel(r.score)}</span>
+        </div>
+      </div>
+      <div class="sent-score-bar-bg">
+        <div class="sent-score-bar-fill" style="width:${pct}%;background:${color};box-shadow:0 0 6px ${color};"></div>
+      </div>
+      ${sinDatos}
+      <div id="sent-detail-${i}" class="sent-detail">
+        <div style="font-size:9px;color:#0af;margin-bottom:6px;letter-spacing:2px;">NOTICIAS · ${r.num_noticias || 0} encontradas</div>
+        ${newsHtml || '<div class="sent-news-item">Sin noticias disponibles</div>'}
+        ${deepBtn}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleSentDetail(i) {
+  const el = document.getElementById("sent-detail-" + i);
+  if (!el) return;
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+async function analizarProfundo(ticker, idx) {
+  const btn = document.getElementById(`deep-btn-${idx}`);
+  const resultDiv = document.getElementById(`deep-result-${idx}`);
+  if (!btn || !resultDiv) return;
+
+  const empresa = sentResults.find(r => r.ticker === ticker);
+  if (!empresa) return;
+
+  btn.disabled = true;
+  btn.textContent = "⏳ ANALIZANDO CON IA...";
+  resultDiv.style.display = "block";
+  resultDiv.innerHTML = `<span style="color:#0af;letter-spacing:1px;font-size:10px;">CONSULTANDO CLAUDE HAIKU...</span>`;
+
+  const noticias = (empresa.noticias || [])
+          .map(n => n.titulo)
+          .join(" | ") || "Sin noticias recientes";
+  const prompt = `Eres un analista bursátil experto en el mercado español. Analiza ${empresa.nombre} (${ticker}) del IBEX 35.
+
+Noticias recientes detectadas: ${noticias}
+Score de sentimiento RSS: ${(empresa.score * 100).toFixed(0)} (escala -100 a +100)
+Sector: ${empresa.sector}
+Contexto: España marzo 2026, BCE tipos al 3%, economía española sólida.
+
+Proporciona un análisis conciso en 3-4 frases que incluya:
+1. Situación actual y drivers principales
+2. Riesgos o catalizadores clave
+3. Perspectiva a corto plazo (1-4 semanas)
+
+Responde en español, directo y profesional, sin asteriscos ni markdown.`;
+
+  try {
+    const resp = await fetch("/api/sentimiento", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    resultDiv.innerHTML = `
+      <div style="font-size:9px;color:#00ff88;letter-spacing:2px;margin-bottom:6px;">🤖 ANÁLISIS IA · ${ticker}</div>
+      <div style="color:#cce;font-size:11px;line-height:1.7;">${data.text || "Sin respuesta"}</div>
+    `;
+    btn.textContent = "✓ ANÁLISIS COMPLETADO";
+    btn.style.borderColor = "#00ff88";
+    btn.style.color = "#00ff88";
+
+  } catch(e) {
+    resultDiv.innerHTML = `<span style="color:#ff4466;font-size:10px;">Error: ${e.message}</span>`;
+    btn.disabled = false;
+    btn.textContent = `🤖 ANÁLISIS PROFUNDO IA · ${ticker}`;
+  }
+}
+
+async function iniciarAnalisisSentimiento() {
+  if (sentRunning) return;
+  sentRunning = true;
+  sentResults = [];
+
+  const btn = document.getElementById("sent-btn-analizar");
+  btn.textContent = "⏳";
+  btn.disabled = true;
+
+  document.getElementById("sent-empty").style.display = "none";
+  document.getElementById("sent-list").innerHTML = "";
+  document.getElementById("sent-progress-wrap").style.display = "block";
+  document.getElementById("sent-ibex-global").style.display = "none";
+  document.getElementById("sent-filters").style.display = "none";
+  document.getElementById("sent-progress-label").textContent = "OBTENIENDO NOTICIAS RSS...";
+  document.getElementById("sent-progress-pct").textContent = "0%";
+  document.getElementById("sent-progress-bar").style.width = "0%";
+
+  // Animación de progreso mientras espera el servidor
+  let fakeProgress = 0;
+  const progressInterval = setInterval(() => {
+    fakeProgress = Math.min(fakeProgress + 2, 88);
+    document.getElementById("sent-progress-bar").style.width = fakeProgress + "%";
+    document.getElementById("sent-progress-pct").textContent = fakeProgress + "%";
+  }, 800);
+
+  try {
+    const resp = await fetch("/api/sentimiento_rss", { method: "GET" });
+    clearInterval(progressInterval);
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    if (!data.ok) throw new Error(data.error || "Error en servidor");
+
+    sentResults = data.empresas || [];
+
+    // Completar progreso
+    document.getElementById("sent-progress-bar").style.width = "100%";
+    document.getElementById("sent-progress-pct").textContent = "100%";
+    document.getElementById("sent-progress-label").textContent = `${sentResults.length} EMPRESAS ANALIZADAS`;
+
+    setTimeout(() => {
+      document.getElementById("sent-progress-wrap").style.display = "none";
+    }, 600);
+
+    // Resumen global
+    const color = sentScoreColor(data.ibex_score);
+    document.getElementById("sent-score-circle").style.borderColor = color;
+    document.getElementById("sent-score-circle").style.boxShadow = `0 0 14px ${color}44`;
+    document.getElementById("sent-score-circle").style.background = `${color}10`;
+    document.getElementById("sent-score-num").style.color = color;
+    document.getElementById("sent-score-num").textContent =
+      (data.ibex_score >= 0 ? "+" : "") + (data.ibex_score * 100).toFixed(0);
+    document.getElementById("sent-ibex-summary").textContent = data.ibex_summary || "";
+    document.getElementById("sent-n-bull").textContent = data.alcistas || 0;
+    document.getElementById("sent-n-neut").textContent = data.neutras || 0;
+    document.getElementById("sent-n-bear").textContent = data.bajistas || 0;
+    document.getElementById("sent-ibex-global").style.display = "block";
+    document.getElementById("sent-filters").style.display = "flex";
+
+    // Añadir hora del análisis
+    const hora = data.timestamp || new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById("sent-ibex-summary").textContent += ` · ${hora}`;
+
+    renderSentList();
+
+  } catch(e) {
+    clearInterval(progressInterval);
+    console.error("Error sentimiento:", e);
+    document.getElementById("sent-progress-wrap").style.display = "none";
+    document.getElementById("sent-empty").style.display = "block";
+    document.getElementById("sent-empty").innerHTML = `
+      <div style="font-size:28px;margin-bottom:10px;opacity:0.4;">⚠️</div>
+      <div style="font-size:11px;letter-spacing:1px;color:#ff4466;">ERROR AL OBTENER DATOS</div>
+      <div style="font-size:10px;color:#6b7f93;margin-top:6px;">${e.message}</div>`;
+  }
+
+  btn.textContent = "↺ RE-ANALIZAR";
+  btn.disabled = false;
+  sentRunning = false;
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarNoticias(); });
+</script>
+</body>
+</html>

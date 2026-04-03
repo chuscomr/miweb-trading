@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Medio Plazo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 950px; margin: 0 auto; }
+        .header { background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        .header h1 { color: #667eea; font-size: 2em; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.1em; }
+        .card { background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-container { display: flex; gap: 4px; align-items: flex-start; flex-wrap: nowrap; overflow-x: auto; }
+        .buttons-col { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+        .btn-analizar { padding: 8px 14px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; border: none; border-radius: 6px;
+            font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .btn-secondary { padding: 6px 10px; background: white; color: #667eea;
+            border: 1px solid #667eea; border-radius: 6px;
+            font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+            text-decoration: none; text-align: center; display: block; }
+        .input-wrapper { display: flex; flex-direction: column; gap: 2px; }
+        .input-group { display: flex; align-items: center; }
+        .input-addon { padding: 6px 8px; background: #f0f0f0; border: 1px solid #ddd;
+            font-size: 11px; font-weight: 600; color: #666; white-space: nowrap; }
+        .input-addon.prefix { border-right: none; border-radius: 6px 0 0 6px; }
+        .input-addon.suffix { border-left: none; border-radius: 0 6px 6px 0; }
+        input[type="number"], select { padding: 6px 8px; border: 1px solid #ddd;
+            font-size: 12px; height: 30px; }
+        .input-group.with-both input { border-radius: 0; }
+        select { border-radius: 6px; cursor: pointer; min-width: 120px; }
+
+        .contexto-bar { padding: 10px 16px; border-radius: 8px;
+            font-size: 0.88em; font-weight: 600; margin-bottom: 20px; text-align: center; }
+        .contexto-alcista { background: #16a34a; color: white; }
+        .contexto-transicion { background: #f59e0b; color: white; }
+        .contexto-bajista { background: #dc2626; color: white; }
+
+        .señal-compra { background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745; border-radius: 8px; padding: 15px 20px; margin-bottom: 5px; }
+        .señal-compra h3 { color: #155724; font-size: 1.3em; }
+        .señal-nooperar { background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border: 2px solid #dc3545; border-radius: 8px; padding: 15px 20px; margin-bottom: 5px; }
+        .señal-nooperar h3 { color: #721c24; font-size: 1.3em; }
+
+        .precio-card { background: #f8f9fa; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; }
+        .precio-card strong { font-size: 0.85em; color: #666; display: block; }
+        .precio-valor { font-size: 1.4em; font-weight: 700; color: #333; }
+        .precio-stats { font-size: 0.8em; color: #666; margin-top: 4px; }
+        .stat { margin-right: 12px; }
+        .stat.neg { color: #dc3545; }
+        .stat.pos { color: #28a745; }
+
+        .plan-trading { background: linear-gradient(135deg, #f0f0ff, #e8e8ff);
+            border: 1px solid #c0c0ff; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .plan-trading h2 { color: #4a4aaa; margin-bottom: 18px; font-size: 1.2em; }
+        .plan-item { padding: 8px 0; border-bottom: 1px solid #e0e0ff; font-size: 0.95em; }
+        .plan-item:last-child { border-bottom: none; }
+        .trigger-box { background: #f0f9ff; border-left: 3px solid #667eea;
+            padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+        .trigger-precio { font-size: 1.15em; font-weight: 700; color: #4040cc; }
+
+        .gestion-r { background: linear-gradient(135deg, #e8f4fd, #d4eaf7);
+            border: 2px solid #3b82f6; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .gestion-r h3 { color: #1d4ed8; margin-bottom: 12px; }
+        .fase { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px;
+            border-radius: 6px; margin-bottom: 6px; font-size: 0.88em; }
+        .fase-1 { background: #fff3cd; border-left: 3px solid #f59e0b; }
+        .fase-2 { background: #d4edda; border-left: 3px solid #28a745; }
+        .fase-3 { background: #cce5ff; border-left: 3px solid #3b82f6; }
+
+        .condiciones li { padding: 6px 0; border-bottom: 1px solid #f0f0f0;
+            list-style: none; font-size: 0.9em; }
+        .condiciones li:last-child { border-bottom: none; }
+
+        .btn-pantallazo { margin-top: 15px; padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 6px; font-size: 0.9em; cursor: pointer; }
+
+        .scanner-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .scanner-card h3 { color: #667eea; text-align: center; margin-bottom: 16px; }
+        .estrategia-btn { padding: 12px 40px; font-size: 1em; font-weight: 700;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <a href="/" style="display:inline-block;margin-bottom:12px;padding:6px 14px;
+       background:rgba(255,255,255,0.15);color:white;text-decoration:none;
+       border-radius:8px;font-size:0.85rem;border:1px solid rgba(255,255,255,0.3);font-weight:500;">
+       ← Volver al inicio
+    </a>
+
+    <div class="header">
+        <h1>🎯 Sistema Medio Plazo</h1>
+        <p>Análisis semanal • Pullback en tendencia alcista • 4-24 semanas</p>
+    </div>
+
+    {% if contexto_mercado %}
+    {% set est = contexto_mercado.estado %}
+    <div class="contexto-bar contexto-{{ 'alcista' if est == 'ALCISTA' else 'transicion' if est == 'TRANSICION' else 'bajista' }}">
+        {% if est == 'ALCISTA' %}
+            ✅ ALCISTA — IBEX en tendencia alcista · Operar con normalidad
+        {% elif est == 'TRANSICION' %}
+            🚦 TRANSICIÓN — IBEX en zona de transición · Reducir tamaño de posición
+        {% else %}
+            🛑 RIESGO ALTO — IBEX bajista · No abrir nuevas posiciones
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <form method="post" action="/medio/analizar">
+            <div class="form-container">
+                <div class="buttons-col">
+                    <button type="submit" name="analizar" value="1" class="btn-analizar">🎯 Analizar</button>
+                    <button type="submit" name="backtest" value="1" class="btn-secondary" style="background:#667eea; color:white; border:none;">📊 Backtest</button>
+                    <a href="/medio/backtest-sistema" class="btn-secondary">🚀 Backtest S.</a>
+                    <a href="/medio/config" class="btn-secondary">⚙️ Config.</a>
+                </div>
+
+                <div class="input-wrapper">
+                    <select name="ticker" style="min-width:110px;">
+                        <option value="">Ticker --</option>
+                        <optgroup label="🟢 IBEX35 — Principal">
+                            <option value="ACX.MC">ACX</option><option value="ACS.MC">ACS</option>
+                            <option value="AENA.MC">AENA</option><option value="AMS.MC">AMS</option>
+                            <option value="ANA.MC">ANA</option><option value="ANE.MC">ANE</option>
+                            <option value="BBVA.MC">BBVA</option><option value="BKT.MC">BKT</option>
+                            <option value="CABK.MC">CABK</option><option value="CLNX.MC">CLNX</option>
+                            <option value="COL.MC">COL</option><option value="ELE.MC">ELE</option>
+                            <option value="ENG.MC">ENG</option><option value="FCC.MC">FCC</option>
+                            <option value="FER.MC">FER</option><option value="GRF.MC">GRF</option>
+                            <option value="IAG.MC">IAG</option><option value="IBE.MC">IBE</option>
+                            <option value="IDR.MC">IDR</option><option value="ITX.MC">ITX</option>
+                            <option value="LOG.MC">LOG</option><option value="MAP.MC">MAP</option>
+                            <option value="MRL.MC">MRL</option><option value="MTS.MC">MTS</option>
+                            <option value="NTGY.MC">NTGY</option><option value="PUIG.MC">PUIG</option>
+                            <option value="RED.MC">RED</option><option value="REP.MC">REP</option>
+                            <option value="ROVI.MC">ROVI</option><option value="SAB.MC">SAB</option>
+                            <option value="SAN.MC">SAN</option><option value="SCYR.MC">SCYR</option>
+                            <option value="SLR.MC">SLR</option><option value="TEF.MC">TEF</option>
+                            <option value="UNI.MC">UNI</option>
+                        </optgroup>
+                        <optgroup label="🟡 Mercado Continuo — Secundario">
+                            <option value="CAF.MC">CAF</option><option value="CIE.MC">CIE</option>
+                            <option value="VID.MC">VID</option><option value="TUB.MC">TUB</option>
+                            <option value="TRE.MC">TRE</option><option value="GEST.MC">GEST</option>
+                            <option value="PHM.MC">PHM</option><option value="ENC.MC">ENC</option>
+                            <option value="GRE.MC">GRE</option><option value="HOME.MC">HOME</option>
+                            <option value="MEL.MC">MEL</option><option value="VIS.MC">VIS</option>
+                            <option value="ENO.MC">ENO</option><option value="A3M.MC">A3M</option>
+                            <option value="R4.MC">R4</option><option value="PSG.MC">PSG</option>
+                            <option value="FAE.MC">FAE</option><option value="EBROM.MC">EBROM</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="input-wrapper">
+                    <div class="input-group with-both">
+                        <span class="input-addon prefix">Broker</span>
+                        <input type="number" name="precio_broker" id="precio_broker_medio" placeholder="0" step="0.01" style="width:70px;" value="{{ request.form.get('precio_broker', '') }}">
+                        <span class="input-addon suffix">€</span>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <div class="input-group with-prefix">
+                        <span class="input-addon prefix">Uds</span>
+                        <input type="number" name="acciones_manual_medio" id="acciones_manual_medio" placeholder="0" step="1" style="width:60px;" value="{{ request.form.get('acciones_manual_medio', '') }}">
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <div class="input-group with-both">
+                        <span class="input-addon prefix">Capital</span>
+                        <input type="number" name="capital_total" id="capital_total_medio" value="{{ capital_total | default(50000) }}" step="1000" style="width:80px;">
+                        <span class="input-addon suffix">€</span>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <div class="input-group with-both">
+                        <span class="input-addon prefix">Riesgo</span>
+                        <input type="number" name="riesgo_pct" id="riesgo_pct_medio" value="{{ riesgo_pct | default(1) }}" step="0.1" min="0.5" max="3" style="width:50px;">
+                        <span class="input-addon suffix">%</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if resultado %}
+    <div id="pantallazo-trading">
+
+    <!-- BACKTEST TICKER -->
+    {% if modo == "backtest" %}
+    <div class="card" style="border-left:4px solid #667eea;">
+        <h2 style="color:#667eea;">📊 Backtest — {{ resultado_bt.ticker }}
+            <span style="font-size:0.55em; color:#888; font-weight:400; margin-left:8px;">10 años · semanal</span>
+        </h2>
+        {% set m = resultado_bt.metricas %}
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0;">
+            <div style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:0.75em; color:#888; margin-bottom:4px;">Trades</div>
+                <div style="font-size:1.4em; font-weight:700;">{{ resultado_bt.total_trades }}</div>
+            </div>
+            <div style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:0.75em; color:#888; margin-bottom:4px;">Expectativa</div>
+                <div style="font-size:1.4em; font-weight:700; color:{% if m.expectancy_R > 0 %}#28a745{% else %}#dc3545{% endif %};">{{ m.expectancy_R }}R</div>
+            </div>
+            <div style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:0.75em; color:#888; margin-bottom:4px;">Win Rate</div>
+                <div style="font-size:1.4em; font-weight:700;">{{ m.winrate }}%</div>
+            </div>
+            <div style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:0.75em; color:#888; margin-bottom:4px;">Max DD</div>
+                <div style="font-size:1.4em; font-weight:700; color:#dc3545;">{{ m.max_drawdown_R }}R</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+            <div style="background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;">
+                <div style="font-size:0.75em; color:#888;">Avg Ganador</div>
+                <div style="font-weight:700; color:#28a745;">+{{ m.avg_winner }}R</div>
+            </div>
+            <div style="background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;">
+                <div style="font-size:0.75em; color:#888;">Avg Perdedor</div>
+                <div style="font-weight:700; color:#dc3545;">{{ m.avg_loser }}R</div>
+            </div>
+            <div style="background:#f8f9fa; border-radius:8px; padding:10px; text-align:center;">
+                <div style="font-size:0.75em; color:#888;">Profit Factor</div>
+                <div style="font-weight:700; color:{% if m.profit_factor >= 1.5 %}#28a745{% elif m.profit_factor >= 1.0 %}#f59e0b{% else %}#dc3545{% endif %};">{{ m.profit_factor }}</div>
+            </div>
+        </div>
+        {% if resultado_bt.trades %}
+        <h4 style="margin-bottom:10px; color:#667eea;">Todos los trades</h4>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+            <thead>
+                <tr style="background:#f0f0ff;">
+                    <th style="padding:6px 10px; text-align:left; border-bottom:2px solid #ddd;">#</th>
+                    <th style="padding:6px 10px; text-align:left; border-bottom:2px solid #ddd;">Entrada</th>
+                    <th style="padding:6px 10px; text-align:left; border-bottom:2px solid #ddd;">Salida</th>
+                    <th style="padding:6px 10px; text-align:center; border-bottom:2px solid #ddd;">R</th>
+                    <th style="padding:6px 10px; text-align:center; border-bottom:2px solid #ddd;">Semanas</th>
+                    <th style="padding:6px 10px; text-align:center; border-bottom:2px solid #ddd;">Fase</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in resultado_bt.trades %}
+                <tr style="border-bottom:1px solid #f0f0f0;">
+                    <td style="padding:5px 10px; color:#888;">{{ loop.index }}</td>
+                    <td style="padding:5px 10px;">{{ trade.fecha_entrada }}</td>
+                    <td style="padding:5px 10px;">{{ trade.fecha_salida }}</td>
+                    <td style="padding:5px 10px; text-align:center; font-weight:700;
+                        color:{% if trade.R > 0 %}#28a745{% else %}#dc3545{% endif %};">
+                        {{ "+" if trade.R > 0 else "" }}{{ trade.R }}R
+                    </td>
+                    <td style="padding:5px 10px; text-align:center;">{{ trade.semanas }}</td>
+                    <td style="padding:5px 10px; text-align:center;">
+                        <span style="font-size:0.8em; padding:2px 6px; border-radius:4px;
+                            {% if trade.get('fase','') == 'TRAILING' %}background:#dbeafe; color:#1e40af;
+                            {% elif trade.get('fase','') == 'PROTEGIDO' %}background:#d4edda; color:#155724;
+                            {% else %}background:#f8d7da; color:#721c24;{% endif %}">
+                            {{ trade.get('fase','—') }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p style="color:#888; font-style:italic;">Sin trades en el período con las condiciones actuales.</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card">
+        <h2>{{ resultado.ticker }}</h2>
+        <p><strong>Precio actual</strong> {{ resultado.precio_actual }}€</p>
+
+        {% if max_reciente is defined %}
+        <div style="margin-top:12px;">
+            <p>
+                <strong>Máximo reciente (10s):</strong> {{ "%.2f"|format(max_reciente) }}€
+                <span style="font-weight:bold; color:{% if dist_max >= 0 %}green{% else %}red{% endif %};">
+                    ({{ "%.2f"|format(dist_max) }}%)
+                </span>
+            </p>
+            <p>
+                <strong>Mínimo reciente (10s):</strong> {{ "%.2f"|format(min_reciente) }}€
+                <span style="font-weight:bold; color:{% if dist_min >= 0 %}green{% else %}red{% endif %};">
+                    ({{ "%.2f"|format(dist_min) }}%)
+                </span>
+            </p>
+            <p>
+                <strong>MM20 semanal:</strong> {{ "%.2f"|format(mm20s) }}€
+                <span style="font-weight:bold; color:{% if dist_mm20 >= 0 %}green{% else %}red{% endif %};">
+                    ({{ "%.2f"|format(dist_mm20) }}%)
+                </span>
+            </p>
+            {% if resultado.detalles.mm50 %}
+            <p><strong>MM50 semanal:</strong> {{ resultado.detalles.mm50 }}€
+               &nbsp;|&nbsp; <strong>MM200 semanal:</strong> {{ resultado.detalles.mm200 }}€
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SEÑAL -->
+    <div class="card">
+        {% if resultado.decision == "COMPRA" %}
+        <div class="señal-compra">
+            <h3>🟢 SEÑAL DE COMPRA</h3>
+        </div>
+
+        <!-- Tier badge -->
+        {% if tier is defined %}
+        <p style="margin-top:8px;">
+            {% if tier == 1 %}
+            <span style="display:inline-block; padding:3px 10px; border-radius:12px;
+                background:#dcfce7; color:#166534; border:1px solid #bbf7d0;
+                font-size:0.82em; font-weight:600;">🟢 IBEX35</span>
+            {% else %}
+            <span style="display:inline-block; padding:3px 10px; border-radius:12px;
+                background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
+                font-size:0.82em; font-weight:600;">🟡 Continuo — priorizar señal IBEX si existe</span>
+            {% endif %}
+        </p>
+        {% endif %}
+
+        <!-- Calidad del setup — score + confirmaciones unificados -->
+        {% if resultado.score is defined %}
+        {% set score = resultado.score | float %}
+        <div style="margin-top:12px; padding:12px 16px; border-radius:8px;
+            {% if score >= 8.5 %}background:#fef9c3; border-left:4px solid #f59e0b;
+            {% elif score >= 7.0 %}background:#dbeafe; border-left:4px solid #3b82f6;
+            {% else %}background:#f8f9fa; border-left:4px solid #94a3b8;{% endif %}">
+            <div style="font-weight:700; font-size:1em; margin-bottom:8px;">
+                {% if score >= 8.5 %}⭐ Setup Excelente
+                {% elif score >= 7.0 %}🔵 Setup Sólido
+                {% else %}🟡 Setup Básico{% endif %}
+                <span style="font-weight:400; font-size:0.85em; opacity:0.7; margin-left:6px;">({{ resultado.score }}/10)</span>
+            </div>
+            {% if resultado.semaforo %}
+            <div style="font-size:0.82em; color:#555; display:flex; gap:16px; flex-wrap:wrap;">
+                {% for c in resultado.semaforo.confirmaciones %}
+                <span>{{ "✔" if c.ok else "❌" }} {{ c.texto }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="señal-nooperar">
+            <h3>🔴 NO OPERAR</h3>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PLAN DE TRADING -->
+    {% if resultado.decision == "COMPRA" and operacion %}
+    <div class="plan-trading">
+        <h2>📈 Plan de Trading — Semanal</h2>
+
+        <div class="plan-item"><strong>Precio actual:</strong> {{ resultado.precio_actual }}€</div>
+
+        <div class="trigger-box">
+            <strong>Entrada (trigger):</strong>
+            <span class="trigger-precio"> {{ resultado.trigger | default(resultado.entrada) }}€</span>
+            <br><small style="color:#5566bb;">🎯 Máximo semana actual + 0.1% — Buy Stop en broker. Solo entra si el precio supera este nivel la próxima semana</small>
+        </div>
+
+        <div class="plan-item"><strong>Stop loss técnico:</strong> {{ resultado.stop }}€</div>
+        <div class="plan-item"><strong>Objetivo técnico (6R):</strong> {{ resultado.objetivo | default("—") }}€</div>
+
+        <!-- Datos para recálculo JS -->
+        <span id="dyn-data-medio"
+            data-trigger="{{ resultado.trigger | default(resultado.entrada) }}"
+            data-stop="{{ resultado.stop }}"
+            data-objetivo="{{ resultado.objetivo | default(0) }}"
+            style="display:none;"></span>
+
+        <hr style="margin:15px 0; border:none; border-top:2px solid #d0d0ff;">
+
+        <div class="plan-item"><strong>Riesgo por acción:</strong> <span id="dyn-m-riesgo-accion">{{ "%.2f"|format(operacion.riesgo_por_accion | default(0)) }}</span>€</div>
+        <div class="plan-item"><strong>Beneficio potencial:</strong> <span id="dyn-m-beneficio">{{ "%.2f"|format(operacion.beneficio_potencial | default(0)) }}</span>€</div>
+        <div class="plan-item">
+            <strong>Ratio R/R:</strong>
+            <span id="dyn-m-rr" style="font-weight:700; color:{% if operacion.rr and operacion.rr >= 2 %}#28a745{% else %}#dc3545{% endif %};">{{ operacion.rr | default(0) }}</span>
+        </div>
+
+        <hr style="margin:15px 0; border:none; border-top:2px solid #d0d0ff;">
+
+        <div class="plan-item"><strong>Tamaño de la posición:</strong> <span id="dyn-m-acciones">{{ operacion.acciones | default(0) }}</span> acciones</div>
+        <div class="plan-item"><strong>Capital total:</strong> <span id="dyn-m-capital-total">{{ "%.2f"|format(capital_total | default(0)) }}</span>€</div>
+        <div class="plan-item"><strong>Capital invertido:</strong> <span id="dyn-m-capital-invertido">{{ "%.2f"|format(operacion.capital_invertido | default(0)) }}</span>€</div>
+        <div class="plan-item"><strong>Riesgo máximo:</strong> <span id="dyn-m-riesgo-max">{{ "%.2f"|format(operacion.riesgo_operacion | default(0)) }}</span>€</div>
+
+        </div>
+        <button type="button" onclick="guardarPantallazo()" class="btn-pantallazo">📸 Guardar pantallazo</button>
+    </div>
+    {% endif %}
+
+    <!-- CONDICIONES TÉCNICAS -->
+    {% if resultado.motivos %}
+    <div class="card">
+        <h3 style="margin-bottom:12px;">Condiciones técnicas</h3>
+        <ul class="condiciones">
+            {% for m in resultado.motivos %}
+            <li>{{ "✔" if m.ok else "❌" }} {{ m.texto }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- GRÁFICO -->
+    {% if grafico_html %}
+    <div class="card">
+        <h3 style="margin-bottom:12px;">📊 Gráfico Semanal</h3>
+        {{ grafico_html | safe }}
+    </div>
+    {% endif %}
+
+    {% endif %}{# fin else modo análisis #}
+
+    {% endif %}{# fin if resultado #}
+
+    <!-- ESCÁNER — solo en página principal (sin resultado) -->
+    {% if not resultado %}
+    <div class="scanner-card">
+        <h3>🔍 Escáner Medio Plazo</h3>
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" onclick="window.open('/popup/medio_ibex','popup_medio_ibex','width=700,height=700,scrollbars=yes,resizable=yes')"
+                style="padding:12px 24px; background:linear-gradient(135deg,#667eea,#764ba2);
+                       color:white; border:none; border-radius:8px; font-size:0.95em;
+                       font-weight:600; cursor:pointer;">
+                🇪🇸 Escáner IBEX 35
+            </button>
+            <button type="button" onclick="window.open('/popup/medio_continuo','popup_medio_continuo','width=700,height=700,scrollbars=yes,resizable=yes')"
+                style="padding:12px 24px; background:linear-gradient(135deg,#f59e0b,#d97706);
+                       color:white; border:none; border-radius:8px; font-size:0.95em;
+                       font-weight:600; cursor:pointer;">
+                🔄 Escáner M. Continuo
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+</div>
+<script>
+function guardarPantallazo() {
+    const zona = document.getElementById("pantallazo-trading");
+    if (!zona) { alert("No hay resultado que guardar"); return; }
+    html2canvas(zona, { scale: 2 }).then(canvas => {
+        const imagen = canvas.toDataURL("image/png");
+        fetch("/guardar_pantallazo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                imagen: imagen,
+                ticker: document.querySelector('select[name="ticker"]')?.value || "medio"
+            })
+        })
+        .then(r => r.json())
+        .then(() => alert("✅ Pantallazo guardado en carpeta pantallazos/"))
+        .catch(() => alert("❌ Error al guardar el pantallazo"));
+    });
+}
+
+// ── Recálculo dinámico plan de trading ──────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    function recalcularPlanMedio() {
+        const dynData = document.getElementById('dyn-data-medio');
+        if (!dynData) return;
+
+        const triggerBase = parseFloat(dynData.dataset.trigger) || 0;
+        const stop        = parseFloat(dynData.dataset.stop)    || 0;
+        const objetivo    = parseFloat(dynData.dataset.objetivo) || 0;
+        if (!triggerBase || !stop || triggerBase <= stop) return;
+
+        const capital   = parseFloat(document.getElementById('capital_total_medio')?.value)   || 50000;
+        const riesgoPct = parseFloat(document.getElementById('riesgo_pct_medio')?.value)      || 1.0;
+        const broker    = parseFloat(document.getElementById('precio_broker_medio')?.value)   || 0;
+        const udsManual = parseInt(document.getElementById('acciones_manual_medio')?.value)   || 0;
+
+        const entrada = broker > 0 ? broker : triggerBase;
+        const R_unit  = entrada - stop;
+        if (R_unit <= 0) return;
+
+        const acciones         = udsManual > 0 ? udsManual : Math.floor((capital * riesgoPct / 100) / R_unit);
+        const capitalInvertido = acciones * entrada;
+        const riesgoMax        = acciones * R_unit;
+        const beneficio        = objetivo > 0 ? acciones * (objetivo - entrada) : 0;
+        const rr               = objetivo > 0 ? ((objetivo - entrada) / R_unit).toFixed(2) : 0;
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('dyn-m-acciones',          acciones);
+        set('dyn-m-capital-total',     capital.toFixed(2));
+        set('dyn-m-capital-invertido', capitalInvertido.toFixed(2));
+        set('dyn-m-riesgo-max',        riesgoMax.toFixed(2));
+        set('dyn-m-riesgo-accion',     R_unit.toFixed(2));
+        set('dyn-m-beneficio',         beneficio.toFixed(2));
+        const rrEl = document.getElementById('dyn-m-rr');
+        if (rrEl) { rrEl.textContent = rr; rrEl.style.color = parseFloat(rr) >= 2 ? '#28a745' : '#dc3545'; }
+    }
+
+    // Listeners
+    ['capital_total_medio','riesgo_pct_medio','precio_broker_medio','acciones_manual_medio'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input',  recalcularPlanMedio);
+            el.addEventListener('change', recalcularPlanMedio);
+        }
+    });
+
+    // Disparo inicial
+    recalcularPlanMedio();
+});
+</script>
+</body>
+</html>

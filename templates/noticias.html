@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noticias del Día — MiWeb Trading</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: #e0e6f0;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 {
+            font-size: 1.8em;
+            color: #1e293b;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .subtitulo {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-bottom: 28px;
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .toolbar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07);
+            color: #e0e6f0;
+            font-size: 0.9em;
+        }
+        .toolbar input::placeholder { color: #64748b; }
+        .btn-refresh {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: none;
+            background: #3b82f6;
+            color: #1e293b;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-refresh:hover { background: #2563eb; }
+        .btn-back {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-back:hover { color: #1e293b; border-color: rgba(255,255,255,0.4); }
+        .contador {
+            font-size: 0.85em;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        .lista { display: flex; flex-direction: column; gap: 10px; }
+        .noticia {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 14px 18px;
+            transition: background 0.15s;
+        }
+        .noticia:hover { background: rgba(255,255,255,0.09); }
+        .noticia-titulo a {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .noticia-titulo a:hover { color: #60a5fa; }
+        .noticia-meta {
+            display: flex;
+            gap: 14px;
+            margin-top: 6px;
+            font-size: 0.78em;
+            color: #64748b;
+        }
+        .fuente {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: rgba(59,130,246,0.15);
+            color: #93c5fd;
+            font-size: 0.78em;
+            font-weight: 500;
+        }
+        .vacio {
+            text-align: center;
+            color: #64748b;
+            padding: 60px 20px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📰 Noticias del Día</h1>
+    <p class="subtitulo">Mercados españoles · Expansión, Cinco Días, El Economista, Bolsamanía y más</p>
+
+    <div class="toolbar">
+        <input type="text" id="filtro" placeholder="Filtrar por palabra clave…" oninput="filtrar()">
+        <a href="/analisis/noticias" class="btn-refresh">🔄 Actualizar</a>
+        <a href="/" class="btn-back">← Hub</a>
+    </div>
+
+    {% if noticias %}
+    <p class="contador" id="contador">{{ noticias|length }} noticias</p>
+    <div class="lista" id="lista">
+        {% for n in noticias %}
+        <div class="noticia" data-texto="{{ n.titulo|lower }}">
+            <div class="noticia-titulo">
+                <a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.titulo }}</a>
+            </div>
+            <div class="noticia-meta">
+                <span class="fuente">{{ n.fuente }}</span>
+                {% if n.fecha %}<span>{{ n.fecha }}</span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="vacio">No se han podido cargar noticias. Intenta actualizar en unos minutos.</div>
+    {% endif %}
+</div>
+
+<script>
+function filtrar() {
+    const q = document.getElementById("filtro").value.toLowerCase();
+    const items = document.querySelectorAll(".noticia");
+    let visibles = 0;
+    items.forEach(el => {
+        const match = !q || el.dataset.texto.includes(q);
+        el.style.display = match ? "" : "none";
+        if (match) visibles++;
+    });
+    const c = document.getElementById("contador");
+    if (c) c.textContent = visibles + " noticias";
+}
+</script>
+</body>
+</html>

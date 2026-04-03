@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Cartera</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+     background:linear-gradient(135deg,#dde4f0 0%,#c8d4e8 50%,#b8c8de 100%);
+     min-height:100vh;padding:20px;color:#1e293b}
+.container{max-width:1100px;margin:0 auto}
+
+/* BACK */
+.back{display:inline-block;color:#334155;text-decoration:none;font-size:0.85em;
+      margin-bottom:16px;background:rgba(255,255,255,0.7);padding:5px 14px;
+      border-radius:8px;border:1px solid rgba(0,0,0,0.1);}
+.back:hover{background:rgba(255,255,255,0.95);}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.header h1{font-size:1.5em;font-weight:700;color:#0f172a;}
+.btn-nueva{background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+           padding:9px 20px;border-radius:10px;text-decoration:none;
+           font-size:0.9em;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
+
+/* RESUMEN GLOBAL */
+.resumen-global{background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                border-radius:16px;padding:24px 28px;margin-bottom:20px;color:white;}
+.resumen-global h2{font-size:0.8em;font-weight:700;letter-spacing:1.5px;
+                   text-transform:uppercase;opacity:0.8;margin-bottom:16px;}
+.resumen-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
+.resumen-item{background:rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px;}
+.resumen-item .lbl{font-size:11px;opacity:0.75;margin-bottom:4px;}
+.resumen-item .val{font-size:1.25em;font-weight:700;}
+.resumen-item .sub{font-size:11px;opacity:0.7;margin-top:3px;}
+.resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.green-val{color:#4ade80;}
+.red-val{color:#f87171;}
+
+/* ALERTAS */
+.alertas-wrap{margin-bottom:16px;}
+.alerta{font-size:0.83em;padding:9px 14px;border-radius:8px;
+        border-left:3px solid;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px;}
+.alerta-warn{background:#fef3c7;color:#92400e;border-color:#f59e0b;}
+.alerta-ok{background:#d1fae5;color:#065f46;border-color:#10b981;}
+.alerta-ko{background:#fee2e2;color:#991b1b;border-color:#ef4444;}
+
+/* TARJETAS DE POSICIÓN */
+.pos-card{background:white;border-radius:16px;padding:22px 24px;
+          margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.pos-card-header{display:flex;align-items:flex-start;justify-content:space-between;
+                 margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.pos-nombre{font-size:1.3em;font-weight:700;color:#0f172a;}
+.pos-ticker{font-size:0.8em;color:#64748b;margin-top:2px;}
+.pos-acciones-header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;}
+.b-swing{background:#dbeafe;color:#1e40af;}
+.b-medio{background:#ede9fe;color:#5b21b6;}
+.b-pos{background:#dcfce7;color:#166534;}
+.fase-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;}
+.fase-inicial{background:#f3f4f6;color:#6b7280;}
+.fase-protegido{background:#d1fae5;color:#065f46;}
+.fase-trailing{background:#fef3c7;color:#92400e;}
+
+.pos-data{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px;}
+.pos-field{display:flex;flex-direction:column;gap:3px;}
+.pos-field .lbl{font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:4px;}
+.pos-field .val{font-size:1em;font-weight:600;color:#1e293b;}
+.pos-field .val.up{color:#16a34a;}
+.pos-field .val.down{color:#dc2626;}
+.pos-field .val.muted{color:#94a3b8;font-weight:400;}
+
+.pos-data2{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+           background:#f8fafc;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+
+/* PROGRESO */
+.progreso-wrap{margin-top:4px;}
+.progreso-label{display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;}
+.progreso-bar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;}
+.progreso-fill{height:100%;border-radius:3px;transition:width .3s;}
+
+/* BOTONES */
+.pos-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+.btn-edit{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;
+          padding:7px 16px;border-radius:8px;font-size:0.85em;font-weight:600;
+          text-decoration:none;cursor:pointer;}
+.btn-edit:hover{background:#e2e8f0;}
+.btn-close{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;
+           padding:7px 16px;border-radius:8px;font-size:0.85em;font-weight:600;
+           text-decoration:none;cursor:pointer;}
+.btn-close:hover{background:#fecaca;}
+
+/* PANEL GESTIÓN */
+.gestion-panel{background:#f8fafc;border-radius:10px;padding:12px 16px;margin-bottom:14px;border-left:3px solid #e2e8f0;}
+.gestion-titulo{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.gestion-hito{display:flex;align-items:flex-start;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid #f1f5f9;}
+.gestion-hito:last-child{border-bottom:none;}
+.hito-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.hito-texto{flex:1;color:#374151;line-height:1.4;}
+.hito-precio{font-weight:700;color:#1e293b;}
+.hito-activo{color:#16a34a;font-weight:600;}
+.hito-pendiente{color:#94a3b8;}
+.hito-urgente{color:#dc2626;font-weight:600;}
+.gestion-swing{border-left-color:#3b82f6;}
+.gestion-medio{border-left-color:#8b5cf6;}
+.gestion-posicional{border-left-color:#10b981;}
+
+/* NAV */
+.nav-bottom{text-align:center;margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.nav-bottom a{color:#475569;text-decoration:none;font-size:0.85em;padding:6px 14px;
+              border:1px solid #cbd5e1;border-radius:8px;background:white;}
+.nav-bottom a:hover{background:#f1f5f9;}
+
+.empty{text-align:center;color:#94a3b8;padding:40px;font-size:0.9em;
+       background:white;border-radius:16px;}
+
+@media(max-width:700px){
+  .resumen-grid{grid-template-columns:repeat(2,1fr);}
+  .pos-data{grid-template-columns:repeat(2,1fr);}
+  .pos-data2{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/" class="back">← Volver al inicio</a>
+
+<div class="header">
+    <h1>💼 Mi Cartera</h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+        {% if contexto_mercado %}
+        <span style="font-size:0.78em;padding:4px 12px;border-radius:8px;font-weight:600;
+            {% if contexto_mercado.estado == 'ALCISTA' %}background:#d4edda;color:#155724;
+            {% elif contexto_mercado.estado == 'BAJISTA' %}background:#f8d7da;color:#721c24;
+            {% else %}background:#fff3cd;color:#856404;{% endif %}">
+            IBEX {{ contexto_mercado.estado }}
+        </span>
+        {% endif %}
+        <a href="/cartera/nueva" class="btn-nueva">＋ Nueva posición</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alerta alerta-ko">⚠️ {{ error }}</div>
+{% endif %}
+
+{% if resumen %}
+<!-- RESUMEN GLOBAL -->
+{% set pnl_pct = (resumen.pnl_flotante / resumen.invertido * 100) if resumen.invertido else 0 %}
+{% set mejor = posiciones | sort(attribute='pnl_eur') | last if posiciones else none %}
+{% set peor  = posiciones | sort(attribute='pnl_eur') | first if posiciones else none %}
+
+<div class="resumen-global">
+    <h2>📊 Resumen Global</h2>
+    <div class="resumen-grid">
+        <div class="resumen-item">
+            <div class="lbl">Posiciones abiertas</div>
+            <div class="val">{{ posiciones|length }}</div>
+            <div class="sub">{{ resumen.n_swing }} swing · {{ resumen.n_medio }} medio · {{ resumen.n_posicional or 0 }} posicional</div>
+        </div>
+        <div class="resumen-item">
+            <div class="lbl">Capital invertido</div>
+            <div class="val">{{ "{:,.2f}".format(resumen.invertido) }}€</div>
+            <div class="sub">Disponible: {{ "{:,.0f}".format(resumen.disponible) }}€</div>
+        </div>
+        <div class="resumen-item">
+            <div class="lbl">P&L total</div>
+            <div class="val {{ 'green-val' if resumen.pnl_flotante >= 0 else 'red-val' }}">
+                {{ "{:+,.2f}".format(resumen.pnl_flotante) }}€
+            </div>
+            <div class="sub {{ 'green-val' if pnl_pct >= 0 else 'red-val' }}">
+                ({{ "%+.1f"|format(pnl_pct) }}%)
+            </div>
+        </div>
+        <div class="resumen-item">
+            <div class="lbl">Riesgo en cartera</div>
+            <div class="val {{ 'red-val' if resumen.riesgo_abierto_pct > 3 else 'green-val' }}">
+                {{ "%+.1f"|format(-resumen.riesgo_abierto_pct) }}%
+            </div>
+            <div class="sub">{{ "{:,.0f}".format(resumen.riesgo_abierto) }}€ en riesgo</div>
+        </div>
+    </div>
+    <div class="resumen-grid2">
+        <div class="resumen-item">
+            <div class="lbl">Mejor posición</div>
+            {% if mejor and mejor.pnl_eur > 0 %}
+            <div class="val green-val">{{ mejor.nombre or mejor.ticker.replace('.MC','') }}
+                ({{ "%+.1f"|format((mejor.precio_actual - mejor.precio_entrada) / mejor.precio_entrada * 100 if mejor.precio_actual and mejor.precio_entrada else 0) }}%)
+            </div>
+            {% else %}<div class="val" style="opacity:.6">—</div>{% endif %}
+        </div>
+        <div class="resumen-item">
+            <div class="lbl">Peor posición</div>
+            {% if peor and peor.pnl_eur < 0 %}
+            <div class="val red-val">{{ peor.nombre or peor.ticker.replace('.MC','') }}
+                ({{ "%+.1f"|format((peor.precio_actual - peor.precio_entrada) / peor.precio_entrada * 100 if peor.precio_actual and peor.precio_entrada else 0) }}%)
+            </div>
+            {% else %}<div class="val" style="opacity:.6">—</div>{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ALERTAS -->
+{% if resumen.alertas %}
+<div class="alertas-wrap">
+    {% for a in resumen.alertas %}
+    <div class="alerta alerta-{{ a.tipo }}">
+        {{ '⚠️' if a.tipo == 'warn' else '✅' if a.tipo == 'ok' else '❌' }}
+        {{ a.texto }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
+<!-- POSICIONES -->
+{% if posiciones %}
+{% for p in posiciones %}
+{% set pct = ((p.precio_actual - p.precio_entrada) / p.precio_entrada * 100) if p.precio_actual and p.precio_entrada else 0 %}
+{% set progreso = ((p.precio_actual - p.precio_entrada) / (p.objetivo - p.precio_entrada) * 100) if p.objetivo and p.precio_actual and p.objetivo > p.precio_entrada else 0 %}
+<div class="pos-card">
+    <div class="pos-card-header">
+        <div>
+            <div class="pos-nombre">{{ p.nombre or p.ticker.replace('.MC','') }}</div>
+            <div class="pos-ticker">{{ p.ticker }}</div>
+        </div>
+        <div class="pos-acciones-header">
+            <span class="badge {{ 'b-swing' if p.sistema == 'SWING' else 'b-pos' if p.sistema == 'POSICIONAL' else 'b-medio' }}">{{ p.sistema }}</span>
+            <span class="fase-badge {{ 'fase-trailing' if p.fase == 'TRAILING' else 'fase-protegido' if p.fase == 'PROTEGIDO' else 'fase-inicial' }}">
+                {{ p.fase or 'INICIAL' }}
+            </span>
+            {% if p.mitad_cerrada %}<span style="font-size:11px;color:#64748b;">½ cerrada</span>{% endif %}
+        </div>
+    </div>
+
+    <!-- Fila 1: datos principales -->
+    <div class="pos-data">
+        <div class="pos-field">
+            <span class="lbl">📅 Fecha entrada</span>
+            <span class="val">
+                {% if p.fecha_entrada %}
+                {{ p.fecha_entrada[8:10] }}/{{ p.fecha_entrada[5:7] }}/{{ p.fecha_entrada[:4] }}
+                {% else %}—{% endif %}
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">🔥 Precio entrada</span>
+            <span class="val">{{ "%.2f"|format(p.precio_entrada) }}€</span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">📊 Precio actual</span>
+            <span class="val {{ 'up' if p.precio_actual and p.precio_actual >= p.precio_entrada else 'down' if p.precio_actual else 'muted' }}">
+                {% if p.precio_actual %}
+                    {{ "%.2f"|format(p.precio_actual) }}€
+                    {{ '↑' if p.precio_actual >= p.precio_entrada else '↓' }}
+                {% else %}—{% endif %}
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">🔴 Stop loss</span>
+            <span class="val {{ 'down' if p.tiene_stop else 'muted' }}">
+                {% if p.tiene_stop %}
+                    {{ "%.2f"|format(p.stop_actual or p.stop_inicial or 0) }}€
+                    {% if p.dist_stop_pct %}<span style="font-size:11px;color:#94a3b8;">({{ p.dist_stop_pct }}%)</span>{% endif %}
+                {% else %}—{% endif %}
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">🎯 Objetivo</span>
+            <span class="val {{ 'muted' if not p.objetivo }}">
+                {% if p.objetivo %}{{ "%.2f"|format(p.objetivo) }}€{% else %}—{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Fila 2: métricas calculadas -->
+    <div class="pos-data2">
+        <div class="pos-field">
+            <span class="lbl">✏️ R alcanzado</span>
+            <span class="val {{ 'up' if p.pnl_R and p.pnl_R >= 0 else 'down' if p.pnl_R else 'muted' }}">
+                {% if p.pnl_R is not none %}{{ "%+.1f"|format(p.pnl_R) }}R{% else %}+0.0R{% endif %}
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">📈 P&L</span>
+            <span class="val {{ 'up' if p.pnl_eur >= 0 else 'down' }}">
+                {{ "{:+,.2f}".format(p.pnl_eur) }}€
+                <span style="font-size:11px;font-weight:400;">({{ "%+.1f"|format(pct) }}%)</span>
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">🔢 Acciones</span>
+            <span class="val">{{ p.acciones }}
+                {% if p.mitad_cerrada %}<span style="font-size:11px;color:#94a3b8;">· {{ (p.acciones/2)|int }} rest.</span>{% endif %}
+            </span>
+        </div>
+        <div class="pos-field">
+            <span class="lbl">💼 Capital</span>
+            <span class="val">{{ "{:,.2f}".format(p.precio_entrada * p.acciones) }}€</span>
+        </div>
+    </div>
+
+    <!-- Progreso al objetivo -->
+    {% if p.objetivo and p.precio_actual %}
+    <div class="progreso-wrap">
+        <div class="progreso-label">
+            <span>Estado: {{ 'En posición' if pct >= 0 else 'En pérdida' }}</span>
+            <span>Progreso a objetivo</span>
+        </div>
+        <div class="progreso-bar">
+            <div class="progreso-fill" style="width:{{ [progreso, 100]|min|round }}%;
+                background:{{ '#16a34a' if progreso >= 100 else '#3b82f6' if progreso >= 50 else '#f59e0b' }};">
+            </div>
+        </div>
+        {% if progreso >= 100 %}
+        <div style="text-align:center;font-size:11px;font-weight:700;color:#16a34a;margin-top:3px;">100% — Objetivo alcanzado</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- PANEL DE GESTIÓN POR SISTEMA -->
+    {% if p.tiene_stop and p.R_unit %}
+    {% set sistema = p.sistema | upper %}
+    {% set pnl_r = p.pnl_R or 0 %}
+    {% set fase = p.fase or 'INICIAL' %}
+
+    {% if sistema == 'SWING' %}
+      {% set r_proteger = 1.0 %}
+      {% set r_trailing = 2.0 %}
+      {% set marco = 'diario' %}
+      {% set trailing_tipo = '5% sobre máximo' %}
+    {% elif sistema == 'MEDIO' %}
+      {% set r_proteger = 2.0 %}
+      {% set r_trailing = 4.0 %}
+      {% set marco = 'semanal' %}
+      {% set trailing_tipo = 'mínimo últimas 5 semanas' %}
+    {% else %}
+      {% set r_proteger = 4.0 %}
+      {% set r_trailing = 8.0 %}
+      {% set marco = 'semanal' %}
+      {% set trailing_tipo = 'mínimo últimas 13 semanas' %}
+    {% endif %}
+
+    {% set precio_breakeven = p.precio_entrada %}
+    {% set precio_trailing = p.precio_entrada + (p.R_unit * r_trailing) %}
+    {% set precio_proteger = p.precio_entrada + (p.R_unit * r_proteger) %}
+
+    <div class="gestion-panel gestion-{{ sistema | lower }}">
+        <div class="gestion-titulo">📋 Gestión {{ sistema }} · {{ marco }}</div>
+
+        <!-- HITO 1: Breakeven -->
+        <div class="gestion-hito">
+            {% if fase == 'INICIAL' and pnl_r < r_proteger %}
+            <span class="hito-icon">⏳</span>
+            <span class="hito-texto hito-pendiente">
+                Mover stop a breakeven en <span class="hito-precio">+{{ r_proteger|int }}R 
+                ({{ "%.2f"|format(precio_proteger) }}€)</span>
+                — faltan {{ "%.1f"|format(r_proteger - pnl_r) }}R
+            </span>
+            {% elif fase in ['PROTEGIDO','TRAILING'] %}
+            <span class="hito-icon">✅</span>
+            <span class="hito-texto hito-activo">Stop en breakeven activado
+                ({{ "%.2f"|format(precio_breakeven) }}€)
+            </span>
+            {% else %}
+            <span class="hito-icon">🎯</span>
+            <span class="hito-texto hito-urgente">
+                ¡Mover stop a breakeven AHORA! +{{ "%.1f"|format(pnl_r) }}R alcanzado
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- HITO 2: Trailing stop -->
+        <div class="gestion-hito">
+            {% if fase in ['INICIAL','PROTEGIDO'] and pnl_r < r_trailing %}
+            <span class="hito-icon">⏳</span>
+            <span class="hito-texto hito-pendiente">
+                Activar trailing stop en <span class="hito-precio">+{{ r_trailing|int }}R
+                ({{ "%.2f"|format(precio_trailing) }}€)</span>
+                — faltan {{ "%.1f"|format(r_trailing - pnl_r) }}R
+                · tipo: {{ trailing_tipo }}
+            </span>
+            {% elif fase == 'TRAILING' %}
+            <span class="hito-icon">✅</span>
+            <span class="hito-texto hito-activo">Trailing stop activo
+                · {{ trailing_tipo }}
+                · Stop actual: {{ "%.2f"|format(p.stop_actual or p.stop_inicial) }}€
+            </span>
+            {% else %}
+            <span class="hito-icon">🔔</span>
+            <span class="hito-texto hito-urgente">
+                ¡Activar trailing AHORA! +{{ "%.1f"|format(pnl_r) }}R alcanzado
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- HITO 3: Stop actual vs precio -->
+        {% if p.stop_actual or p.stop_inicial %}
+        {% set stop = p.stop_actual or p.stop_inicial %}
+        {% set dist = p.dist_stop_pct %}
+        <div class="gestion-hito">
+            {% if dist and dist < 3 %}
+            <span class="hito-icon">⚠️</span>
+            <span class="hito-texto hito-urgente">
+                Stop muy cerca: {{ "%.2f"|format(stop) }}€ ({{ dist }}% bajo precio actual)
+            </span>
+            {% else %}
+            <span class="hito-icon">🔴</span>
+            <span class="hito-texto">
+                Stop actual: <span class="hito-precio">{{ "%.2f"|format(stop) }}€</span>
+                {% if dist %}· {{ dist }}% bajo precio actual{% endif %}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+    <div class="pos-btns">
+        <a href="/cartera/editar/{{ p.id }}" class="btn-edit">✏️ Editar</a>
+        <a href="/cartera/cerrar/{{ p.id }}" class="btn-close">Cerrar ✕</a>
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty">Sin posiciones abiertas — <a href="/cartera/nueva">añadir primera posición</a></div>
+{% endif %}
+
+<div class="nav-bottom">
+    <a href="/cartera/historial">Historial</a>
+    <a href="/cartera/domingo">Revisión del domingo</a>
+    <a href="/cartera/config">Configuración</a>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nueva Alerta — MiWeb Trading</title>
+<style>
+  :root {
+    --bg:      #0d1117; --surface: #161b22; --border: #30363d;
+    --text:    #e6edf3; --muted:   #8b949e;
+    --green:   #3fb950; --red:     #f85149; --yellow: #d29922; --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif;
+         padding: 32px 24px; max-width: 640px; margin: 0 auto; }
+  h1   { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 28px; }
+  .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 16px; }
+  .back-link:hover { color: var(--text); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  input, select, textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 9px 12px; font-size: 0.88rem;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+  select option { background: var(--surface); }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .btn { display: inline-block; padding: 10px 22px; border-radius: 6px; font-size: 0.88rem;
+         font-weight: 600; cursor: pointer; border: none; text-decoration: none; }
+  .btn-primary { background: var(--blue); color: #000; }
+  .btn-primary:hover { opacity: .85; }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+  .btn-row { display: flex; gap: 10px; margin-top: 24px; }
+  .errores { background: rgba(248,81,73,.1); border: 1px solid var(--red);
+             border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; }
+  .errores li { color: var(--red); font-size: 0.84rem; margin-left: 14px; margin-top: 3px; }
+  .tipo-desc { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.2);
+               border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem;
+               color: var(--blue); display: none; }
+  .section-sep { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<a href="/alertas/" class="back-link">← Volver a Alertas</a>
+<h1>🔔 Nueva Alerta</h1>
+<p class="subtitle">Configura una alerta técnica o de precio</p>
+
+{% if errores %}
+<div class="errores">
+  <strong style="color:var(--red)">Errores:</strong>
+  <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<div class="card">
+  <form method="POST" action="/alertas/nueva">
+
+    <div class="row-2">
+      <div class="form-group">
+        <label>Ticker *</label>
+        <input type="text" name="ticker" value="{{ datos.ticker if datos else '' }}"
+               placeholder="ej. BBVA, SAN, ITX" required autocomplete="off"
+               style="text-transform:uppercase">
+        <p class="hint">Sin sufijo .MC</p>
+      </div>
+      <div class="form-group">
+        <label>Tipo de alerta *</label>
+        <select name="tipo" id="sel-tipo" onchange="actualizarTipo()" required>
+          <option value="">— Seleccionar —</option>
+          <optgroup label="Precio">
+            <option value="PRECIO_SOBRE"  {% if datos and datos.tipo=='PRECIO_SOBRE'  %}selected{% endif %}>📈 Precio sube sobre nivel</option>
+            <option value="PRECIO_BAJO"   {% if datos and datos.tipo=='PRECIO_BAJO'   %}selected{% endif %}>📉 Precio cae bajo nivel</option>
+            <option value="STOP_LOSS"     {% if datos and datos.tipo=='STOP_LOSS'     %}selected{% endif %}>🚨 Stop Loss</option>
+            <option value="OBJETIVO"      {% if datos and datos.tipo=='OBJETIVO'      %}selected{% endif %}>🎯 Objetivo de precio</option>
+          </optgroup>
+          <optgroup label="Indicadores">
+            <option value="RSI_ALTO"      {% if datos and datos.tipo=='RSI_ALTO'      %}selected{% endif %}>⚠️ RSI sobrecompra</option>
+            <option value="RSI_BAJO"      {% if datos and datos.tipo=='RSI_BAJO'      %}selected{% endif %}>✅ RSI sobreventa</option>
+          </optgroup>
+        </select>
+        <div class="tipo-desc" id="tipo-desc"></div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="form-group" id="grp-nivel">
+        <label>Nivel de precio (€)</label>
+        <input type="number" name="nivel" value="{{ datos.nivel if datos else '' }}"
+               step="0.001" min="0" placeholder="ej. 8.45">
+        <p class="hint">Requerido para alertas de precio</p>
+      </div>
+      <div class="form-group" id="grp-umbral">
+        <label>Umbral RSI</label>
+        <input type="number" name="umbral" value="{{ datos.umbral if datos else '' }}"
+               step="1" min="0" max="100" placeholder="ej. 70 o 30">
+        <p class="hint">Requerido para alertas de RSI (0–100)</p>
+      </div>
+    </div>
+
+    <hr class="section-sep">
+
+    <div class="form-group">
+      <label>Descripción (opcional)</label>
+      <input type="text" name="descripcion" value="{{ datos.descripcion if datos else '' }}"
+             placeholder="ej. Resistencia clave zona 8.50€">
+    </div>
+    <div class="form-group">
+      <label>Notas (opcional)</label>
+      <textarea name="notas" rows="2" placeholder="Contexto adicional...">{{ datos.notas if datos else '' }}</textarea>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-primary">Crear alerta</button>
+      <a href="/alertas/" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const descripciones = {
+  PRECIO_SOBRE: "Se dispara cuando el precio cierra <strong>por encima</strong> del nivel indicado.",
+  PRECIO_BAJO:  "Se dispara cuando el precio cierra <strong>por debajo</strong> del nivel indicado.",
+  STOP_LOSS:    "🚨 Se dispara cuando el precio toca o rompe el stop. Usarlo para posiciones abiertas.",
+  OBJETIVO:     "🎯 Se dispara cuando el precio alcanza o supera el objetivo.",
+  RSI_ALTO:     "Se dispara cuando el RSI(14) supera el umbral indicado (ej. 70 = sobrecompra).",
+  RSI_BAJO:     "Se dispara cuando el RSI(14) cae bajo el umbral indicado (ej. 30 = sobreventa).",
+};
+function actualizarTipo() {
+  const t = document.getElementById('sel-tipo').value;
+  const d = document.getElementById('tipo-desc');
+  d.innerHTML = descripciones[t] || '';
+  d.style.display = t ? 'block' : 'none';
+}
+// Inicializar si hay valor previo
+if (document.getElementById('sel-tipo').value) actualizarTipo();
+</script>
+</body>
+</html>

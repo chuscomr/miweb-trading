@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Analizar - Posicional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e3c72; margin-bottom: 15px; font-size: 1.4em; }
+        
+        /* DOS SELECTORES */
+        .selector-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: #333; 
+            font-size: 0.85em; 
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        select:focus { 
+            outline: none; 
+            border-color: #1e3c72; 
+        }
+        
+        select:disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #2a5298; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .loading { text-align: center; padding: 25px; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 12px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .result-section { margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px; }
+        .result-section h3 { color: #1e3c72; margin-bottom: 10px; font-size: 1em; }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .result-item { padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #1e3c72; }
+        .result-label { font-size: 0.75em; color: #666; margin-bottom: 3px; }
+        .result-value { font-size: 1em; font-weight: bold; color: #1e3c72; }
+        .signal {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .signal-compra { background: #d4edda; color: #155724; border: 2px solid #28a745; }
+        .signal-espera { background: #fff3cd; color: #856404; border: 2px solid #ffc107; }
+        .alert { padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.9em; }
+        .alert-error { background: #fee; border-left: 3px solid #c33; color: #c33; }
+        .alert-info { background: #e7f3ff; border-left: 3px solid #0066cc; color: #0066cc; }
+        
+        @media (max-width: 768px) {
+            .selector-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/posicional" class="back-link">← Volver</a>
+        
+        <div class="card">
+            <h1>🔍 Analizar Valor</h1>
+            
+            <div class="alert alert-info">
+                💡 Selecciona un ticker de IBEX 35 o Mercado Continuo
+            </div>
+            
+            <div class="selector-group">
+                <!-- Selector IBEX 35 -->
+                <div class="selector-item">
+                    <label for="ticker-ibex">📊 IBEX 35:</label>
+                    <select id="ticker-ibex" onchange="seleccionarIbex()">
+                        <option value="">-- Selecciona IBEX --</option>
+                        {% for ticker in valores_ibex %}
+                        <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Selector Mercado Continuo -->
+                <div class="selector-item">
+                    <label for="ticker-continuo">📈 Mercado Continuo:</label>
+                    <select id="ticker-continuo" onchange="seleccionarContinuo()">
+                        <option value="">-- Selecciona Continuo --</option>
+                        {% for ticker in valores_continuo %}
+                        <option value="{{ ticker }}">{{ ticker }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" id="btnAnalizar" onclick="analizar()">Analizar</button>
+            
+            <div id="resultado"></div>
+        </div>
+    </div>
+    
+    <script>
+        let tickerSeleccionado = null;
+        
+        // Cuando selecciona IBEX, deshabilita Continuo
+        function seleccionarIbex() {
+            const ibexSelect = document.getElementById('ticker-ibex');
+            const continuoSelect = document.getElementById('ticker-continuo');
+            
+            if (ibexSelect.value) {
+                tickerSeleccionado = ibexSelect.value;
+                continuoSelect.value = '';
+                continuoSelect.disabled = true;
+            } else {
+                tickerSeleccionado = null;
+                continuoSelect.disabled = false;
+            }
+        }
+        
+        // Cuando selecciona Continuo, deshabilita IBEX
+        function seleccionarContinuo() {
+            const ibexSelect = document.getElementById('ticker-ibex');
+            const continuoSelect = document.getElementById('ticker-continuo');
+            
+            if (continuoSelect.value) {
+                tickerSeleccionado = continuoSelect.value;
+                ibexSelect.value = '';
+                ibexSelect.disabled = true;
+            } else {
+                tickerSeleccionado = null;
+                ibexSelect.disabled = false;
+            }
+        }
+        
+        function analizar() {
+            const resultadoDiv = document.getElementById('resultado');
+            const btn = document.getElementById('btnAnalizar');
+            
+            if (!tickerSeleccionado) {
+                resultadoDiv.innerHTML = '<div class="alert alert-error">❌ Selecciona un valor de IBEX 35 o Mercado Continuo</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            resultadoDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analizando ' + tickerSeleccionado + '...</p></div>';
+            
+            fetch('/posicional/api/analizar/' + tickerSeleccionado)
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    if (!data.success) {
+                        resultadoDiv.innerHTML = '<div class="alert alert-error">❌ ' + data.error + '</div>';
+                        return;
+                    }
+                    mostrarResultado(data);
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    resultadoDiv.innerHTML = '<div class="alert alert-error">❌ Error: ' + error.message + '</div>';
+                });
+        }
+        
+        function mostrarResultado(data) {
+            const analisis = data.analisis;
+            const validacion = data.validacion;
+            
+            let html = '<div class="result-section"><h3>📊 Datos</h3><div class="result-grid">';
+            html += '<div class="result-item"><div class="result-label">Precio</div><div class="result-value">' + data.datos.precio_actual.toFixed(2) + '€</div></div>';
+            html += '<div class="result-item"><div class="result-label">Semanas</div><div class="result-value">' + data.datos.semanas + '</div></div>';
+            html += '<div class="result-item"><div class="result-label">Volatilidad</div><div class="result-value">' + validacion.volatilidad_anual + '%</div></div>';
+            html += '<div class="result-item"><div class="result-label">Volumen</div><div class="result-value">' + (validacion.volumen_medio_diario/1000000).toFixed(1) + 'M€</div></div>';
+            html += '</div></div>';
+            
+            // ── SCORE 0-100 ──────────────────────────────────────────
+            const score      = analisis.score ?? 0;
+            const scoreMax   = analisis.score_max ?? 100;
+            const scoreLabel = analisis.score_label ?? '';
+            const desglose   = analisis.score_desglose ?? {};
+            const fr         = analisis.fuerza_relativa ?? '';
+            const frDiff     = analisis.fr_diferencial ?? 0;
+
+            // Barra de score
+            const scorePct  = Math.round(score / scoreMax * 100);
+            const scoreColor = score >= 80 ? '#16a34a' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#dc2626';
+            html += '<div style="background:white;border-radius:12px;padding:16px 20px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+            html += '<span style="font-weight:700;font-size:1em;">📊 Score del setup</span>';
+            html += '<span style="font-weight:800;font-size:1.3em;color:' + scoreColor + '">' + score + '/100 ' + scoreLabel + '</span>';
+            html += '</div>';
+            html += '<div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:12px">';
+            html += '<div style="height:100%;width:' + scorePct + '%;background:' + scoreColor + ';border-radius:4px;transition:width .5s"></div>';
+            html += '</div>';
+
+            // Desglose por factor
+            const factorNames = {
+                tendencia: 'Tendencia', consolidacion: 'Consolidación ⭐',
+                fuerza_relativa: 'Fuerza relativa ⭐', breakout: 'Breakout',
+                volumen: 'Volumen', distancia_mm50: 'Dist. MM50', volatilidad: 'Volatilidad'
+            };
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.8em">';
+            for (const [key, [pts, max, desc]] of Object.entries(desglose)) {
+                const pct2 = Math.round(pts / max * 100);
+                const col2 = pts >= max * 0.8 ? '#16a34a' : pts >= max * 0.5 ? '#f59e0b' : '#dc2626';
+                html += '<div style="background:#f8fafc;border-radius:6px;padding:6px 8px">';
+                html += '<div style="display:flex;justify-content:space-between;margin-bottom:3px">';
+                html += '<span style="color:#475569">' + (factorNames[key] || key) + '</span>';
+                html += '<span style="font-weight:700;color:' + col2 + '">' + pts + '/' + max + '</span>';
+                html += '</div>';
+                html += '<div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">';
+                html += '<div style="height:100%;width:' + pct2 + '%;background:' + col2 + ';border-radius:2px"></div>';
+                html += '</div>';
+                html += '<div style="color:#94a3b8;font-size:0.85em;margin-top:2px">' + desc + '</div>';
+                html += '</div>';
+            }
+            html += '</div></div>';
+
+            // ── SEÑAL ─────────────────────────────────────────────────
+            let signalClass = analisis.decision === 'COMPRA' ? 'signal-compra' : 'signal-espera';
+            let signalText  = analisis.decision === 'COMPRA' ? '✅ SEÑAL DE COMPRA' : '⏳ NO OPERAR';
+            html += '<div class="signal ' + signalClass + '">' + signalText + '</div>';
+
+            // ── ANÁLISIS DETALLADO (siempre, COMPRA o NO_OPERAR) ─────
+            const det = analisis.detalles ?? {};
+
+            // Bloque estado técnico
+            html += '<div class="result-section" style="border-left:4px solid #64748b;">';
+            html += '<h3>📈 Estado Técnico del Valor</h3>';
+            html += '<div class="result-grid">';
+
+            // Tendencia
+            const tend = det.tendencia ?? '—';
+            const tendColor = tend === 'ALCISTA' ? '#16a34a' : tend === 'BAJISTA' ? '#dc2626' : '#f59e0b';
+            html += '<div class="result-item">';
+            html += '<div class="result-label">Tendencia</div>';
+            html += '<div class="result-value" style="color:' + tendColor + ';">' + tend + '</div>';
+            html += '</div>';
+
+            // MM50 y MM200
+            if (det.mm50) {
+                html += '<div class="result-item">';
+                html += '<div class="result-label">MM50 semanal</div>';
+                html += '<div class="result-value">' + det.mm50.toFixed(2) + '€</div>';
+                html += '</div>';
+            }
+            if (det.mm200) {
+                html += '<div class="result-item">';
+                html += '<div class="result-label">MM200 semanal</div>';
+                html += '<div class="result-value">' + det.mm200.toFixed(2) + '€</div>';
+                html += '</div>';
+            }
+
+            // Distancia MM50
+            if (det.distancia_mm50_pct != null) {
+                const distColor = det.distancia_mm50_pct >= 2 && det.distancia_mm50_pct <= 50 ? '#16a34a' : '#f59e0b';
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Distancia MM50</div>';
+                html += '<div class="result-value" style="color:' + distColor + ';">' + det.distancia_mm50_pct.toFixed(1) + '%</div>';
+                html += '</div>';
+            }
+
+            // Pendiente MM50
+            if (det.pendiente_mm50 != null) {
+                const pendOk = det.pendiente_positiva;
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Pendiente MM50</div>';
+                html += '<div class="result-value" style="color:' + (pendOk ? '#16a34a' : '#dc2626') + '">' +
+                        (pendOk ? '✅ Positiva' : '❌ Negativa') + ' (' + (det.pendiente_mm50 > 0 ? '+' : '') + det.pendiente_mm50.toFixed(1) + '%)</div>';
+                html += '</div>';
+            }
+
+            // Consolidación
+            if (det.consolidacion_semanas) {
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Consolidación</div>';
+                html += '<div class="result-value">✅ ' + det.consolidacion_semanas + ' semanas · ' + (det.consolidacion_rango ?? '—') + '% rango</div>';
+                html += '</div>';
+            } else if (det.consolidacion === false) {
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Consolidación</div>';
+                html += '<div class="result-value" style="color:#dc2626;">❌ Sin base detectada</div>';
+                html += '</div>';
+            }
+
+            // Breakout
+            if (det.breakout != null) {
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Breakout</div>';
+                html += '<div class="result-value" style="color:' + (det.breakout ? '#16a34a' : '#dc2626') + '">' +
+                        (det.breakout ? '✅ Confirmado (+' + (det.breakout_distancia_pct ?? 0).toFixed(1) + '%)' : '❌ Sin breakout') + '</div>';
+                html += '</div>';
+            }
+
+            // Fuerza relativa
+            if (det.fr_cat) {
+                const frColor = det.fr_cat === 'LIDERA' ? '#16a34a' : det.fr_cat === 'NEUTRAL' ? '#f59e0b' : '#dc2626';
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Fuerza relativa vs IBEX</div>';
+                html += '<div class="result-value" style="color:' + frColor + '">' + det.fr_cat +
+                        (det.fr_diff != null ? ' (' + (det.fr_diff > 0 ? '+' : '') + det.fr_diff.toFixed(1) + '%)' : '') + '</div>';
+                html += '</div>';
+            }
+
+            // Volatilidad
+            if (det.volatilidad_pct) {
+                const volOk = det.volatilidad_pct >= 20 && det.volatilidad_pct <= 60;
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Volatilidad anual</div>';
+                html += '<div class="result-value" style="color:' + (volOk ? '#16a34a' : '#f59e0b') + '">' + det.volatilidad_pct + '%</div>';
+                html += '</div>';
+            }
+
+            // IBEX contexto
+            if (det.mercado_ibex) {
+                const ibexColor = det.mercado_ibex === 'ALCISTA' ? '#16a34a' : '#dc2626';
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Contexto IBEX</div>';
+                html += '<div class="result-value" style="color:' + ibexColor + '">' + det.mercado_ibex + '</div>';
+                html += '</div>';
+            }
+
+            html += '</div></div>';
+
+            // ── MOTIVOS DE RECHAZO (si NO_OPERAR) ────────────────────
+            if (analisis.decision !== 'COMPRA' && analisis.motivos && analisis.motivos.length > 0) {
+                html += '<div class="result-section" style="border-left:4px solid #dc2626;background:#fef2f2;">';
+                html += '<h3>❌ Por qué no opera</h3>';
+                analisis.motivos.forEach(m => {
+                    html += '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #fee2e2;font-size:0.88em;">';
+                    html += '<span style="color:#dc2626;flex-shrink:0;">•</span>';
+                    html += '<span style="color:#7f1d1d;">' + m + '</span>';
+                    html += '</div>';
+                });
+
+                // Qué falta para que sea señal
+                html += '<div style="margin-top:10px;padding:8px 10px;background:#fff;border-radius:6px;font-size:0.82em;color:#64748b;">';
+                html += '<b>¿Qué necesita para ser señal?</b><br>';
+                if (!det.pendiente_positiva) html += '• MM50 con pendiente positiva (tendencia activa)<br>';
+                if (det.tendencia !== 'ALCISTA') html += '• Precio sobre MM50, MM50 sobre MM200<br>';
+                if (!det.breakout) html += '• Superar máximos de 26 semanas (+0.5%)<br>';
+                if (!det.consolidacion_semanas) html += '• Base de consolidación previa (12-26 semanas)<br>';
+                if (det.fr_cat === 'DÉBIL') html += '• Mejorar fuerza relativa vs IBEX<br>';
+                html += '</div>';
+
+                html += '</div>';
+            }
+
+            // ── AVISO SOBREEXTENDIDO ──────────────────────────────────
+            if (det.aviso_sobreextendido) {
+                html += '<div class="result-section" style="border-left:4px solid #f59e0b;background:#fffbeb;">';
+                html += '<div style="font-size:0.85em;color:#92400e;">⚠️ ' + det.aviso_sobreextendido + '</div>';
+                html += '</div>';
+            }
+
+            if (analisis.decision === 'COMPRA') {
+                const trigger   = analisis.trigger ?? analisis.entrada;
+                const stop      = analisis.stop;
+                const riesgo    = analisis.riesgo_pct;
+                const R_unit    = trigger - stop;
+
+                // Hitos de gestión posicional
+                const p_breakeven = trigger;                   // breakeven = entrada
+                const p_proteger  = trigger + R_unit * 4;     // +4R → mover stop a BE
+                const p_trailing  = trigger + R_unit * 8;     // +8R → activar trailing
+                const p_trailing2 = trigger + R_unit * 12;    // +12R → trailing ampliado
+                const p_obj_min   = trigger + R_unit * 8;     // objetivo mínimo ~8R
+                const p_obj_max   = trigger + R_unit * 20;    // objetivo máximo ~20R
+
+                // ── ENTRADA ──────────────────────────────────────
+                html += '<div class="result-section" style="border-left:4px solid #7c3aed;">';
+                html += '<h3>🎯 Plan de Entrada</h3>';
+                html += '<div class="result-grid">';
+
+                html += '<div class="result-item" style="border-left:3px solid #7c3aed;background:#f5f3ff;grid-column:span 2;padding:12px">';
+                html += '<div class="result-label" style="color:#7c3aed;font-weight:700;font-size:0.85em;">TRIGGER — Orden stop-limit</div>';
+                html += '<div class="result-value" style="color:#7c3aed;font-size:1.3em;font-weight:800;">' + trigger.toFixed(2) + '€</div>';
+                html += '<div style="font-size:0.75em;color:#94a3b8;margin-top:2px;">Máx. 26 semanas × 1.001 — colocar orden al superar este precio</div>';
+                html += '</div>';
+
+                html += '<div class="result-item"><div class="result-label">Precio actual</div><div class="result-value">' + analisis.entrada.toFixed(2) + '€</div></div>';
+                html += '<div class="result-item"><div class="result-label">Stop inicial</div><div class="result-value" style="color:#dc2626;">' + stop.toFixed(2) + '€</div></div>';
+                html += '<div class="result-item"><div class="result-label">Riesgo stop</div><div class="result-value">' + riesgo.toFixed(1) + '%</div></div>';
+                html += '<div class="result-item"><div class="result-label">R unitario (€)</div><div class="result-value">' + R_unit.toFixed(2) + '€/acc</div></div>';
+                html += '</div></div>';
+
+                // ── GESTIÓN DE STOPS ─────────────────────────────
+                html += '<div class="result-section" style="border-left:4px solid #16a34a;">';
+                html += '<h3>🛡️ Gestión de Stops</h3>';
+                html += '<div class="result-grid">';
+
+                html += '<div class="result-item" style="background:#f0fdf4">';
+                html += '<div class="result-label" style="color:#166534;">+4R → Breakeven</div>';
+                html += '<div class="result-value" style="color:#16a34a;">' + p_proteger.toFixed(2) + '€</div>';
+                html += '<div style="font-size:0.75em;color:#6b7280;margin-top:2px;">Mover stop a precio de entrada (' + p_breakeven.toFixed(2) + '€)</div>';
+                html += '</div>';
+
+                html += '<div class="result-item" style="background:#fefce8">';
+                html += '<div class="result-label" style="color:#854d0e;">+8R → Trailing</div>';
+                html += '<div class="result-value" style="color:#ca8a04;">' + p_trailing.toFixed(2) + '€</div>';
+                html += '<div style="font-size:0.75em;color:#6b7280;margin-top:2px;">Trailing sobre mín. 13 semanas</div>';
+                html += '</div>';
+
+                html += '<div class="result-item" style="background:#faf5ff">';
+                html += '<div class="result-label" style="color:#6b21a8;">+12R → Trailing ampliado</div>';
+                html += '<div class="result-value" style="color:#7c3aed;">' + p_trailing2.toFixed(2) + '€</div>';
+                html += '<div style="font-size:0.75em;color:#6b7280;margin-top:2px;">Trailing sobre mín. 26 semanas</div>';
+                html += '</div>';
+
+                html += '<div class="result-item">';
+                html += '<div class="result-label">Duración objetivo</div>';
+                html += '<div class="result-value">26–52 sem</div>';
+                html += '<div style="font-size:0.75em;color:#6b7280;margin-top:2px;">6 meses mínimo · 1 año objetivo</div>';
+                html += '</div>';
+
+                html += '</div></div>';
+
+                // ── OBJETIVOS ────────────────────────────────────
+                html += '<div class="result-section" style="border-left:4px solid #3b82f6;">';
+                html += '<h3>🎯 Objetivos de Beneficio</h3>';
+                html += '<div class="result-grid">';
+
+                for (let r = 4; r <= 20; r += 4) {
+                    const p_r = trigger + R_unit * r;
+                    const color = r <= 8 ? '#16a34a' : r <= 12 ? '#2563eb' : r <= 16 ? '#7c3aed' : '#dc2626';
+                    const label = r === 4  ? 'Mínimo aceptable' :
+                                  r === 8  ? 'Objetivo base' :
+                                  r === 12 ? 'Objetivo bueno' :
+                                  r === 16 ? 'Objetivo excelente' : 'Objetivo máximo';
+                    html += '<div class="result-item">';
+                    html += '<div class="result-label" style="color:' + color + ';">+' + r + 'R — ' + label + '</div>';
+                    html += '<div class="result-value" style="color:' + color + ';">' + p_r.toFixed(2) + '€</div>';
+                    html += '</div>';
+                }
+                html += '</div></div>';
+
+                // ── TAMAÑO POSICIÓN ──────────────────────────────
+                html += '<div class="result-section" style="border-left:4px solid #f59e0b;">';
+                html += '<h3>💼 Tamaño de Posición</h3>';
+                html += '<div class="result-grid">';
+                const capitales = [10000, 20000, 30000, 50000, 100000];
+                const riesgoPct = 1.0;  // 1% por defecto posicional
+                capitales.forEach(cap => {
+                    const riesgoEur = cap * riesgoPct / 100;
+                    const acciones  = Math.floor(riesgoEur / R_unit);
+                    const inversion = acciones * trigger;
+                    if (acciones > 0) {
+                        html += '<div class="result-item">';
+                        html += '<div class="result-label">' + (cap/1000).toFixed(0) + 'K€ capital (1% riesgo)</div>';
+                        html += '<div class="result-value">' + acciones + ' acc · ' + inversion.toFixed(0) + '€</div>';
+                        html += '</div>';
+                    }
+                });
+                html += '</div></div>';
+            }
+
+            html += '<div class="result-section"><p style="font-size: 0.85em;"><strong>Motivo:</strong> ' + analisis.motivo + '</p></div>';
+            
+            document.getElementById('resultado').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

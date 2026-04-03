@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contexto de Mercado · MiWeb</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #e8edf5 0%, #d0daea 50%, #c2d0e8 100%);
+    min-height: 100vh; padding: 24px 20px;
+}
+.container { max-width: 1020px; margin: 0 auto; }
+
+a.back {
+    color:#334155; text-decoration:none; font-size:.85rem;
+    display:inline-block; margin-bottom:16px;
+    background:rgba(255,255,255,0.6); padding:6px 14px;
+    border-radius:8px; border:1px solid rgba(0,0,0,0.1);
+}
+a.back:hover { background:rgba(255,255,255,0.9); }
+.page-title { font-size:1.8rem; color:#1e293b; margin-bottom:4px; font-weight:700; }
+.page-sub   { color:#475569; font-size:.95rem; margin-bottom:28px; }
+
+/* ── CARDS ── */
+.card {
+    background:white; border-radius:14px; padding:28px;
+    margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,.08);
+}
+.card-title {
+    font-size:1rem; font-weight:700; color:#334155;
+    margin-bottom:20px; padding-bottom:12px;
+    border-bottom:2px solid #f1f5f9;
+    display:flex; align-items:center; gap:8px;
+}
+.card-subtitle { font-size:.85rem; color:#64748b; margin-top:-14px; margin-bottom:18px; }
+
+/* ── SELECTOR ── */
+.selector-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+.selector-row select {
+    padding:10px 14px; border:2px solid #e2e8f0; border-radius:8px;
+    font-size:.9rem; color:#334155; background:white; min-width:220px; cursor:pointer;
+}
+.selector-row select:focus { outline:none; border-color:#6366f1; }
+.btn-primary {
+    padding:10px 22px; background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:white; border:none; border-radius:8px; font-size:.9rem;
+    font-weight:600; cursor:pointer; transition:all .2s;
+}
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(99,102,241,.35); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.btn-link {
+    padding:10px 20px; background:rgba(99,102,241,0.08);
+    color:#6366f1; border:2px solid rgba(99,102,241,0.2);
+    border-radius:8px; font-size:.9rem; font-weight:600;
+    cursor:pointer; transition:all .2s; text-decoration:none; display:inline-block;
+}
+.btn-link:hover { background:rgba(99,102,241,0.15); border-color:#6366f1; }
+
+/* ── SCORE BADGE GRANDE ── */
+.score-header {
+    display:flex; gap:24px; align-items:center;
+    padding:20px; background:#f8fafc; border-radius:10px;
+    margin-bottom:20px; flex-wrap:wrap;
+}
+.score-circle {
+    width:80px; height:80px; border-radius:50%;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    font-weight:800; flex-shrink:0;
+    border:3px solid;
+}
+.score-circle .num  { font-size:1.6rem; line-height:1; }
+.score-circle .lbl  { font-size:.62rem; text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+.score-nombre { font-size:1.3rem; font-weight:700; color:#1e293b; }
+.score-nivel  { font-size:.95rem; font-weight:600; margin-top:4px; }
+.score-desc   { font-size:.82rem; color:#64748b; margin-top:6px; max-width:380px; line-height:1.5; }
+
+/* ── BARRAS DE CATEGORÍAS ── */
+.cats-grid { display:grid; gap:10px; }
+.cat-row {
+    display:flex; align-items:center; gap:14px;
+    padding:12px 16px; border-radius:10px;
+    border-left:4px solid; background:#fafafa;
+}
+.cat-nombre { font-size:.78rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; min-width:100px; }
+.cat-bar-wrap { flex:1; background:#f1f5f9; border-radius:4px; height:8px; overflow:hidden; }
+.cat-bar { height:100%; border-radius:4px; transition:width .8s ease; }
+.cat-score { font-size:.85rem; font-weight:700; min-width:36px; text-align:right; }
+.cat-resumen { font-size:.78rem; color:#64748b; margin-left:4px; flex:1; }
+
+/* ── FORTALEZAS/DEBILIDADES ── */
+.fd-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+.fd-box { padding:14px 16px; border-radius:10px; }
+.fd-box.fort { background:#f0fdf4; border:1px solid #bbf7d0; }
+.fd-box.deb  { background:#fff7ed; border:1px solid #fed7aa; }
+.fd-box h4 { font-size:.8rem; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+.fd-box.fort h4 { color:#16a34a; }
+.fd-box.deb  h4 { color:#ea580c; }
+.fd-item { font-size:.82rem; color:#475569; padding:3px 0; border-bottom:1px solid rgba(0,0,0,.04); }
+.fd-item:last-child { border-bottom:none; }
+
+/* ── DATOS EXTRA FUNDAMENTAL ── */
+.datos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:16px; }
+.dato-box { background:#f8fafc; border-radius:8px; padding:12px; text-align:center; }
+.dato-val { font-size:1.1rem; font-weight:800; color:#1e293b; }
+.dato-lbl { font-size:.72rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+
+/* ── NOTICIAS ── */
+.noticia-item { padding:12px 0; border-bottom:1px solid #f1f5f9; }
+.noticia-item:last-child { border-bottom:none; }
+.noticia-titulo { font-size:.9rem; font-weight:600; color:#1e293b; line-height:1.4; }
+.noticia-titulo a { color:#1e293b; text-decoration:none; }
+.noticia-titulo a:hover { color:#6366f1; text-decoration:underline; }
+.noticia-meta { font-size:.75rem; color:#94a3b8; margin-top:3px; }
+.noticia-fuente { color:#6366f1; font-weight:600; }
+
+/* ── SENTIMIENTO LINK CARD ── */
+.sent-promo {
+    display:flex; gap:20px; align-items:center;
+    padding:20px 24px; background:linear-gradient(135deg,#1e293b,#0f172a);
+    border-radius:12px; cursor:pointer; text-decoration:none;
+    transition:all .2s; color:white;
+}
+.sent-promo:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.25); }
+.sent-gauge-mini svg { overflow:visible; }
+.sent-info h3 { font-size:1.1rem; font-weight:700; margin-bottom:4px; }
+.sent-info p  { font-size:.85rem; opacity:.7; line-height:1.5; }
+.sent-arrow { margin-left:auto; font-size:1.5rem; opacity:.5; flex-shrink:0; }
+
+/* ── SPINNER ── */
+.spinner { display:none; text-align:center; padding:40px; color:#64748b; font-size:.9rem; }
+.spinner-ring { width:34px; height:34px; border:3px solid #e2e8f0; border-top-color:#6366f1; border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 10px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-box { display:none; padding:16px; background:#fee2e2; border-radius:8px; color:#dc2626; font-size:.88rem; }
+
+/* ── PILL SCORE ── */
+.pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+.pill.verde  { background:#dcfce7; color:#16a34a; }
+.pill.azul   { background:#dbeafe; color:#2563eb; }
+.pill.amaril { background:#fef9c3; color:#ca8a04; }
+.pill.rojo   { background:#fee2e2; color:#dc2626; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="/" class="back">← Volver al Hub</a>
+<div class="page-title">🔍 Contexto de Mercado</div>
+<div class="page-sub">Análisis fundamental · Sentimiento técnico · Noticias financieras en tiempo real</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     BLOQUE 1 — ANÁLISIS FUNDAMENTAL
+══════════════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-title">💼 Análisis Fundamental</div>
+    <div class="card-subtitle">Valoración, rentabilidad, solidez del balance y perspectiva de analistas</div>
+
+    <div class="selector-row">
+        <select id="ctx-fund-ticker">
+<option value="">— Selecciona empresa —</option>
+            <optgroup label="─ IBEX 35 ─">
+                <option value="ACX.MC">ACX — Acerinox</option><option value="ACS.MC">ACS — ACS</option>
+                <option value="AENA.MC">AENA — Aena</option><option value="AMS.MC">AMS — Amadeus</option>
+                <option value="ANA.MC">ANA — Acciona</option><option value="ANE.MC">ANE — Acciona Energía</option>
+                <option value="BBVA.MC">BBVA — BBVA</option><option value="BKT.MC">BKT — Bankinter</option>
+                <option value="CABK.MC">CABK — CaixaBank</option><option value="CLNX.MC">CLNX — Cellnex</option>
+                <option value="COL.MC">COL — Colonial</option><option value="ELE.MC">ELE — Endesa</option>
+                <option value="ENG.MC">ENG — Enagás</option><option value="FCC.MC">FCC — FCC</option>
+                <option value="FER.MC">FER — Ferrovial</option><option value="GRF.MC">GRF — Grifols</option>
+                <option value="IAG.MC">IAG — IAG Iberia</option><option value="IBE.MC">IBE — Iberdrola</option>
+                <option value="IDR.MC">IDR — Indra</option><option value="ITX.MC">ITX — Inditex</option>
+                <option value="LOG.MC">LOG — Logista</option><option value="MAP.MC">MAP — Mapfre</option>
+                <option value="MRL.MC">MRL — Merlin</option><option value="MTS.MC">MTS — ArcelorMittal</option>
+                <option value="NTGY.MC">NTGY — Naturgy</option><option value="PUIG.MC">PUIG — Puig</option>
+                <option value="RED.MC">RED — Redeia</option><option value="REP.MC">REP — Repsol</option>
+                <option value="ROVI.MC">ROVI — Rovi</option><option value="SAB.MC">SAB — Sabadell</option>
+                <option value="SAN.MC">SAN — Santander</option><option value="SCYR.MC">SCYR — Sacyr</option>
+                <option value="SLR.MC">SLR — Solaria</option><option value="TEF.MC">TEF — Telefónica</option>
+                <option value="UNI.MC">UNI — Unicaja</option>
+            </optgroup>
+            <optgroup label="─ M. Continuo ─">
+                <option value="CIE.MC">CIE — CIE Automotive</option><option value="VID.MC">VID — Vidrala</option>
+                <option value="TUB.MC">TUB — Tubacex</option><option value="TRE.MC">TRE — Técnicas Reunidas</option>
+                <option value="CAF.MC">CAF — CAF</option><option value="PHM.MC">PHM — Pharma Mar</option>
+                <option value="OHLA.MC">OHLA — OHLA</option><option value="GRE.MC">GRE — Grenergy</option>
+                <option value="MEL.MC">MEL — Meliá Hotels</option><option value="VIS.MC">VIS — Viscofan</option>
+                <option value="ADX.MC">ADX — Audax</option><option value="AEDAS.MC">AEDAS — Aedas Homes</option>
+            </optgroup>
+        </select>
+        </select>
+        <button class="btn-primary" onclick="abrirFundamental()">💼 Analizar</button>
+    </div>
+
+
+
+<!-- ══════════════════════════════════════════════════════════
+     BLOQUE 2 — SENTIMIENTO DE MERCADO
+══════════════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-title">📊 Sentimiento de Mercado</div>
+    <div class="card-subtitle">Análisis técnico del posicionamiento alcista/bajista del mercado</div>
+
+    <a href="/analisis/sentimiento" target="_blank" class="sent-promo">
+        <!-- Mini gauge decorativo -->
+        <div class="sent-gauge-mini">
+            <svg width="80" height="48" viewBox="0 0 260 150">
+                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="22" stroke-linecap="round"/>
+                <defs>
+                    <linearGradient id="mgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#ef4444"/>
+                        <stop offset="50%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#22c55e"/>
+                    </linearGradient>
+                </defs>
+                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="url(#mgGrad)" stroke-width="22" stroke-linecap="round"/>
+                <line x1="130" y1="130" x2="165" y2="45" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="130" cy="130" r="7" fill="white"/>
+                <text x="12"  y="148" font-size="16" fill="#ef4444">🐻</text>
+                <text x="220" y="148" font-size="16" fill="#22c55e">🐂</text>
+            </svg>
+        </div>
+        <div class="sent-info">
+            <h3>🔍 Ver análisis completo de Sentimiento</h3>
+            <p>Gauge 🐻→🐂 por empresa · Resumen IBEX 35 · Indicadores técnicos + Análisis de prensa RSS</p>
+        </div>
+        <div class="sent-arrow">→</div>
+    </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     BLOQUE 3 — NOTICIAS
+══════════════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-title">📰 Noticias Financieras</div>
+    <div class="card-subtitle">Feed en tiempo real · Expansión · Cinco Días · El Economista · Bolsamanía · Invertia</div>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="btn-primary" id="btn-noticias" onclick="cargarNoticias()">📰 Cargar noticias</button>
+        <span id="noticias-count" style="font-size:.82rem;color:#94a3b8;"></span>
+    </div>
+
+    <div class="spinner" id="not-spinner"><div class="spinner-ring"></div>Cargando noticias...</div>
+    <div class="error-box" id="not-error"></div>
+    <div id="not-lista" style="display:none;"></div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════
+// BLOQUE 1: ANÁLISIS FUNDAMENTAL
+// ═══════════════════════════════════════════════
+document.getElementById('fund-ticker').addEventListener('change', function() {
+    if (this.value) analizarFundamental();
+});
+
+async function analizarFundamental() {
+    const sel    = document.getElementById('fund-ticker');
+    const ticker = sel.value;
+    if (!ticker) { alert('Selecciona una empresa'); return; }
+
+    const btn = document.getElementById('btn-fund');
+    btn.disabled = true; btn.textContent = '⏳ Cargando...';
+    document.getElementById('fund-spinner').style.display = 'block';
+    document.getElementById('fund-resultado').style.display = 'none';
+    document.getElementById('fund-error').style.display = 'none';
+
+    try {
+        const resp = await fetch('/analisis/api/fundamental/' + encodeURIComponent(ticker));
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const { datos, score } = data;
+        if (!score) throw new Error('Sin datos de score');
+
+        // Color según nivel
+        const colores = {
+            'MUY SÓLIDA': { bg:'#16a34a', border:'#22c55e', pill:'verde' },
+            'SÓLIDA':     { bg:'#2563eb', border:'#3b82f6', pill:'azul'  },
+            'NEUTRA':     { bg:'#ca8a04', border:'#f59e0b', pill:'amaril'},
+            'DÉBIL':      { bg:'#dc2626', border:'#ef4444', pill:'rojo'  },
+        };
+        const col = colores[score.nivel] || colores['NEUTRA'];
+        const nombre = sel.options[sel.selectedIndex].text.split('—')[1]?.trim() || ticker;
+
+        // Categorías
+        const catIcons = {
+            valoracion:'💰', rentabilidad:'📈', crecimiento:'🚀',
+            balance:'🏦', dividendo:'💵', analistas:'🎯'
+        };
+        const catNombres = {
+            valoracion:'Valoración', rentabilidad:'Rentabilidad', crecimiento:'Crecimiento',
+            balance:'Balance', dividendo:'Dividendo', analistas:'Analistas'
+        };
+
+        let catsHtml = '';
+        if (score.categorias) {
+            Object.entries(score.categorias).forEach(([key, cat]) => {
+                const sn = cat.score_normalizado || 0;
+                const barColor = sn >= 70 ? '#22c55e' : sn >= 50 ? '#f59e0b' : '#ef4444';
+                const borderCol = barColor;
+                catsHtml += `
+                <div class="cat-row" style="border-left-color:${borderCol};">
+                    <span class="cat-nombre">${catIcons[key]||''} ${catNombres[key]||key}</span>
+                    <div class="cat-bar-wrap">
+                        <div class="cat-bar" style="width:${sn}%;background:${barColor};"></div>
+                    </div>
+                    <span class="cat-score" style="color:${barColor};">${sn.toFixed(0)}</span>
+                    <span class="cat-resumen">${cat.resumen||''}</span>
+                </div>`;
+            });
+        }
+
+        // Fortalezas y debilidades
+        let fdHtml = '';
+        const forts = score.fortalezas || [];
+        const debs  = score.debilidades || [];
+        if (forts.length || debs.length) {
+            fdHtml = '<div class="fd-grid">';
+            fdHtml += '<div class="fd-box fort"><h4>✅ Fortalezas</h4>';
+            if (forts.length) forts.forEach(f => { fdHtml += `<div class="fd-item">• ${f}</div>`; });
+            else fdHtml += '<div class="fd-item" style="color:#94a3b8;">Sin fortalezas destacadas</div>';
+            fdHtml += '</div>';
+            fdHtml += '<div class="fd-box deb"><h4>⚠️ Debilidades</h4>';
+            if (debs.length) debs.forEach(d => { fdHtml += `<div class="fd-item">• ${d}</div>`; });
+            else fdHtml += '<div class="fd-item" style="color:#94a3b8;">Sin debilidades destacadas</div>';
+            fdHtml += '</div></div>';
+        }
+
+        // Datos clave
+        function fmt(v, suf) { return v != null ? v + (suf||'') : '—'; }
+        let datosHtml = '<div class="datos-grid">';
+        const campos = [
+            ['precio_actual',   '€',  'Precio'],
+            ['per',             'x',  'PER'],
+            ['ev_ebitda',       'x',  'EV/EBITDA'],
+            ['roe',             '%',  'ROE'],
+            ['margen_operativo','%',  'Mg. Oper.'],
+            ['dividendo_yield', '%',  'Dividendo'],
+            ['precio_52s_max',  '€',  'Máx 52sem'],
+            ['precio_52s_min',  '€',  'Mín 52sem'],
+        ];
+        campos.forEach(([campo, suf, label]) => {
+            const v = datos ? datos[campo] : null;
+            datosHtml += `<div class="dato-box"><div class="dato-val">${fmt(v != null ? (typeof v === 'number' ? v.toFixed(2) : v) : null, suf)}</div><div class="dato-lbl">${label}</div></div>`;
+        });
+        datosHtml += '</div>';
+
+        document.getElementById('fund-resultado').innerHTML = `
+        <div class="score-header">
+            <div class="score-circle" style="color:${col.bg};border-color:${col.border};background:${col.bg}18;">
+                <span class="num">${score.score.toFixed(0)}</span>
+                <span class="lbl">/ 100</span>
+            </div>
+            <div>
+                <div class="score-nombre">💼 ${nombre} <span style="color:#94a3b8;font-size:.85rem;">(${ticker})</span></div>
+                <div class="score-nivel"><span class="pill ${col.pill}">${score.nivel}</span></div>
+                <div class="score-desc">${score.recomendacion || ''}</div>
+            </div>
+        </div>
+        <div class="cats-grid">${catsHtml}</div>
+        ${datosHtml}
+        ${fdHtml}`;
+
+        document.getElementById('fund-resultado').style.display = 'block';
+
+    } catch(e) {
+        document.getElementById('fund-error').textContent = '⚠️ Error: ' + e.message;
+        document.getElementById('fund-error').style.display = 'block';
+    } finally {
+        document.getElementById('fund-spinner').style.display = 'none';
+        btn.disabled = false; btn.textContent = '💼 Analizar';
+    }
+}
+
+// ═══════════════════════════════════════════════
+// BLOQUE 3: NOTICIAS
+// ═══════════════════════════════════════════════
+async function cargarNoticias() {
+    const btn = document.getElementById('btn-noticias');
+    btn.disabled = true; btn.textContent = '⏳ Cargando...';
+    document.getElementById('not-spinner').style.display = 'block';
+    document.getElementById('not-lista').style.display = 'none';
+    document.getElementById('not-error').style.display = 'none';
+    document.getElementById('noticias-count').textContent = '';
+
+    try {
+        const resp = await fetch('/analisis/api/noticias');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const noticias = data.noticias || [];
+
+        if (!noticias.length) {
+            document.getElementById('not-error').textContent = 'Sin noticias disponibles en este momento.';
+            document.getElementById('not-error').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('noticias-count').textContent = noticias.length + ' noticias';
+        document.getElementById('not-lista').innerHTML = noticias.map(n => `
+            <div class="noticia-item">
+                <div class="noticia-titulo">
+                    <a href="${n.url||'#'}" target="_blank">${n.titulo}</a>
+                </div>
+                <div class="noticia-meta">
+                    <span class="noticia-fuente">${n.fuente}</span>
+                    ${n.fecha ? ' · ' + n.fecha : ''}
+                </div>
+            </div>`).join('');
+        document.getElementById('not-lista').style.display = 'block';
+        btn.textContent = '↺ Actualizar';
+
+    } catch(e) {
+        document.getElementById('not-error').textContent = '⚠️ Error: ' + e.message;
+        document.getElementById('not-error').style.display = 'block';
+        btn.textContent = '📰 Cargar noticias';
+    } finally {
+        document.getElementById('not-spinner').style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+// Cargar noticias automáticamente al abrir
+document.addEventListener('DOMContentLoaded', function() {
+    cargarNoticias();
+});
+</script>
+
+<!-- ══ OVERLAY (invisible, no bloquea) ══ -->
+<div id="fund-overlay" style="display:none; position:fixed; inset:0; z-index:9998; pointer-events:none;"></div>
+
+<!-- ══ MODAL FUNDAMENTAL FLOTANTE ══ -->
+<div id="fund-modal" style="
+  display:none;
+  position:fixed;
+  top: 16px;
+  right: 16px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  z-index: 9999;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.85);
+  background: #1a1f2e;
+  border: 1px solid rgba(255,255,255,0.1);
+">
+  <!-- Barra de arrastre -->
+  <div id="fund-drag-bar" style="
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px 6px; cursor:grab; user-select:none;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.04); border-radius:12px 12px 0 0;
+  ">
+    <span style="font-size:11px; color:#64748b; font-weight:600; letter-spacing:0.5px;">⠿ ANÁLISIS FUNDAMENTAL</span>
+    <button onclick="cerrarFundamental()" style="
+      background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3);
+      color:#fff; border-radius:50%; width:26px; height:26px;
+      font-size:0.85rem; cursor:pointer; line-height:1;
+    ">✕</button>
+  </div>
+
+  <!-- Spinner -->
+  <div id="fund-spinner" style="
+    padding:50px 30px; text-align:center; color:#aaa; clear:both;
+  ">
+    <div style="font-size:2rem; margin-bottom:10px;">⏳</div>
+    <div style="font-size:0.9rem;">Cargando análisis fundamental...</div>
+  </div>
+
+  <!-- Contenido inyectado -->
+  <div id="fund-contenido"></div>
+</div>
+
+<style>
+/* ══ ANIMACIÓN ENTRADA ══ */
+@keyframes slideInRight {
+  from { opacity:0; transform:translateX(30px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+#fund-modal.visible {
+  animation: slideInRight 0.25s ease;
+}
+
+/* ══ SCROLLBAR DEL MODAL ══ */
+#fund-modal::-webkit-scrollbar { width: 5px; }
+#fund-modal::-webkit-scrollbar-track { background: #1a1f2e; }
+#fund-modal::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ══ TODOS LOS ESTILOS DEL PANEL FUNDAMENTAL ══ */
+#fund-modal .fund-card {
+  background: #1a1f2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#fund-modal .fund-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  clear: both;
+}
+#fund-modal .fund-header.muy_solida { background: linear-gradient(135deg,#1a3a2a,#1e4d35); border-left: 4px solid #28a745; }
+#fund-modal .fund-header.solida     { background: linear-gradient(135deg,#1a2a3a,#1e3a55); border-left: 4px solid #3b9ede; }
+#fund-modal .fund-header.neutra     { background: linear-gradient(135deg,#3a3010,#4d4020); border-left: 4px solid #f0c040; }
+#fund-modal .fund-header.debil      { background: linear-gradient(135deg,#3a1020,#5a1a2a); border-left: 4px solid #dc3545; }
+
+#fund-modal .fund-ticker { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 1px; }
+#fund-modal .fund-sector { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+
+#fund-modal .score-badge { text-align: right; }
+#fund-modal .score-numero { font-size: 1.8rem; font-weight: 800; line-height: 1; color: #fff; }
+#fund-modal .score-label { font-size: 0.65rem; text-transform: uppercase; color: #aaa; display: block; margin-top: 2px; }
+#fund-modal .calidad-texto { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-top: 3px; }
+#fund-modal .muy_solida .calidad-texto { color: #5dd882; }
+#fund-modal .solida     .calidad-texto { color: #60b3f0; }
+#fund-modal .neutra     .calidad-texto { color: #f0c040; }
+#fund-modal .debil      .calidad-texto { color: #f06060; }
+
+#fund-modal .score-bar-wrapper { background: #161b27; padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+#fund-modal .score-bar-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: #666; margin-bottom: 5px; }
+#fund-modal .score-bar-bg { height: 7px; background: #2a2a3a; border-radius: 4px; overflow: hidden; }
+#fund-modal .score-bar-fill { height: 100%; border-radius: 4px; }
+#fund-modal .score-bar-fill.muy_solida { background: linear-gradient(90deg,#28a745,#5dd882); }
+#fund-modal .score-bar-fill.solida     { background: linear-gradient(90deg,#3b9ede,#60d0ff); }
+#fund-modal .score-bar-fill.neutra     { background: linear-gradient(90deg,#f0a030,#f0c040); }
+#fund-modal .score-bar-fill.debil      { background: linear-gradient(90deg,#dc3545,#f06060); }
+
+#fund-modal .fund-motivos { background: #161b27; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+#fund-modal .motivo-tag { font-size: 0.72rem; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+#fund-modal .motivo-tag.ok      { background: rgba(40,167,69,0.18);  color: #5dd882; border: 1px solid rgba(40,167,69,0.3); }
+#fund-modal .motivo-tag.ko      { background: rgba(220,53,69,0.18);  color: #f06060; border: 1px solid rgba(220,53,69,0.3); }
+#fund-modal .motivo-tag.neutral { background: rgba(240,192,64,0.15); color: #f0c040; border: 1px solid rgba(240,192,64,0.3); }
+
+#fund-modal .nota-banco { background: rgba(59,158,222,0.1); border: 1px solid rgba(59,158,222,0.25); border-radius: 6px; padding: 7px 12px; font-size: 0.74rem; color: #60b3f0; margin: 10px 14px; }
+
+#fund-modal .fund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.06); }
+#fund-modal .fund-seccion { background: #161b27; padding: 12px 14px; }
+#fund-modal .fund-seccion h4 { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+#fund-modal .ratio-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+#fund-modal .ratio-item:last-child { border-bottom: none; }
+#fund-modal .ratio-label { font-size: 0.76rem; color: #999; }
+#fund-modal .ratio-value { font-size: 0.82rem; font-weight: 700; }
+#fund-modal .ratio-value.ok   { color: #5dd882; }
+#fund-modal .ratio-value.warn { color: #f0a030; }
+#fund-modal .ratio-value.bad  { color: #f06060; }
+#fund-modal .ratio-value.na   { color: #444; font-weight: 400; }
+
+#fund-modal .fund-footer { background: #161b27; padding: 8px 14px; display: flex; justify-content: space-between; font-size: 0.68rem; color: #555; border-top: 1px solid rgba(255,255,255,0.06); }
+</style>
+<script>
+// ══ DRAG & DROP DEL MODAL FUNDAMENTAL ══
+(function() {
+  const modal = document.getElementById('fund-modal');
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
+
+  // Cabecera como zona de arrastre
+  const handle = document.createElement('div');
+  handle.style.cssText = `
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    user-select: none;
+  `;
+  handle.innerHTML = `<span style="color:#444;font-size:18px;letter-spacing:3px">⠿⠿⠿</span>`;
+  modal.insertBefore(handle, modal.firstChild);
+
+  handle.addEventListener('mousedown', function(e) {
+    isDragging = true;
+
+    // Si el modal estaba centrado con transform, convertir a posición absoluta
+    const rect = modal.getBoundingClientRect();
+    modal.style.right   = 'auto';
+    modal.style.bottom  = 'auto';
+    modal.style.top     = rect.top + 'px';
+    modal.style.left    = rect.left + 'px';
+    modal.style.transform = 'none';
+
+    startX    = e.clientX;
+    startY    = e.clientY;
+    startLeft = rect.left;
+    startTop  = rect.top;
+
+    handle.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    let newLeft = startLeft + dx;
+    let newTop  = startTop  + dy;
+
+    // Límites para no salir de la pantalla
+    const maxLeft = window.innerWidth  - modal.offsetWidth  - 8;
+    const maxTop  = window.innerHeight - 60;
+
+    newLeft = Math.max(8, Math.min(newLeft, maxLeft));
+    newTop  = Math.max(8, Math.min(newTop,  maxTop));
+
+    modal.style.left = newLeft + 'px';
+    modal.style.top  = newTop  + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      handle.style.cursor = 'grab';
+    }
+  });
+})();
+</script>
+
+<script>
+    function abrirFundamental() {
+      const sel = document.getElementById('ctx-fund-ticker');
+      if (!sel) { alert('No se encontró selector de ticker'); return; }
+      const ticker = sel.value;
+      if (!ticker) { alert('Selecciona un ticker primero'); return; }
+      document.getElementById('fund-modal').style.display   = 'block';
+      document.getElementById('fund-spinner').style.display = 'block';
+      document.getElementById('fund-contenido').innerHTML   = '';
+      fetch(`/analisis/modal/fundamental/${ticker}`)
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+        .then(html => {
+            document.getElementById('fund-spinner').style.display = 'none';
+            document.getElementById('fund-contenido').innerHTML = html;
+            document.getElementById('fund-contenido').querySelectorAll('script').forEach(s => {
+                const ns = document.createElement('script');
+                ns.textContent = s.textContent;
+                document.body.appendChild(ns);
+            });
+        })
+        .catch(err => {
+            document.getElementById('fund-spinner').style.display = 'none';
+            document.getElementById('fund-contenido').innerHTML = `
+                <div style="padding:40px;text-align:center;color:#f06060;background:#1a1f2e;border-radius:12px;">
+                  ❌ Error al cargar datos de <strong>${ticker}</strong><br>
+                  <small style="color:#666">${err.message}</small>
+                </div>`;
+        });
+    }
+    function cerrarFundamental() {
+      document.getElementById('fund-modal').style.display   = 'none';
+      document.getElementById('fund-contenido').innerHTML   = '';
+      document.getElementById('fund-spinner').style.display = 'block';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarFundamental(); });
+</script>
+</body>
+</html>

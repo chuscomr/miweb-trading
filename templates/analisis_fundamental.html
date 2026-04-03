@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis Fundamental{% if ticker %} — {{ ticker }}{% endif %} · MiWeb</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);
+    min-height: 100vh;
+    padding: 24px 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  a.back { color: rgba(255,255,255,.7); text-decoration: none; font-size: .85rem; display: inline-block; margin-bottom: 14px; }
+  a.back:hover { color: #fff; }
+  .card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  h1 { font-size: 1.8rem; color: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%); margin-bottom: 6px; }
+  .subtitle { color: #666; font-size: .95rem; margin-bottom: 24px; }
+  /* Form */
+  .form-row { display: flex; gap: 12px; }
+  .form-row input { flex: 1; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; text-transform: uppercase; }
+  .form-row input:focus { outline: none; border-color: #667eea; }
+  .btn { padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 8px; font-size: .95rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn:hover { opacity: .9; }
+  /* Error */
+  .alert-error { background: #fee; border-left: 4px solid #c33; color: #c33; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: .9rem; }
+  /* Score badge */
+  .score-banner { display: flex; align-items: center; gap: 20px; padding: 20px 24px; border-radius: 10px; margin-bottom: 24px; }
+  .score-banner.excelente { background: linear-gradient(135deg,#d4edda,#c3e6cb); border-left: 6px solid #28a745; }
+  .score-banner.bueno      { background: linear-gradient(135deg,#d1ecf1,#bee5eb); border-left: 6px solid #17a2b8; }
+  .score-banner.aceptable  { background: linear-gradient(135deg,#fff3cd,#ffeeba); border-left: 6px solid #ffc107; }
+  .score-banner.debil      { background: linear-gradient(135deg,#ffe5d0,#ffd0b5); border-left: 6px solid #fd7e14; }
+  .score-banner.malo       { background: linear-gradient(135deg,#f8d7da,#f5c6cb); border-left: 6px solid #dc3545; }
+  .score-num  { font-size: 2.8rem; font-weight: 800; color: #333; }
+  .score-info h2 { font-size: 1.2rem; color: #333; }
+  .score-info p  { font-size: .9rem; color: #555; margin-top: 4px; }
+  /* Categorías */
+  .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 12px; margin-bottom: 24px; }
+  .cat-card { padding: 14px 16px; background: #f8f9fa; border-radius: 8px; border-top: 3px solid; }
+  .cat-card.green  { border-color: #28a745; }
+  .cat-card.blue   { border-color: #17a2b8; }
+  .cat-card.yellow { border-color: #ffc107; }
+  .cat-card.orange { border-color: #fd7e14; }
+  .cat-card.red    { border-color: #dc3545; }
+  .cat-name  { font-size: .8rem; color: #666; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .cat-score { font-size: 1.4rem; font-weight: 700; color: #333; }
+  .cat-max   { font-size: .8rem; color: #999; }
+  /* Tablas de datos */
+  .section-title { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
+  .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 10px; }
+  .data-item { padding: 10px 12px; background: #f8f9fa; border-radius: 6px; }
+  .data-label { font-size: .75rem; color: #888; margin-bottom: 3px; }
+  .data-value { font-size: 1rem; font-weight: 600; color: #333; }
+  .data-value.good { color: #28a745; }
+  .data-value.bad  { color: #dc3545; }
+  /* Fortalezas / debilidades */
+  .fw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .fw-list { list-style: none; }
+  .fw-list li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: .88rem; }
+  .fw-list li::before { margin-right: 6px; }
+  .fortalezas li::before { content: "✅"; }
+  .debilidades li::before { content: "⚠️"; }
+  @media (max-width:640px) { .fw-grid { grid-template-columns: 1fr; } .form-row { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/analisis/tecnico" class="back">← Análisis Técnico</a>
+
+  <div class="card">
+    <h1>📋 Análisis Fundamental</h1>
+    <p class="subtitle">Valoración, rentabilidad y solidez financiera</p>
+
+    {% if error %}
+    <div class="alert-error">❌ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/analisis/fundamental">
+      <div class="form-row">
+        <input type="text" name="ticker" placeholder="Ej: BBVA, SAN, ITX" list="tickers-list"
+               value="{{ ticker or '' }}" required autofocus>
+        <button type="submit" class="btn">🔍 Analizar</button>
+      </div>
+    </form>
+    
+    {% if todos_tickers %}
+    <datalist id="tickers-list">
+      {% for t in todos_tickers %}
+      <option value="{{ t }}">{{ t }}</option>
+      {% endfor %}
+    </datalist>
+    {% endif %}
+  </div>
+
+  {% if datos and score %}
+  <!-- Score global -->
+  {% set nivel_lower = score.nivel|lower %}
+  <div class="score-banner {{ nivel_lower }}">
+    <div class="score-num">{{ score.score }}</div>
+    <div class="score-info">
+      <h2>{{ nombre_valor or ticker }} — {{ score.nivel }}</h2>
+      <p>Score fundamental sobre 100 puntos</p>
+    </div>
+  </div>
+
+  <!-- Categorías -->
+  <div class="card">
+    <div class="section-title">Desglose por categoría</div>
+    <div class="cats-grid">
+      {% for cat, vals in score.categorias.items() %}
+      {% set pct = (vals.score / vals.maximo * 100) if vals.maximo else 0 %}
+      {% set color = 'green' if pct >= 70 else 'blue' if pct >= 50 else 'yellow' if pct >= 35 else 'orange' if pct >= 20 else 'red' %}
+      <div class="cat-card {{ color }}">
+        <div class="cat-name">{{ cat }}</div>
+        <div class="cat-score">{{ vals.score }} <span class="cat-max">/ {{ vals.maximo }}</span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Fortalezas y debilidades -->
+  <div class="card">
+    <div class="section-title">Fortalezas y debilidades</div>
+    <div class="fw-grid">
+      <div>
+        <p style="font-weight:600; color:#28a745; margin-bottom:8px;">✅ Fortalezas</p>
+        <ul class="fw-list fortalezas">
+          {% for f in score.fortalezas %}
+          <li>{{ f }}</li>
+          {% else %}
+          <li style="color:#999">Sin fortalezas destacadas</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <p style="font-weight:600; color:#dc3545; margin-bottom:8px;">⚠️ Debilidades</p>
+        <ul class="fw-list debilidades">
+          {% for d in score.debilidades %}
+          <li>{{ d }}</li>
+          {% else %}
+          <li style="color:#999">Sin debilidades destacadas</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos de valoración -->
+  <div class="card">
+    <div class="section-title">Valoración</div>
+    <div class="data-grid">
+      <div class="data-item"><div class="data-label">PER</div><div class="data-value">{{ datos.per or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">PER Forward</div><div class="data-value">{{ datos.per_forward or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">EV/EBITDA</div><div class="data-value">{{ datos.ev_ebitda or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">P/Ventas</div><div class="data-value">{{ datos.precio_ventas or '—' }}</div></div>
+      <div class="data-item"><div class="data-label">P/Book</div><div class="data-value">{{ datos.precio_book or '—' }}</div></div>
+    </div>
+  </div>
+
+  <!-- Rentabilidad -->
+  <div class="card">
+    <div class="section-title">Rentabilidad</div>
+    <div class="data-grid">
+      <div class="data-item"><div class="data-label">ROE</div><div class="data-value {{ 'good' if datos.roe and datos.roe > 0.10 else 'bad' if datos.roe and datos.roe < 0 else '' }}">{{ '%.1f'|format(datos.roe * 100) ~ '%' if datos.roe else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">ROA</div><div class="data-value">{{ '%.1f'|format(datos.roa * 100) ~ '%' if datos.roa else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Margen Neto</div><div class="data-value">{{ '%.1f'|format(datos.margen_neto * 100) ~ '%' if datos.margen_neto else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Margen EBITDA</div><div class="data-value">{{ '%.1f'|format(datos.margen_ebitda * 100) ~ '%' if datos.margen_ebitda else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Margen Bruto</div><div class="data-value">{{ '%.1f'|format(datos.margen_bruto * 100) ~ '%' if datos.margen_bruto else '—' }}</div></div>
+    </div>
+  </div>
+
+  <!-- Balance -->
+  <div class="card">
+    <div class="section-title">Balance y crecimiento</div>
+    <div class="data-grid">
+      <div class="data-item"><div class="data-label">Deuda/Equity</div><div class="data-value {{ 'bad' if datos.deuda_equity and datos.deuda_equity > 2 else '' }}">{{ '%.2f'|format(datos.deuda_equity) if datos.deuda_equity else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Ratio Corriente</div><div class="data-value">{{ '%.2f'|format(datos.ratio_corriente) if datos.ratio_corriente else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Crec. BPA</div><div class="data-value {{ 'good' if datos.crecimiento_bpa and datos.crecimiento_bpa > 0 else 'bad' if datos.crecimiento_bpa and datos.crecimiento_bpa < 0 else '' }}">{{ '%.1f'|format(datos.crecimiento_bpa * 100) ~ '%' if datos.crecimiento_bpa else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Crec. Ingresos</div><div class="data-value">{{ '%.1f'|format(datos.crecimiento_ingresos * 100) ~ '%' if datos.crecimiento_ingresos else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Dividendo</div><div class="data-value">{{ '%.2f'|format(datos.dividend_yield * 100) ~ '%' if datos.dividend_yield else '—' }}</div></div>
+      <div class="data-item"><div class="data-label">Sector</div><div class="data-value" style="font-size:.85rem">{{ datos.sector or '—' }}</div></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

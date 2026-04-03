@@ -1,0 +1,2485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Técnico</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #0f172a;
+        }
+        
+        /* TOOLBAR */
+        .toolbar {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        select {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #1e293b;
+        }
+        #ticker { min-width: 250px; }
+        #tf { min-width: 100px; }
+        
+        .chart-type {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 6px;
+        }
+        .chart-type button {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-type button.active {
+            background: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .indicators {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        /* SELECTOR DESPLEGABLE MULTI-SELECT */
+        .indicadores-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .indicadores-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 38px;
+        }
+        
+        .indicadores-display:hover {
+            border-color: #2563eb;
+            background: white;
+        }
+        
+        .indicadores-display.open {
+            border-color: #2563eb;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            background: white;
+        }
+        
+        .indicadores-selected {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .indicadores-placeholder {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        
+        .indicador-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #2563eb;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .indicador-tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .indicador-tag-remove:hover {
+            opacity: 1;
+        }
+        
+        .indicadores-arrow {
+            margin-left: 8px;
+            font-size: 10px;
+            transition: transform 0.2s;
+            color: #64748b;
+        }
+        
+        .indicadores-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .indicadores-count {
+            font-size: 11px;
+            color: #64748b;
+            margin-left: 4px;
+            font-weight: 500;
+        }
+        
+        .indicadores-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2563eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .indicadores-dropdown.open {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .indicadores-dropdown::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .indicadores-actions {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+        
+        .indicadores-action-btn {
+            font-size: 11px;
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .indicadores-action-btn:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        
+        .indicador-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .indicador-option:last-child {
+            border-bottom: none;
+        }
+        
+        .indicador-option:hover {
+            background: #f8fafc;
+        }
+        
+        .indicador-option.selected {
+            background: #eff6ff;
+        }
+        
+        .indicador-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        
+        .indicador-option.selected .indicador-checkbox {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .indicador-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .indicador-option.selected .indicador-checkbox::after {
+            opacity: 1;
+        }
+        
+        .indicador-name {
+            font-weight: 500;
+            color: #334155;
+            font-size: 12px;
+            flex: 1;
+        }
+        
+        .indicator-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #475569;
+            cursor: pointer;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 16px;
+            transition: background 0.2s;
+        }
+        .indicator-label:hover {
+            background: #e2e8f0;
+        }
+        .indicator-label input {
+            width: 13px;
+            height: 13px;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-fullscreen {
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+        }
+        .btn-fullscreen svg {
+            display: block;
+        }
+        
+        /* LAYOUT PRINCIPAL */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto 20px auto;  /* igual que .container */
+        }
+        
+        /* GRÁFICO */
+        .chart-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        #grafico {
+            width: 100%;
+            height: 800px;   /* altura base — se ajusta dinámicamente con JS */
+        }
+
+        /* OCULTAR barra nativa Plotly — usamos barra personalizada */
+        .modebar-container { display: none !important; }
+
+        /* BOTONES barra personalizada */
+        .mb-btn {
+            background: white; border: 1px solid #e2e8f0; border-radius: 4px;
+            padding: 3px 8px; font-size: 13px; cursor: pointer; color: #475569;
+            transition: all 0.15s; line-height: 1.4;
+        }
+        .mb-btn:hover { background: #e2e8f0; color: #1e293b; }
+        .mb-btn.active { background: #3b82f6; color: white; border-color: #2563eb; }
+        
+        /* PANEL LATERAL */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .info-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .info-card h3 {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-content {
+            font-size: 13px;
+        }
+        .info-content p {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            color: #334155;
+        }
+        .info-content p span:first-child {
+            color: #64748b;
+        }
+        .info-content p strong {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        
+        /* NIVELES S/R */
+        .nivel-precio {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 4px 0;
+            font-size: 12px;
+            border-radius: 4px;
+            background: #f8fafc;
+        }
+        .nivel-precio.soporte {
+            border-left: 3px solid #22c55e;
+            background: #f0fdf4;
+        }
+        .nivel-precio.resistencia {
+            border-left: 3px solid #ef4444;
+            background: #fef2f2;
+        }
+        .nivel-precio .precio {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .nivel-precio .fuerza {
+            color: #64748b;
+            font-size: 11px;
+        }
+        
+        /* PATRONES */
+        .patron-vela {
+            padding: 8px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .patron-alcista { 
+            background: #f0fdf4; 
+            border-left-color: #22c55e;
+            color: #166534;
+        }
+        .patron-bajista { 
+            background: #fef2f2; 
+            border-left-color: #ef4444;
+            color: #991b1b;
+        }
+        .patron-neutral { 
+            background: #fefce8; 
+            border-left-color: #eab308;
+            color: #854d0e;
+        }
+        
+        /* LOADING STATE */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 700px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        /* Ocultar paneles en pantalla completa */
+        .container:fullscreen .resumen-tecnico-panel,
+        .container:fullscreen .desglose-panel {
+            display: none;
+        }
+        
+        /* Compatibilidad con otros navegadores */
+        .container:-webkit-full-screen .resumen-tecnico-panel,
+        .container:-webkit-full-screen .desglose-panel,
+        .container:-moz-full-screen .resumen-tecnico-panel,
+        .container:-moz-full-screen .desglose-panel {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📊 Análisis Técnico Completo</h1>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <select id="ticker">
+            <option value="">-- Selecciona un valor --</option>
+            <optgroup label="🇪🇸 IBEX 35">
+                <option value="ANA.MC">Acciona (ANA.MC)</option>
+                <option value="ANE.MC">Acciona Energías (ANE.MC)</option>
+                <option value="ACX.MC">Acerinox (ACX.MC)</option>
+                <option value="ACS.MC">ACS (ACS.MC)</option>
+                <option value="AENA.MC">Aena (AENA.MC)</option>
+                <option value="AMS.MC">Amadeus (AMS.MC)</option>
+                <option value="MTS.MC">ArcelorMittal (MTS.MC)</option>
+                <option value="SAB.MC">Banco Sabadell (SAB.MC)</option>
+                <option value="SAN.MC">Banco Santander (SAN.MC)</option>
+                <option value="BKT.MC">Bankinter (BKT.MC)</option>
+                <option value="BBVA.MC">BBVA (BBVA.MC)</option>
+                <option value="CABK.MC">Caixabank (CABK.MC)</option>
+                <option value="CLNX.MC">Cellnex (CLNX.MC)</option>
+                <option value="ENG.MC">Enagás (ENG.MC)</option>
+                <option value="ELE.MC">Endesa (ELE.MC)</option>
+                <option value="FCC.MC">FCC (FCC.MC)</option>
+                <option value="FER.MC">Ferrovial (FER.MC)</option>
+                <option value="FDR.MC">Fluidra (FDR.MC)</option>
+                <option value="GRF.MC">Grifols A (GRF.MC)</option>
+                <option value="IAG.MC">IAG (Iberia) (IAG.MC)</option>
+                <option value="IBE.MC">Iberdrola (IBE.MC)</option>
+                <option value="COL.MC">Inmobiliaria Colonial (COL.MC)</option>
+                <option value="ITX.MC">Inditex (ITX.MC)</option>
+                <option value="IDR.MC">Indra (IDR.MC)</option>
+                <option value="ROVI.MC">Laboratorios Rovi (ROVI.MC)</option>
+                <option value="LOG.MC">Logista (LOG.MC)</option>
+                <option value="MAP.MC">Mapfre (MAP.MC)</option>
+                <option value="MRL.MC">MERLIN Properties (MRL.MC)</option>
+                <option value="NTGY.MC">Naturgy (NTGY.MC)</option>
+                <option value="PUIG.MC">Puig Brands B (PUIG.MC)</option>
+                <option value="RED.MC">Redeia (RED.MC)</option>
+                <option value="REP.MC">Repsol (REP.MC)</option>
+                <option value="SCYR.MC">Sacyr (SCYR.MC)</option>
+                <option value="SLR.MC">Solaria (SLR.MC)</option>
+                <option value="TEF.MC">Telefónica (TEF.MC)</option>
+                <option value="UNI.MC">Unicaja (UNI.MC)</option>
+            </optgroup>
+            
+            <optgroup label="📈 Mercado Continuo">
+                <option value="AEDAS.MC">AEDAS Inmobiliaria (AEDAS.MC)</option>
+                <option value="AMP.MC">Amper (AMP.MC)</option>
+                <option value="APAM.MC">Applus (APAM.MC)</option>
+                <option value="A3M.MC">Atresmedia (A3M.MC)</option>
+                <option value="ATRY.MC">Atrys Health (ATRY.MC)</option>
+                <option value="ADX.MC">Audax Renovables (ADX.MC)</option>
+                <option value="CAF.MC">CAF (CAF.MC)</option>
+                <option value="CASH.MC">Cash Converters (CASH.MC)</option>
+                <option value="CIE.MC">CIE Automotive (CIE.MC)</option>
+                <option value="CIRSA.MC">CIRSA (CIRSA.MC)</option>
+                <option value="DIA.MC">DIA (DIA.MC)</option>
+                <option value="EBROM.MC">Ebro Motor (EBROM.MC)</option>
+                <option value="ECR.MC">Ercros (ECR.MC)</option>
+                <option value="ENO.MC">Elecnor (ENO.MC)</option>
+                <option value="ENC.MC">ENCE (ENC.MC)</option>
+                <option value="FAE.MC">Faes Farma (FAE.MC)</option>
+                <option value="GEST.MC">Gestamp (GEST.MC)</option>
+                <option value="DOM.MC">Global Dominion (DOM.MC)</option>
+                <option value="GRE.MC">Grenergy (GRE.MC)</option>
+                <option value="HBX.MC">HBX Group (HBX.MC)</option>
+                <option value="IMC.MC">Inmocentro (IMC.MC)</option>
+                <option value="IZER.MC">Izertis (IZER.MC)</option>
+                <option value="LIB.MC">Libertas (LIB.MC)</option>
+                <option value="LDA.MC">Linea Directa (LDA.MC)</option>
+                <option value="MEL.MC">Meliá (MEL.MC)</option>
+                <option value="MVC.MC">Metrovacesa (MVC.MC)</option>
+                <option value="NEA.MC">Naturhouse (NEA.MC)</option>
+                <option value="HOME.MC">Neinor Homes (HOME.MC)</option>
+                <option value="NHH.MC">NH Hotel Group (NHH.MC)</option>
+                <option value="OHLA.MC">OHLA (OHLA.MC)</option>
+                <option value="PHM.MC">PharmaMar (PHM.MC)</option>
+                <option value="PSG.MC">Prosegur (PSG.MC)</option>
+                <option value="RLIA.MC">Realia Business (RLIA.MC)</option>
+                <option value="R4.MC">Renta 4 (R4.MC)</option>
+                <option value="TRE.MC">Técnicas Reunidas (TRE.MC)</option>
+                <option value="TUB.MC">Tubacex (TUB.MC)</option>
+                <option value="VID.MC">Vidrala (VID.MC)</option>
+                <option value="VIS.MC">Viscofan (VIS.MC)</option>
+            </optgroup>
+        </select>
+        
+        <select id="tf">
+            <option value="1d">Diario</option>
+            <option value="1wk">Semanal</option>
+            <option value="1mo">Mensual</option>
+        </select>
+
+        <div class="chart-type">
+            <button id="btn-velas" class="active">Velas</button>
+            <button id="btn-linea">Línea</button>
+        </div>
+
+        <div class="indicators">
+            <div class="indicadores-select-wrapper">
+                <div class="indicadores-display" id="indicadores-display">
+                    <div class="indicadores-selected" id="indicadores-selected">
+                        <span class="indicadores-placeholder">Seleccionar indicadores...</span>
+                    </div>
+                    <span class="indicadores-count" id="indicadores-count">(0)</span>
+                    <span class="indicadores-arrow" id="indicadores-arrow">▼</span>
+                </div>
+                
+                <div class="indicadores-dropdown" id="indicadores-dropdown">
+                    <div class="indicadores-actions">
+                        <span class="indicadores-action-btn" id="btn-select-all">✓ Seleccionar todos</span>
+                        <span class="indicadores-action-btn" id="btn-deselect-all">✗ Limpiar</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: TENDENCIA -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                        📈 TENDENCIA
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM20">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM20 - Media Móvil 20</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM50">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM50 - Media Móvil 50</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MM200">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MM200 - Media Móvil 200</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA9">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA9 - Media Exponencial 9 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA21">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA21 - Media Exponencial 21 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="EMA50">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">EMA50 - Media Exponencial 50 ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ADX">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">ADX - Fuerza Tendencia ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PSAR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Parabolic SAR - Stops Dinámicos ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ICHIMOKU">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Ichimoku Cloud ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: MOMENTUM -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        ⚡ MOMENTUM
+                    </div>
+                    
+                    <div class="indicador-option" data-value="RSI">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">RSI - Índice Fuerza Relativa</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MACD">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MACD - Convergencia/Divergencia</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="STOCH">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Stochastic - Sobrecompra/Sobreventa ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="MFI">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">MFI - RSI con Volumen ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: VOLUMEN -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📊 VOLUMEN
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VOLUMEN">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Volumen - Barras</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="OBV">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">OBV - On Balance Volume</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VWAP">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">VWAP - Precio Institucional ✨</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="VOLPROFILE">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Volume Profile - POC ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: VOLATILIDAD -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📉 VOLATILIDAD
+                    </div>
+                    
+                    <div class="indicador-option" data-value="BB">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Bollinger Bands</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="ATR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">ATR - Average True Range</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="KELTNER">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Keltner Channels ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: NIVELES -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        🎯 NIVELES
+                    </div>
+                    
+                    <div class="indicador-option" data-value="SR">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Soportes/Resistencias</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="FIBO">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Fibonacci - Retrocesos</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PIVOT">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Pivot Points - S/R Diarios ✨</span>
+                    </div>
+                    
+                    <!-- CATEGORÍA: PATRONES -->
+                    <div style="padding: 8px 12px; background: #f1f5f9; font-weight: 600; font-size: 11px; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 4px;">
+                        📐 PATRONES
+                    </div>
+                    
+                    <div class="indicador-option" data-value="PATRONES">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Patrones Chartistas</span>
+                    </div>
+                    
+                    <div class="indicador-option" data-value="DIVERGENCIAS">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">Divergencias</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Checkboxes ocultos para compatibilidad con código existente -->
+            <div style="display: none;">
+                <label class="indicator-label"><input type="checkbox" value="MM20"> MM20</label>
+                <label class="indicator-label"><input type="checkbox" value="MM50"> MM50</label>
+                <label class="indicator-label"><input type="checkbox" value="MM200"> MM200</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA9"> EMA9</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA21"> EMA21</label>
+                <label class="indicator-label"><input type="checkbox" value="EMA50"> EMA50</label>
+                <label class="indicator-label"><input type="checkbox" value="ADX"> ADX</label>
+                <label class="indicator-label"><input type="checkbox" value="PSAR"> PSAR</label>
+                <label class="indicator-label"><input type="checkbox" value="ICHIMOKU"> ICHIMOKU</label>
+                <label class="indicator-label"><input type="checkbox" value="RSI"> RSI</label>
+                <label class="indicator-label"><input type="checkbox" value="MACD"> MACD</label>
+                <label class="indicator-label"><input type="checkbox" value="STOCH"> STOCH</label>
+                <label class="indicator-label"><input type="checkbox" value="MFI"> MFI</label>
+                <label class="indicator-label"><input type="checkbox" value="BB"> BB</label>
+                <label class="indicator-label"><input type="checkbox" value="ATR"> ATR</label>
+                <label class="indicator-label"><input type="checkbox" value="KELTNER"> KELTNER</label>
+                <label class="indicator-label"><input type="checkbox" value="SR"> SR</label>
+                <label class="indicator-label"><input type="checkbox" value="FIBO"> FIBO</label>
+                <label class="indicator-label"><input type="checkbox" value="PIVOT"> PIVOT</label>
+                <label class="indicator-label"><input type="checkbox" value="PATRONES"> PATRONES</label>
+                <label class="indicator-label"><input type="checkbox" value="DIVERGENCIAS"> DIVERGENCIAS</label>
+                <label class="indicator-label"><input type="checkbox" value="VOLUMEN"> VOLUMEN</label>
+                <label class="indicator-label"><input type="checkbox" value="OBV"> OBV</label>
+                <label class="indicator-label"><input type="checkbox" value="VWAP"> VWAP</label>
+                <label class="indicator-label"><input type="checkbox" value="VOLPROFILE"> VOLPROFILE</label>
+            </div>
+        </div>
+
+
+        </div>
+
+        <!-- Fila de botones: todos en la misma línea -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;width:100%;">
+            <button class="btn" id="btn-actualizar">Actualizar</button>
+            <button class="btn btn-fullscreen" id="btn-fullscreen" title="Pantalla completa">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+            </button>
+            <button class="btn btn-fullscreen" id="btn-limpiar-lineas" title="Limpiar líneas dibujadas">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+            <button class="btn btn-definiciones" onclick="abrirDefiniciones()">
+                📖 Definiciones
+            </button>
+            <button onclick="abrirScanPatrones('ibex35')"
+                style="background:#6366f1;color:white;border:none;padding:6px 12px;
+                       border-radius:6px;font-size:0.82em;font-weight:600;cursor:pointer;
+                       white-space:nowrap;height:32px;">
+                🔍 Scan IBEX35
+            </button>
+            <button onclick="abrirScanPatrones('continuo')"
+                style="background:#0891b2;color:white;border:none;padding:6px 12px;
+                       border-radius:6px;font-size:0.82em;font-weight:600;cursor:pointer;
+                       white-space:nowrap;height:32px;">
+                🔍 Scan Continuo
+            </button>
+        </div>
+
+    </div>
+
+    </div>
+
+<!-- ── MODAL SCAN PATRONES ─────────────────────────────── -->
+<div id="modal-scan-patrones" style="display:none;position:fixed;top:80px;right:20px;
+     z-index:9999;width:min(920px,60vw);max-height:55vh;background:white;border-radius:12px;
+     box-shadow:0 8px 40px rgba(0,0,0,0.25);flex-direction:column;
+     border:1px solid #e2e8f0;cursor:default;"
+     onclick="event.stopPropagation()">
+
+        <!-- Header draggable -->
+        <div id="scan-header" style="padding:12px 16px;border-bottom:1px solid #e2e8f0;
+                    display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+                    cursor:grab;background:#f8fafc;border-radius:12px 12px 0 0;user-select:none;">
+            <div>
+                <h3 id="scan-titulo" style="margin:0;font-size:1.1em;font-weight:700;color:#1e293b;">
+                    🔍 Escáner de Patrones Chartistas
+                </h3>
+                <div id="scan-subtitulo" style="font-size:0.8em;color:#64748b;margin-top:2px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <label style="font-size:0.8em;color:#64748b;display:flex;align-items:center;gap:4px;">
+                    <input type="checkbox" id="scan-solo-confirmados" onchange="filtrarScan()">
+                    Solo confirmados
+                </label>
+                <button onclick="document.getElementById('modal-scan-patrones').style.display='none'"
+                    style="background:none;border:none;font-size:1.4em;cursor:pointer;color:#94a3b8;
+                           line-height:1;padding:4px;">✕</button>
+            </div>
+        </div>
+
+        <!-- Spinner -->
+        <div id="scan-spinner" style="padding:40px;text-align:center;">
+            <div style="font-size:2em;margin-bottom:8px;">⏳</div>
+            <div style="color:#64748b;font-size:0.9em;">Analizando valores...</div>
+            <div id="scan-progreso" style="color:#94a3b8;font-size:0.8em;margin-top:4px;"></div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="scan-resultados" style="display:none;overflow-y:auto;flex:1;min-height:0;padding:12px 16px;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
+                <thead>
+                    <tr style="background:#f8fafc;position:sticky;top:0;z-index:1;">
+                        <th style="padding:8px 10px;text-align:left;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Valor</th>
+                        <th style="padding:8px 10px;text-align:left;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Patrón</th>
+                        <th style="padding:8px 10px;text-align:center;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Fiabilidad</th>
+                        <th style="padding:8px 10px;text-align:left;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Estado</th>
+                        <th style="padding:8px 10px;text-align:left;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Fecha</th>
+                        <th style="padding:8px 10px;text-align:right;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Precio</th>
+                        <th style="padding:8px 10px;text-align:right;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Neckline</th>
+                        <th style="padding:8px 10px;text-align:right;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Dist.%</th>
+                        <th style="padding:8px 10px;text-align:right;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Objetivo</th>
+                        <th style="padding:8px 10px;text-align:center;color:#64748b;font-weight:600;border-bottom:2px solid #e2e8f0;">Ver</th>
+                    </tr>
+                </thead>
+                <tbody id="scan-tbody"></tbody>
+            </table>
+        </div>
+        <!-- Resize handle -->
+        <div id="scan-resize" style="position:absolute;bottom:0;right:0;width:16px;height:16px;
+             cursor:se-resize;opacity:0.4;"
+             title="Arrastrar para redimensionar">
+            <svg viewBox="0 0 16 16" fill="#64748b"><path d="M11 5h2v2h-2zm-3 3h2v2H8zm3 0h2v2h-2zM5 11h2v2H5zm3 0h2v2H8zm3 0h2v2h-2z"/></svg>
+        </div>
+    </div>
+</div>
+
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="main-layout">
+        <!-- GRÁFICO -->
+        <div class="chart-container" style="padding:0;">
+            <!-- BARRA PERSONALIZADA ENCIMA DEL GRÁFICO -->
+            <div id="custom-modebar" style="
+                display:flex; flex-wrap:wrap; gap:2px; align-items:center;
+                justify-content:flex-end;
+                background:#f8fafc; border-bottom:1px solid #e2e8f0;
+                border-radius:8px 8px 0 0; padding:5px 8px;
+            ">
+                <!-- Zoom -->
+                <div style="display:flex;gap:1px;border-right:1px solid #dde;padding-right:6px;margin-right:2px;">
+                    <button onclick="modebarAction('zoom')" title="Zoom" class="mb-btn" id="mb-zoom">🔍+</button>
+                    <button onclick="modebarAction('zoomout')" title="Zoom Out" class="mb-btn">🔍-</button>
+                    <button onclick="modebarAction('autoscale')" title="Autoescala" class="mb-btn">⊡</button>
+                    <button onclick="modebarAction('reset')" title="Reset" class="mb-btn">🏠</button>
+                </div>
+                <!-- Pan -->
+                <div style="display:flex;gap:1px;border-right:1px solid #dde;padding-right:6px;margin-right:2px;">
+                    <button onclick="modebarAction('pan')" title="Desplazar" class="mb-btn" id="mb-pan">✋</button>
+                </div>
+                <!-- Dibujo -->
+                <div style="display:flex;gap:1px;border-right:1px solid #dde;padding-right:6px;margin-right:2px;">
+                    <button onclick="modebarAction('drawline')" title="Línea" class="mb-btn" id="mb-drawline">╱</button>
+                    <button onclick="modebarAction('drawrect')" title="Rectángulo" class="mb-btn" id="mb-drawrect">▭</button>
+                    <button onclick="modebarAction('drawopenpath')" title="Trazo libre" class="mb-btn" id="mb-drawpath">✏</button>
+                    <button onclick="modebarAction('eraseshape')" title="Borrar" class="mb-btn" id="mb-erase">✕</button>
+                </div>
+                <!-- Captura -->
+                <div style="display:flex;gap:1px;">
+                    <button onclick="modebarAction('toimage')" title="Guardar imagen" class="mb-btn">📷</button>
+                </div>
+            </div>
+            <div id="grafico" style="border-radius:0 0 8px 8px;"></div>
+        </div>
+
+        <!-- PANEL LATERAL -->
+        <div class="sidebar">
+            <!-- ÚLTIMA VELA -->
+            <div class="info-card">
+                <h3>📊 Última Vela</h3>
+                <div class="info-content" id="ultima-vela">
+                    <p><span>Apertura:</span> <strong>--</strong></p>
+                    <p><span>Máximo:</span> <strong>--</strong></p>
+                    <p><span>Mínimo:</span> <strong>--</strong></p>
+                    <p><span>Cierre:</span> <strong>--</strong></p>
+                    <p><span>Volumen:</span> <strong>--</strong></p>
+                </div>
+            </div>
+
+            <!-- CONTEXTO DE TRADING -->
+            <div class="info-card" style="border-left: 5px solid #3b82f6; background:#f0f7ff;">
+                <h3 style="color:#1e3a5f; font-weight:800;">🧭 Contexto de Trading</h3>
+                <div class="info-content" id="contexto-trading">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando análisis...</p>
+                </div>
+            </div>
+
+            <!-- SOPORTES -->
+            <div class="info-card">
+                <h3>🟢 Soportes</h3>
+                <div class="info-content" id="soportes">
+                    <p style="color: #94a3b8;">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- RESISTENCIAS -->
+            <div class="info-card">
+                <h3>🔴 Resistencias</h3>
+                <div class="info-content" id="resistencias">
+                    <p style="color: #94a3b8;">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- PATRONES CHARTISTAS -->
+            <div class="info-card">
+                <h3>📊 Patrones Chartistas</h3>
+                <div class="info-content" id="patrones_chartistas">
+                    <p style="color: #94a3b8; font-size: 0.85em;">No detectados en ventana de 100 velas</p>
+                </div>
+            </div>
+
+            <!-- PATRONES DE VELAS -->
+            <div class="info-card">
+                <h3>🕯️ Patrones de Velas</h3>
+                <div class="info-content" id="patrones">
+                    <p style="color: #94a3b8;">No implementado aún</p>
+                </div>
+            </div>
+
+            <!-- FIBONACCI -->
+            <div class="info-card">
+                <h3>📐 Fibonacci</h3>
+                <div class="info-content" id="fibonacci">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Activa el checkbox Fibonacci</p>
+                </div>
+            </div>
+
+            <!-- DIVERGENCIAS -->
+            <div class="info-card">
+                <h3>🔀 Divergencias</h3>
+                <div class="info-content" id="divergencias">
+                    <p style="color: #94a3b8; font-size: 0.85em;">Cargando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- NUEVO PANEL DE RESUMEN TÉCNICO -->
+<!-- Añadir esto DESPUÉS del </div> que cierra .main-layout y ANTES del cierre de .container -->
+
+<div class="resumen-tecnico-panel">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <h2 style="margin:0;">📊 Resumen Técnico</h2>
+        <!-- Selector de sistema -->
+        <div id="selector-sistema" style="display:flex; gap:6px;">
+            <button class="btn-sistema activo" data-sistema="swing"
+                style="padding:5px 14px; border-radius:20px; border:1px solid #6366f1;
+                       background:#6366f1; color:white; font-size:0.78em; font-weight:600;
+                       cursor:pointer; transition:all 0.2s;">
+                ⚡ Swing
+            </button>
+            <button class="btn-sistema" data-sistema="medio"
+                style="padding:5px 14px; border-radius:20px; border:1px solid #94a3b8;
+                       background:transparent; color:#64748b; font-size:0.78em; font-weight:600;
+                       cursor:pointer; transition:all 0.2s;">
+                🎯 Medio Plazo
+            </button>
+            <button class="btn-sistema" data-sistema="posicional"
+                style="padding:5px 14px; border-radius:20px; border:1px solid #94a3b8;
+                       background:transparent; color:#64748b; font-size:0.78em; font-weight:600;
+                       cursor:pointer; transition:all 0.2s;">
+                🏔️ Posicional
+            </button>
+        </div>
+    </div>
+
+    <!-- Etiqueta del sistema activo -->
+    <div id="sistema-descripcion" style="font-size:0.75em; color:#94a3b8; margin-bottom:10px; text-align:center;">
+        Swing Trading · Osciladores y momentum de corto plazo
+    </div>
+
+    <div class="resumen-grid">
+        <!-- INDICADORES TÉCNICOS -->
+        <div class="resumen-card">
+            <h3>Indicadores técnicos</h3>
+            <div class="gauge-container">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-indicadores">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label" id="label-indicadores">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="señales-detalle" id="detalle-indicadores">
+                <span class="compra">0 Compra</span>
+                <span class="venta">0 Venta</span>
+                <span class="neutral">0 Neutral</span>
+            </div>
+        </div>
+
+        <!-- RESUMEN GENERAL -->
+        <div class="resumen-card resumen-principal">
+            <h3 id="resumen-titulo">Resumen · Swing</h3>
+            <!-- Escala estilo Investing -->
+            <div style="display:flex; justify-content:space-between; font-size:9px;
+                        color:#94a3b8; padding:0 8px; margin-bottom:2px;">
+                <span>Venta<br>fuerte</span>
+                <span style="text-align:center;">Neutral</span>
+                <span style="text-align:right;">Compra<br>fuerte</span>
+            </div>
+            <div class="gauge-container gauge-grande">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-resumen">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label gauge-label-grande" id="label-resumen">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="recomendacion-final" id="recomendacion-final">
+                <strong>Resumen:</strong> <span class="recomendacion-badge">Neutral</span>
+            </div>
+        </div>
+
+        <!-- MEDIAS MÓVILES -->
+        <div class="resumen-card">
+            <h3>Medias móviles</h3>
+            <div class="gauge-container">
+                <svg class="gauge" viewBox="0 0 200 120" id="gauge-medias">
+                    <!-- Se dibuja con JavaScript -->
+                </svg>
+                <div class="gauge-label" id="label-medias">
+                    <span class="gauge-value">--</span>
+                    <span class="gauge-text">Analizando...</span>
+                </div>
+            </div>
+            <div class="señales-detalle" id="detalle-medias">
+                <span class="compra">0 Compra</span>
+                <span class="venta">0 Venta</span>
+                <span class="neutral">0 Neutral</span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- PANEL DE DESGLOSE DE SEÑALES -->
+<!-- Añadir esto DESPUÉS del cierre del resumen-tecnico-panel -->
+
+<div class="desglose-panel">
+    <div class="desglose-header" onclick="toggleDesglose()">
+        <h3>📋 Desglose de Señales</h3>
+        <span class="toggle-icon" id="desglose-toggle">▼</span>
+    </div>
+    
+    <div class="desglose-content" id="desglose-content">
+        <div class="desglose-grid">
+            <!-- INDICADORES TÉCNICOS -->
+            <div class="desglose-section">
+                <h4>Indicadores Técnicos</h4>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header compra-header">
+                        <span class="icono">✅</span>
+                        <span class="titulo">COMPRA (<span id="ind-compra-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-compra-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header venta-header">
+                        <span class="icono">❌</span>
+                        <span class="titulo">VENTA (<span id="ind-venta-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-venta-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header neutral-header">
+                        <span class="icono">⚪</span>
+                        <span class="titulo">NEUTRAL (<span id="ind-neutral-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="ind-neutral-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- MEDIAS MÓVILES -->
+            <div class="desglose-section">
+                <h4>Medias Móviles</h4>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header compra-header">
+                        <span class="icono">✅</span>
+                        <span class="titulo">COMPRA (<span id="mm-compra-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-compra-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header venta-header">
+                        <span class="icono">❌</span>
+                        <span class="titulo">VENTA (<span id="mm-venta-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-venta-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+                
+                <div class="señales-grupo">
+                    <div class="señales-grupo-header neutral-header">
+                        <span class="icono">⚪</span>
+                        <span class="titulo">NEUTRAL (<span id="mm-neutral-count">0</span>)</span>
+                    </div>
+                    <ul class="señales-lista" id="mm-neutral-lista">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS CSS PARA EL PANEL DE DESGLOSE -->
+<style>
+.desglose-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.desglose-header {
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 8px 8px 0 0;
+    transition: background 0.2s;
+}
+
+.desglose-header:hover {
+    background: #f1f5f9;
+}
+
+.desglose-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.toggle-icon {
+    font-size: 1.2rem;
+    color: #64748b;
+    transition: transform 0.3s;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.desglose-content {
+    padding: 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.desglose-content.open {
+    max-height: 2000px;
+}
+
+.desglose-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.desglose-section h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.señales-grupo {
+    margin-bottom: 20px;
+}
+
+.señales-grupo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.compra-header {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.venta-header {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.neutral-header {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.señales-grupo-header .icono {
+    font-size: 1rem;
+}
+
+.señales-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.señales-lista li {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #334155;
+    border-left: 3px solid transparent;
+}
+
+.señales-lista li.compra-item {
+    border-left-color: #22c55e;
+}
+
+.señales-lista li.venta-item {
+    border-left-color: #ef4444;
+}
+
+.señales-lista li.neutral-item {
+    border-left-color: #94a3b8;
+}
+
+.señales-lista li strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.señales-lista li.vacio {
+    font-style: italic;
+    color: #94a3b8;
+    border-left: none;
+}
+
+@media (max-width: 1200px) {
+    .desglose-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<!-- ESTILOS CSS PARA EL PANEL DE RESUMEN -->
+<style>
+.resumen-tecnico-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.resumen-tecnico-panel h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #0f172a;
+}
+
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.resumen-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.resumen-principal {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 2px solid #2563eb;
+}
+
+.resumen-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.gauge-container {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto 8px;
+}
+
+.gauge-grande {
+    max-width: 260px;
+}
+
+.gauge {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+}
+
+.gauge-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.gauge-label-grande {
+    bottom: 12px;
+}
+
+.gauge-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.gauge-label-grande .gauge-value {
+    font-size: 1.8rem;
+}
+
+.gauge-text {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 3px;
+    font-weight: 500;
+}
+
+.gauge-label-grande .gauge-text {
+    font-size: 0.82rem;
+}
+
+.señales-detalle {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.75rem;
+}
+
+.señales-detalle .compra {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.señales-detalle .venta {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.señales-detalle .neutral {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.recomendacion-final {
+    text-align: center;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+}
+
+.recomendacion-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-left: 8px;
+}
+
+.recomendacion-badge.compra-fuerte {
+    background: #22c55e;
+    color: white;
+}
+
+.recomendacion-badge.compra {
+    background: #86efac;
+    color: #166534;
+}
+
+.recomendacion-badge.neutral {
+    background: #cbd5e1;
+    color: #475569;
+}
+
+.recomendacion-badge.venta {
+    background: #fca5a5;
+    color: #991b1b;
+}
+
+.recomendacion-badge.venta-fuerte {
+    background: #ef4444;
+    color: white;
+}
+
+@media (max-width: 1200px) {
+    .resumen-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.btn-definiciones {
+    background: #166534;
+    color: #ffffff;
+    border: 1px solid #1e293b;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+.btn-definiciones:hover { background: #e2e8f0; border-color: #94a3b8; }
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    pointer-events: none;
+}
+.modal-overlay.abierto { display: block; }
+
+.modal-contenido {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 780px;
+    max-width: calc(100vw - 32px);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+    pointer-events: all;
+}
+.modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.modal-titulo { display: flex; align-items: center; gap: 10px; }
+.modal-icono { font-size: 1.4rem; }
+.modal-titulo h2 { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin: 0; }
+.modal-controles { display: flex; gap: 10px; align-items: center; }
+#buscadorIndicador {
+    flex: 1;
+    padding: 8px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    outline: none;
+    transition: border-color 0.2s;
+}
+#buscadorIndicador:focus { border-color: #2563eb; }
+.modal-cerrar {
+    background: #e2e8f0;
+    border: none;
+    color: #475569;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.modal-cerrar:hover { background: #fecaca; color: #dc2626; }
+.modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: #f1f5f9; }
+.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+.cat-separador { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
+.cat-separador:first-child { margin-top: 0; }
+.cat-separador h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; white-space: nowrap; margin: 0; }
+.cat-separador::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+.indicador-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; transition: border-color 0.2s; }
+.indicador-card:hover { border-color: #93c5fd; }
+.ind-cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ind-badge { background: #2563eb; color: white; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.ind-nombre { font-weight: 600; color: #0f172a; font-size: 14px; }
+.ind-definicion { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 8px; }
+.ind-uso { font-size: 12px; color: #475569; background: #eff6ff; border-left: 3px solid #2563eb; padding: 6px 10px; border-radius: 0 6px 6px 0; line-height: 1.5; }
+.ind-uso strong { color: #1d4ed8; }
+.sin-resultados { text-align: center; color: #94a3b8; padding: 40px 20px; font-size: 14px; }
+
+</style>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SELECTOR DESPLEGABLE DE INDICADORES
+    // ═══════════════════════════════════════════════════════════════
+    (function() {
+        const display = document.getElementById('indicadores-display');
+        const dropdown = document.getElementById('indicadores-dropdown');
+        const arrow = document.getElementById('indicadores-arrow');
+        const selectedContainer = document.getElementById('indicadores-selected');
+        const countEl = document.getElementById('indicadores-count');
+        const options = document.querySelectorAll('.indicador-option');
+        const btnSelectAll = document.getElementById('btn-select-all');
+        const btnDeselectAll = document.getElementById('btn-deselect-all');
+        
+        let selectedIndicadores = [];
+        
+        // Toggle dropdown
+        display.addEventListener('click', function(e) {
+            if (e.target.classList.contains('indicador-tag-remove')) {
+                return;
+            }
+            dropdown.classList.toggle('open');
+            display.classList.toggle('open');
+            arrow.classList.toggle('open');
+        });
+        
+        // Cerrar al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const wrapper = document.querySelector('.indicadores-select-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                dropdown.classList.remove('open');
+                display.classList.remove('open');
+                arrow.classList.remove('open');
+            }
+        });
+        
+        // Seleccionar/deseleccionar indicador
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                
+                if (selectedIndicadores.includes(value)) {
+                    selectedIndicadores = selectedIndicadores.filter(v => v !== value);
+                    this.classList.remove('selected');
+                } else {
+                    selectedIndicadores.push(value);
+                    this.classList.add('selected');
+                }
+                
+                updateDisplay();
+                updateChart(); // Actualizar gráfico
+            });
+        });
+        
+        // Seleccionar todos
+        btnSelectAll.addEventListener('click', function() {
+            selectedIndicadores = [];
+            options.forEach(option => {
+                const value = option.getAttribute('data-value');
+                selectedIndicadores.push(value);
+                option.classList.add('selected');
+            });
+            updateDisplay();
+            updateChart();
+        });
+        
+        // Deseleccionar todos
+        btnDeselectAll.addEventListener('click', function() {
+            selectedIndicadores = [];
+            options.forEach(option => {
+                option.classList.remove('selected');
+            });
+            updateDisplay();
+            updateChart();
+        });
+        
+        // Actualizar display
+        function updateDisplay() {
+            selectedContainer.innerHTML = '';
+            
+            if (selectedIndicadores.length === 0) {
+                selectedContainer.innerHTML = '<span class="indicadores-placeholder">Seleccionar indicadores...</span>';
+            } else {
+                selectedIndicadores.forEach(value => {
+                    const tag = document.createElement('span');
+                    tag.className = 'indicador-tag';
+                    tag.innerHTML = `${value} <span class="indicador-tag-remove" data-value="${value}">×</span>`;
+                    selectedContainer.appendChild(tag);
+                    
+                    tag.querySelector('.indicador-tag-remove').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const val = this.getAttribute('data-value');
+                        selectedIndicadores = selectedIndicadores.filter(v => v !== val);
+                        
+                        options.forEach(opt => {
+                            if (opt.getAttribute('data-value') === val) {
+                                opt.classList.remove('selected');
+                            }
+                        });
+                        
+                        updateDisplay();
+                        updateChart();
+                    });
+                });
+            }
+            
+            countEl.textContent = `(${selectedIndicadores.length})`;
+        }
+        
+        // Actualizar gráfico (función que ya existe en tu código)
+        function updateChart() {
+            // Obtener checkboxes (para compatibilidad con código existente)
+            const checkboxes = document.querySelectorAll('.indicator-label input[type="checkbox"]');
+            
+            // Desmarcar todos
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Marcar solo los seleccionados
+            selectedIndicadores.forEach(value => {
+                checkboxes.forEach(cb => {
+                    if (cb.value === value) {
+                        cb.checked = true;
+                    }
+                });
+            });
+            
+            // Disparar actualización del gráfico (si existe la función)
+            if (typeof actualizarGrafico === 'function') {
+                actualizarGrafico();
+            }
+        }
+        
+        // Inicializar sin ningún indicador seleccionado por defecto
+        const defaultIndicators = [];
+        defaultIndicators.forEach(value => {
+            selectedIndicadores.push(value);
+            options.forEach(opt => {
+                if (opt.getAttribute('data-value') === value) {
+                    opt.classList.add('selected');
+                }
+            });
+        });
+        updateDisplay();
+        
+        // Hacer disponible globalmente para otras funciones
+        window.getSelectedIndicadores = function() {
+            return selectedIndicadores;
+        };
+    })();
+    </script>
+    
+    <script src="{{ url_for('indicadores.static', filename='js/grafico.js') }}"></script>
+</div>
+<div id="modalDefiniciones" class="modal-overlay">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <div class="modal-titulo">
+                <span class="modal-icono">📖</span>
+                <h2>Glosario de Indicadores Técnicos</h2>
+            </div>
+            <div class="modal-controles">
+                <input type="text" id="buscadorIndicador" 
+                       placeholder="🔍 Buscar indicador..." 
+                       oninput="filtrarIndicadores(this.value)"
+                       autocomplete="off">
+                <button class="modal-cerrar" onclick="cerrarDefiniciones()" title="Cerrar">✕</button>
+            </div>
+        </div>
+        <div class="modal-body" id="listaIndicadores"></div>
+    </div>
+</div>
+<script>
+const GLOSARIO = [
+    // TENDENCIA
+    { cat: "📈 Tendencia", badge: "MM20", nombre: "Media Móvil Simple 20",
+      def: "Promedio del precio de cierre de las últimas 20 velas. Suaviza las fluctuaciones del precio y muestra hacia dónde se dirige la tendencia a corto plazo.",
+      uso: "Si el precio está por encima de la MM20, hay tendencia alcista. Si está por debajo, bajista. Se usa frecuentemente como soporte o resistencia dinámica." },
+
+    { cat: "📈 Tendencia", badge: "MM50", nombre: "Media Móvil Simple 50",
+      def: "Promedio de los últimos 50 cierres. Refleja la tendencia a medio plazo y filtra el ruido del mercado mejor que la MM20.",
+      uso: "El cruce de MM20 con MM50 (cruce dorado alcista / cruce de la muerte bajista) es una señal clásica de cambio de tendencia." },
+
+    { cat: "📈 Tendencia", badge: "MM200", nombre: "Media Móvil Simple 200",
+      def: "Promedio de los últimos 200 cierres. Es la media más usada para definir si un activo está en tendencia alcista o bajista a largo plazo.",
+      uso: "Precio sobre MM200 = mercado alcista de fondo. Precio bajo MM200 = mercado bajista. Los gestores institucionales la usan como referencia clave." },
+
+    { cat: "📈 Tendencia", badge: "EMA9", nombre: "Media Móvil Exponencial 9",
+      def: "Media móvil que da más peso a los precios recientes que la SMA. Con período 9 es muy sensible a los movimientos del precio.",
+      uso: "Se usa en intradía y swing trading para detectar cambios de tendencia rápidos. Cruce EMA9/EMA21 = señal de entrada." },
+
+    { cat: "📈 Tendencia", badge: "EMA21", nombre: "Media Móvil Exponencial 21",
+      def: "EMA de 21 períodos. Equilibrio entre rapidez de reacción y fiabilidad de señal.",
+      uso: "Combinada con EMA9: el cruce alcista (EMA9 supera EMA21) sugiere entrada larga. Sirve también de soporte dinámico en tendencias fuertes." },
+
+    { cat: "📈 Tendencia", badge: "EMA50", nombre: "Media Móvil Exponencial 50",
+      def: "EMA de medio plazo. Reacciona más rápido que la SMA50 ante giros del mercado.",
+      uso: "Niveles de soporte/resistencia dinámico. Muy útil para buscar pullbacks en tendencia." },
+
+    { cat: "📈 Tendencia", badge: "ADX", nombre: "Average Directional Index — Fuerza de Tendencia",
+      def: "Mide la FUERZA de la tendencia en una escala de 0 a 100, sin importar si es alcista o bajista. No indica dirección.",
+      uso: "ADX > 25 = tendencia fuerte. ADX < 20 = mercado lateral, mejor usar osciladores. +DI > -DI = fuerza alcista." },
+
+    { cat: "📈 Tendencia", badge: "PSAR", nombre: "Parabolic SAR — Stops Dinámicos",
+      def: "Aparece como puntos sobre o bajo el precio. Puntos bajo el precio = tendencia alcista. Puntos encima = tendencia bajista.",
+      uso: "Se usa para colocar stops de seguimiento (trailing stop). El cruce del precio con los puntos marca una posible inversión de tendencia." },
+
+    { cat: "📈 Tendencia", badge: "ICHIMOKU", nombre: "Ichimoku Cloud — Nube Ichimoku",
+      def: "Sistema de 5 líneas que muestra tendencia, soporte/resistencia y momentum de un solo vistazo. La 'nube' (Kumo) es la zona de soporte/resistencia principal.",
+      uso: "Precio sobre la nube = tendencia alcista. Dentro de la nube = indecisión. Bajo la nube = bajista. Cruce Tenkan/Kijun genera señales de entrada." },
+
+    // MOMENTUM
+    { cat: "⚡ Momentum", badge: "RSI", nombre: "Relative Strength Index — Índice de Fuerza Relativa",
+      def: "Oscilador entre 0 y 100 que mide la velocidad y magnitud de los movimientos del precio. Por encima de 70 sobrecomprado; por debajo de 30, sobrevendido.",
+      uso: "Señales: cruce del nivel 50 (tendencia), zonas extremas (posible rebote) y divergencias precio/RSI que anticipan giros importantes." },
+
+    { cat: "⚡ Momentum", badge: "MACD", nombre: "Moving Average Convergence Divergence",
+      def: "Diferencia entre EMA12 y EMA26 (línea MACD) y su media de 9 períodos (señal). El histograma muestra la distancia entre ambas.",
+      uso: "Cruce de MACD sobre su señal = compra. Cruce bajo = venta. Las divergencias MACD/precio son de las señales más fiables del análisis técnico." },
+
+    { cat: "⚡ Momentum", badge: "STOCH", nombre: "Stochastics — Estocástico",
+      def: "Compara el precio de cierre con el rango máx/mín de N períodos. Oscila entre 0 y 100.",
+      uso: "%K > 80 sobrecompra, < 20 sobreventa. El cruce de %K con %D en zonas extremas da señales de entrada/salida. Funciona mejor en mercados laterales." },
+
+    { cat: "⚡ Momentum", badge: "MFI", nombre: "Money Flow Index — RSI con Volumen",
+      def: "Versión del RSI que incorpora el volumen. Mide la presión compradora o vendedora ponderando por volumen negociado.",
+      uso: "MFI > 80 con volumen alto = señal bajista potente. MFI < 20 = posible suelo. Las divergencias MFI/precio son muy fiables." },
+
+    // VOLUMEN
+    { cat: "📊 Volumen", badge: "VOL", nombre: "Volumen — Barras",
+      def: "Número de acciones o contratos negociados en cada vela. Es el indicador más básico y fundamental del mercado.",
+      uso: "Subida de precio con volumen alto = tendencia confirmada. Subida con volumen bajo = sospechosa. El volumen confirma o desmiente el movimiento del precio." },
+
+    { cat: "📊 Volumen", badge: "OBV", nombre: "On Balance Volume",
+      def: "Suma el volumen cuando el precio sube y lo resta cuando baja. Refleja si el dinero institucional entra o sale del activo.",
+      uso: "OBV subiendo = presión compradora. OBV bajando con precio subiendo = divergencia bajista (la subida no tiene respaldo de volumen real)." },
+
+    { cat: "📊 Volumen", badge: "VWAP", nombre: "Volume Weighted Average Price — Precio Institucional",
+      def: "Precio promedio del día ponderado por el volumen de cada operación. Es la referencia que usan fondos e instituciones para evaluar sus ejecuciones.",
+      uso: "Precio sobre VWAP = sesgo alcista intradía. Precio bajo VWAP = sesgo bajista. Actúa como fuerte soporte/resistencia dinámico." },
+
+    { cat: "📊 Volumen", badge: "VOLP", nombre: "Volume Profile — POC",
+      def: "Muestra a qué precios se ha negociado más volumen. El POC (Point of Control) es el precio con mayor volumen del período.",
+      uso: "El POC actúa como imán de precio y como fuerte soporte/resistencia. Las zonas de poco volumen (gaps de volumen) suelen cruzarse con rapidez." },
+
+    // VOLATILIDAD
+    { cat: "🌡️ Volatilidad", badge: "BB", nombre: "Bandas de Bollinger",
+      def: "Tres bandas: MM20 central ± 2 desviaciones estándar. Se expanden con alta volatilidad y se contraen cuando el mercado está en calma.",
+      uso: "Squeeze (bandas muy juntas) anticipa un movimiento fuerte inminente. Precio en banda superior = sobrecompra relativa. Precio en banda inferior = sobreventa relativa." },
+
+    { cat: "🌡️ Volatilidad", badge: "ATR", nombre: "Average True Range — Rango Verdadero Medio",
+      def: "Mide cuánto se mueve de media el precio en cada vela. No indica dirección, solo la magnitud del movimiento.",
+      uso: `Imprescindible para calibrar stops: stop = precio entrada − (ATR × multiplicador). ATR alto = ampliar stops. ATR bajo = mercado tranquilo.
+      <br><br>
+      <strong>¿Cómo leer los valores?</strong><br>
+      • <strong>En €:</strong> Si el ATR diario de Santander es 0,18€, el precio se mueve de media 18 céntimos por sesión. Un stop razonable sería 1,5 × ATR = 0,27€ bajo el precio de entrada.<br>
+      • <strong>En %:</strong> ATR% = ATR / Precio × 100. Ej: precio 4,20€ y ATR 0,18€ → ATR% = 4,3%. Útil para comparar volatilidad entre acciones de diferente precio.<br>
+      • <strong>Regla práctica:</strong> Stop conservador = 2 × ATR. Stop ajustado = 1 × ATR. En mercados muy volátiles usar 2,5 × ATR para evitar stop-hunts.` },
+
+    { cat: "🌡️ Volatilidad", badge: "KELT", nombre: "Keltner Channels — Canales de Keltner",
+      def: "Canal formado por una EMA20 central y bandas a ±2 ATR. Similar a Bollinger pero basado en volatilidad ATR.",
+      uso: "Menos propenso a falsas roturas que Bollinger. Rotura del canal con volumen confirma tendencia fuerte. Squeeze de Keltner + BB = señal clásica de explosión de precio." },
+
+    // NIVELES
+    { cat: "🎯 Niveles", badge: "S/R", nombre: "Soportes y Resistencias",
+      def: "Zonas de precio donde históricamente el mercado ha rebotado (soporte = suelo) o rechazado (resistencia = techo). Se detectan automáticamente por máximos y mínimos relevantes.",
+      uso: "Comprar cerca de soporte con stop bajo él. Vender cerca de resistencia. Si un soporte se rompe, se convierte en resistencia (cambio de polaridad) y viceversa." },
+
+    { cat: "🎯 Niveles", badge: "FIBO", nombre: "Fibonacci — Retrocesos",
+      def: "Niveles derivados de la secuencia de Fibonacci (23.6%, 38.2%, 50%, 61.8%, 78.6%) que marcan posibles zonas de rebote tras un movimiento impulsivo.",
+      uso: "En tendencia alcista, buscar compras en retrocesos al 38.2% o 61.8%. El nivel 61.8% (ratio áureo) es el más respetado. El 50% es el más usado por su psicología." },
+
+    { cat: "🎯 Niveles", badge: "PIVOT", nombre: "Pivot Points — Soportes y Resistencias Diarios",
+      def: "Niveles calculados con los máximos, mínimos y cierre del día anterior. Generan un punto pivote central (PP) y niveles S1, S2, R1, R2.",
+      uso: "El PP es la referencia neutral del día. Precio sobre PP = sesgo alcista. Bajo PP = bajista. S1/R1 son los primeros objetivos de precio del día." },
+
+    // PATRONES
+    { cat: "🕯️ Patrones", badge: "CHART", nombre: "Patrones Chartistas",
+      def: "Formaciones geométricas del precio como cabeza y hombros, doble techo/suelo, triángulos, banderas y cuñas, identificadas analizando máximos y mínimos.",
+      uso: "Patrones de vuelta (cabeza y hombros, doble techo): señalan fin de tendencia. Patrones de continuación (bandera, triángulo): pausa antes de continuar la tendencia." },
+
+    { cat: "🕯️ Patrones", badge: "DIV", nombre: "Divergencias",
+      def: "Ocurre cuando el precio marca un nuevo máximo/mínimo pero el indicador (RSI, MACD) no lo confirma. Señal de debilidad del movimiento actual.",
+      uso: "Divergencia bajista: precio sube a nuevo máximo pero RSI baja = agotamiento alcista. Divergencia alcista: precio baja a nuevo mínimo pero RSI sube = posible suelo." },
+];
+
+function abrirDefiniciones() {
+    const modal = document.getElementById('modalDefiniciones');
+    modal.classList.add('abierto');
+    document.getElementById('buscadorIndicador').value = '';
+    renderizarGlosario(GLOSARIO);
+}
+
+// ── ESCÁNER DE PATRONES CHARTISTAS ───────────────────────────
+let _scanResultados = [];
+
+async function abrirScanPatrones(mercado) {
+    const modal    = document.getElementById('modal-scan-patrones');
+    const spinner  = document.getElementById('scan-spinner');
+    const results  = document.getElementById('scan-resultados');
+    const titulo   = document.getElementById('scan-titulo');
+    const subtitulo= document.getElementById('scan-subtitulo');
+    const progreso = document.getElementById('scan-progreso');
+
+    modal.style.display = 'flex';
+    spinner.style.display = 'block';
+    results.style.display = 'none';
+    document.getElementById('scan-tbody').innerHTML = '';
+    document.getElementById('scan-solo-confirmados').checked = false;
+
+    const nombre = mercado === 'ibex35' ? 'IBEX 35' : 'Mercado Continuo';
+    titulo.textContent = `🔍 Escáner de Patrones Chartistas — ${nombre}`;
+    subtitulo.textContent = 'Analizando...';
+    progreso.textContent = 'Descargando datos de todos los valores...';
+
+    try {
+        const res  = await fetch(`/indicadores/scan_patrones?mercado=${mercado}`);
+        const data = await res.json();
+        _scanResultados = data.resultados || [];
+
+        subtitulo.textContent = `${data.total} patrones detectados en ${nombre}`;
+        spinner.style.display = 'none';
+        results.style.display = 'block';
+        renderizarScan(_scanResultados);
+    } catch(e) {
+        spinner.innerHTML = `<div style="color:#ef4444;padding:20px;">Error al escanear: ${e.message}</div>`;
+    }
+}
+
+function filtrarScan() {
+    const soloConf = document.getElementById('scan-solo-confirmados').checked;
+    const filtrados = soloConf ? _scanResultados.filter(r => r.confirmado) : _scanResultados;
+    renderizarScan(filtrados);
+}
+
+function renderizarScan(resultados) {
+    const tbody = document.getElementById('scan-tbody');
+    if (!resultados.length) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8;">No se encontraron patrones</td></tr>';
+        return;
+    }
+
+    const NOMBRES_PATRON = {
+        doble_techo: '🔴 Doble Techo',
+        doble_suelo: '🟢 Doble Suelo',
+        hch:         '🔴 HCH',
+        hch_invertido:'🟢 HCH Invertido',
+        triangulo_ascendente: '🟢 Triángulo Asc.',
+        triangulo_descendente:'🔴 Triángulo Desc.',
+        triangulo_simetrico:  '⚡ Triángulo Sim.',
+        bandera_alcista: '🟢 Bandera Alcista',
+        bandera_bajista: '🔴 Bandera Bajista',
+    };
+
+    tbody.innerHTML = resultados.map((r, i) => {
+        const color   = r.direccion === 'alcista' ? '#10b981' : '#ef4444';
+        const bgRow   = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+        // Badge estado + rotura reciente
+        let badge;
+        if (r.rotura_reciente) {
+            badge = '<span style="background:#fef08a;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid #f59e0b;">🔥 Rotura reciente</span>';
+        } else if (r.confirmado) {
+            badge = '<span style="background:#dcfce7;color:#15803d;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;">✓ Confirmado</span>';
+        } else {
+            badge = '<span style="background:#fef9c3;color:#92400e;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;">⏱ En formación</span>';
+        }
+
+        const fecha   = r.fecha2 || r.fecha_cabeza || '—';
+        const neck    = r.neckline ? r.neckline + '€' : '—';
+        const obj     = r.objetivo ? r.objetivo + '€' : '—';
+        const patron  = NOMBRES_PATRON[r.tipo] || r.tipo;
+
+        // Tooltip de fiabilidad con el detalle de cada confirmación
+        const detallesFiabilidad = (r.fiabilidad_detalle || [])
+            .map(d => `${d.icono} ${d.texto}`)
+            .join('\n') || 'Sin datos de confirmación';
+
+        // Distancia a neckline
+        let distCell = '—';
+        if (r.dist_neck_pct !== null && r.dist_neck_pct !== undefined) {
+            const dist = r.dist_neck_pct;
+            const distColor = Math.abs(dist) <= 2 ? '#f59e0b'    // muy cerca → naranja
+                            : Math.abs(dist) <= 5 ? '#6366f1'    // cerca → morado
+                            : '#94a3b8';                          // lejos → gris
+            const distSign = dist >= 0 ? '+' : '';
+            const distLabel = Math.abs(dist) <= 2 ? ` ⚡` : '';
+            distCell = `<span style="color:${distColor};font-weight:700;">${distSign}${dist}%${distLabel}</span>`;
+        }
+
+        // Resaltar fila si rotura reciente
+        const bgRowFinal = r.rotura_reciente ? '#fffbeb' : bgRow;
+
+        return `<tr style="background:${bgRowFinal};border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px 10px;">
+                <div style="font-weight:700;color:#1e293b;">${r.ticker}</div>
+                <div style="font-size:10px;color:#64748b;">${r.nombre || ''}</div>
+            </td>
+            <td style="padding:8px 10px;color:${color};font-weight:600;">${patron}</td>
+            <td style="padding:8px 10px;text-align:center;">
+                <div class="fiabilidad-tooltip-wrap" style="position:relative;display:inline-block;cursor:help;">
+                    <span style="font-size:13px;letter-spacing:1px;">${r.fiabilidad_str || '☆☆☆☆☆'}</span>
+                    <div class="fiabilidad-tooltip" style="display:none;position:fixed;
+                         background:#1e293b;color:white;padding:8px 12px;border-radius:8px;
+                         font-size:11px;line-height:1.7;white-space:nowrap;z-index:99999;
+                         box-shadow:0 4px 20px rgba(0,0,0,0.4);min-width:240px;text-align:left;">
+                        ${(r.fiabilidad_detalle||[]).map(d => {
+                            const col = d.ok === true ? '#4ade80' : d.ok === false ? '#f87171' : '#94a3b8';
+                            return '<span style="color:'+col+'">'+d.icono+' '+d.texto+'</span>';
+                        }).join('<br>') || 'Sin datos'}
+                    </div>
+                </div>
+            </td>
+            <td style="padding:8px 10px;">${badge}</td>
+            <td style="padding:8px 10px;color:#475569;font-size:11px;">${fecha}</td>
+            <td style="padding:8px 10px;text-align:right;font-weight:600;">${r.precio}€</td>
+            <td style="padding:8px 10px;text-align:right;color:${color};font-weight:600;">${neck}</td>
+            <td style="padding:8px 10px;text-align:right;">${distCell}</td>
+            <td style="padding:8px 10px;text-align:right;color:#6366f1;font-weight:600;">${obj}</td>
+            <td style="padding:8px 10px;text-align:center;">
+                <button class="btn-ver-patron" data-ticker="${r.ticker}"
+                    style="background:#6366f1;color:white;border:none;padding:4px 10px;
+                           border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;">
+                    📈 Ver
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Tooltips de fiabilidad ────────────────────────────────────
+document.addEventListener('mouseover', function(e) {
+    const wrap = e.target.closest('.fiabilidad-tooltip-wrap');
+    if (wrap) {
+        const tip = wrap.querySelector('.fiabilidad-tooltip');
+        if (tip) {
+            tip.style.display = 'block';
+            // Posicionar debajo del cursor
+            const rect = wrap.getBoundingClientRect();
+            const tipH = tip.offsetHeight || 120;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow >= tipH + 10) {
+                tip.style.top  = (rect.bottom + 6) + 'px';
+            } else {
+                tip.style.top  = (rect.top - tipH - 6) + 'px';
+            }
+            // Centrar horizontalmente, sin salirse de la pantalla
+            let left = rect.left + rect.width/2 - 120;
+            left = Math.max(8, Math.min(left, window.innerWidth - 260));
+            tip.style.left = left + 'px';
+        }
+    }
+});
+document.addEventListener('mouseout', function(e) {
+    const wrap = e.target.closest('.fiabilidad-tooltip-wrap');
+    if (wrap && !wrap.contains(e.relatedTarget)) {
+        const tip = wrap.querySelector('.fiabilidad-tooltip');
+        if (tip) tip.style.display = 'none';
+    }
+});
+
+// ── Delegación de eventos para botones Ver del escáner ───────
+// Usar el tbody directamente para evitar stopPropagation del panel flotante
+function iniciarListenerScan() {
+    const tbody = document.getElementById('scan-tbody');
+    if (!tbody) return;
+    tbody.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-ver-patron');
+        if (btn) {
+            e.stopPropagation();
+            const ticker = btn.getAttribute('data-ticker');
+            console.log('[SCANNER] Click en Ver, ticker:', ticker);
+            if (ticker) abrirTickerDesdeScanner(ticker);
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', iniciarListenerScan);
+
+function abrirTickerDesdeScanner(ticker) {
+    console.log('[SCANNER] abrirTickerDesdeScanner llamado con:', ticker);
+
+    // 1. Seleccionar el ticker en el select único
+    const sel = document.getElementById('ticker');
+    if (sel) {
+        // Si el ticker no existe como opción, añadirlo dinámicamente
+        if (!Array.from(sel.options).some(o => o.value === ticker)) {
+            const opt = document.createElement('option');
+            opt.value = ticker;
+            opt.text  = ticker;
+            sel.add(opt);
+        }
+        sel.value = ticker;
+        console.log('[SCANNER] Ticker puesto en select:', sel.value);
+    } else {
+        console.error('[SCANNER] No se encontró el select #ticker');
+    }
+
+    // 2. Desactivar todos los checkboxes excepto PATRONES
+    document.querySelectorAll('input[type="checkbox"][value]').forEach(cb => {
+        cb.checked = cb.value === 'PATRONES';
+    });
+    document.querySelectorAll('.indicador-option').forEach(el => {
+        el.classList.toggle('activo', el.dataset.value === 'PATRONES');
+    });
+
+    // 3. Cargar gráfico
+    console.log('[SCANNER] window.grafico:', window.grafico);
+    if (window.grafico) {
+        window.grafico.cargar();
+    } else {
+        console.warn('[SCANNER] window.grafico no disponible, usando fallback');
+        document.getElementById('btn-actualizar')?.click();
+    }
+}
+
+// ── DRAGGABLE + RESIZABLE para el panel flotante ─────────────
+(function() {
+    let isDragging = false, isResizing = false;
+    let startX, startY, startLeft, startTop, startW, startH;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const panel  = document.getElementById('modal-scan-patrones');
+        const header = document.getElementById('scan-header');
+        const resizeH= document.getElementById('scan-resize');
+        if (!panel || !header) return;
+
+        // ── Drag ──
+        header.addEventListener('mousedown', e => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            isDragging = true;
+            const rect = panel.getBoundingClientRect();
+            startX = e.clientX; startY = e.clientY;
+            startLeft = rect.left; startTop = rect.top;
+            panel.style.right = 'auto'; panel.style.bottom = 'auto';
+            panel.style.left = startLeft + 'px'; panel.style.top = startTop + 'px';
+            header.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+
+        // ── Resize ──
+        if (resizeH) {
+            resizeH.addEventListener('mousedown', e => {
+                isResizing = true;
+                const rect = panel.getBoundingClientRect();
+                startX = e.clientX; startY = e.clientY;
+                startW = rect.width; startH = rect.height;
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (isDragging) {
+                panel.style.left = Math.max(0, startLeft + e.clientX - startX) + 'px';
+                panel.style.top  = Math.max(0, startTop  + e.clientY - startY) + 'px';
+            }
+            if (isResizing) {
+                const newW = Math.max(400, startW + e.clientX - startX);
+                const newH = Math.max(200, startH + e.clientY - startY);
+                panel.style.width    = newW + 'px';
+                panel.style.maxWidth = newW + 'px';
+                panel.style.maxHeight= newH + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) { isDragging = false; header.style.cursor = 'grab'; }
+            isResizing = false;
+        });
+    });
+})();
+
+
+
+function cerrarDefiniciones() {
+    document.getElementById('modalDefiniciones').classList.remove('abierto');
+}
+
+function cerrarModalFuera(e) {
+    // Ya no hay overlay — no hace falta
+}
+
+function filtrarIndicadores(texto) {
+    const t = texto.toLowerCase().trim();
+    if (!t) { renderizarGlosario(GLOSARIO); return; }
+    const filtrados = GLOSARIO.filter(i =>
+        i.badge.toLowerCase().includes(t) ||
+        i.nombre.toLowerCase().includes(t) ||
+        i.cat.toLowerCase().includes(t) ||
+        i.def.toLowerCase().includes(t)
+    );
+    renderizarGlosario(filtrados);
+}
+
+function renderizarGlosario(lista) {
+    const contenedor = document.getElementById('listaIndicadores');
+    if (lista.length === 0) {
+        contenedor.innerHTML = '<div class="sin-resultados">🔍 No se encontraron indicadores con ese término.</div>';
+        return;
+    }
+    const categorias = [...new Set(lista.map(i => i.cat))];
+    let html = '';
+    categorias.forEach(cat => {
+        html += `<div class="cat-separador"><h3>${cat}</h3></div>`;
+        lista.filter(i => i.cat === cat).forEach(ind => {
+            html += `
+            <div class="indicador-card">
+                <div class="ind-cabecera">
+                    <span class="ind-badge">${ind.badge}</span>
+                    <span class="ind-nombre">${ind.nombre}</span>
+                </div>
+                <p class="ind-definicion">${ind.def}</p>
+                <div class="ind-uso"><strong>💡 Cómo usarlo:</strong> ${ind.uso}</div>
+            </div>`;
+        });
+    });
+    contenedor.innerHTML = html;
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarDefiniciones();
+});
+
+// Drag & drop del modal de definiciones
+(function() {
+    const overlay  = document.getElementById('modalDefiniciones');
+    const contenido = overlay?.querySelector('.modal-contenido');
+    const header   = overlay?.querySelector('.modal-header');
+    if (!overlay || !header) return;
+    let drag = false, sx, sy, il, it;
+    header.style.cursor = 'grab';
+    header.addEventListener('mousedown', e => {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+        drag = true; header.style.cursor = 'grabbing';
+        const r = overlay.getBoundingClientRect();
+        overlay.style.left      = r.left + 'px';
+        overlay.style.top       = r.top  + 'px';
+        overlay.style.transform = 'none';
+        sx = e.clientX; sy = e.clientY; il = r.left; it = r.top;
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+        if (!drag) return;
+        overlay.style.left = Math.max(0, Math.min(window.innerWidth  - overlay.offsetWidth,  il + e.clientX - sx)) + 'px';
+        overlay.style.top  = Math.max(0, Math.min(window.innerHeight - overlay.offsetHeight, it + e.clientY - sy)) + 'px';
+    });
+    document.addEventListener('mouseup', () => { drag = false; header.style.cursor = 'grab'; });
+})();
+</script>
+<script>
+// ── BARRA PERSONALIZADA — conecta con Plotly ─────────────────
+let _mbMode = 'zoom';
+
+function modebarAction(action) {
+    const gd = document.getElementById('grafico');
+    if (!gd || !gd._fullLayout) return;
+
+    // Quitar active de todos
+    document.querySelectorAll('.mb-btn').forEach(b => b.classList.remove('active'));
+
+    if (action === 'zoom') {
+        // Zoom IN — reduce el rango de fechas desde la izquierda
+        const layout = gd._fullLayout;
+        const xr = layout.xaxis.range;
+        // Convertir a ms, recortar 30% por la izquierda, mantener extremo derecho
+        const t0 = new Date(xr[0]).getTime();
+        const t1 = new Date(xr[1]).getTime();
+        const span = t1 - t0;
+        const newT0 = new Date(t0 + span * 0.3).toISOString().slice(0, 10);
+        Plotly.relayout(gd, {
+            'xaxis.range': [newT0, xr[1]],
+            'yaxis.autorange': true
+        });
+        document.getElementById('mb-zoom').classList.add('active');
+
+    } else if (action === 'zoomout') {
+        const layout = gd._fullLayout;
+        const xr = layout.xaxis.range;
+        const yr = layout.yaxis.range;
+        const xc = (xr[0] + xr[1]) / 2, xh = (xr[1] - xr[0]) * 0.7;
+        const yc = (yr[0] + yr[1]) / 2, yh = (yr[1] - yr[0]) * 0.7;
+        Plotly.relayout(gd, {
+            'xaxis.range': [xc - xh, xc + xh],
+            'yaxis.range': [yc - yh, yc + yh]
+        });
+
+    } else if (action === 'autoscale') {
+        Plotly.relayout(gd, {'xaxis.autorange': true, 'yaxis.autorange': true});
+
+    } else if (action === 'reset') {
+        Plotly.relayout(gd, {'xaxis.autorange': true, 'yaxis.autorange': true});
+
+    } else if (action === 'pan') {
+        Plotly.relayout(gd, {'dragmode': 'pan'});
+        document.getElementById('mb-pan').classList.add('active');
+
+    } else if (action === 'drawline') {
+        Plotly.relayout(gd, {'dragmode': 'drawline'});
+        document.getElementById('mb-drawline').classList.add('active');
+
+    } else if (action === 'drawrect') {
+        Plotly.relayout(gd, {'dragmode': 'drawrect'});
+        document.getElementById('mb-drawrect').classList.add('active');
+
+    } else if (action === 'drawopenpath') {
+        Plotly.relayout(gd, {'dragmode': 'drawopenpath'});
+        document.getElementById('mb-drawpath').classList.add('active');
+
+    } else if (action === 'eraseshape') {
+        Plotly.relayout(gd, {'dragmode': 'eraseshape'});
+        document.getElementById('mb-erase').classList.add('active');
+
+    } else if (action === 'toimage') {
+        Plotly.downloadImage(gd, {
+            format: 'png', filename: 'grafico_tecnico',
+            height: 1080, width: 1920, scale: 2
+        });
+    }
+}
+
+// Marcar zoom como activo por defecto cuando el gráfico carga
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver(() => {
+        const gd = document.getElementById('grafico');
+        if (gd && gd._fullLayout) {
+            document.getElementById('mb-zoom')?.classList.add('active');
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.getElementById('grafico') || document.body, {childList: true, subtree: true});
+});
+</script>
+
+<!-- ══ MODAL ALERTAS TÉCNICAS ══ -->
+<div id="alertas-modal" style="
+  display:none; position:fixed; top:16px; left:16px;
+  width:380px; max-width:calc(100vw - 32px); max-height:calc(100vh - 32px);
+  overflow-y:auto; z-index:9999; border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.85); background:#0d1a26;
+  border:1px solid rgba(231,76,60,0.3);
+">
+  <div id="alertas-drag-bar" style="
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 10px 6px;cursor:grab;user-select:none;
+    border-bottom:1px solid rgba(231,76,60,0.2);
+    background:rgba(231,76,60,0.08);border-radius:12px 12px 0 0;
+  ">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:#e74c3c;font-weight:700;letter-spacing:1px;">⚡ ALERTAS TÉCNICAS</span>
+      <span id="alertas-modal-badge" style="display:none;background:#e74c3c;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <label style="font-size:10px;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:3px;">
+        <input type="checkbox" id="toggle-ia-alertas" style="margin:0;"> 🤖 IA
+      </label>
+      <button onclick="cargarAlertasIA(window._tickerAlertasActual)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;border-radius:4px;width:22px;height:22px;font-size:11px;cursor:pointer;line-height:1;padding:0;">↺</button>
+      <button onclick="cerrarAlertasModal()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:50%;width:22px;height:22px;font-size:0.8rem;cursor:pointer;line-height:1;padding:0;">✕</button>
+    </div>
+  </div>
+  <div id="alertas-modal-ticker" style="padding:6px 12px;font-size:12px;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,0.05);font-weight:500;">—</div>
+  <div id="alertas-modal-contenido" style="padding:12px;"></div>
+  <div id="alertas-modal-ia" style="display:none;margin:0 12px 12px;padding:12px;background:rgba(0,150,255,0.06);border:1px solid rgba(0,150,255,0.2);border-radius:6px;font-size:11px;color:#aac;"></div>
+</div>
+
+<style>
+@keyframes spin-a { to { transform: rotate(360deg); } }
+#alertas-modal::-webkit-scrollbar { width:4px; }
+#alertas-modal::-webkit-scrollbar-track { background:#0d1a26; }
+#alertas-modal::-webkit-scrollbar-thumb { background:#333;border-radius:2px; }
+</style>
+
+<script>
+(function() {
+  const SEVER_CFG = {
+    ALTA:  { borde: '#ff4466', bg: 'rgba(255,68,102,0.08)'  },
+    MEDIA: { borde: '#ffaa00', bg: 'rgba(255,170,0,0.08)'   },
+    BAJA:  { borde: '#4499ff', bg: 'rgba(68,153,255,0.08)'  },
+  };
+  const REC_TEXTO = {
+    ENTRAR_LARGO:'↑ Entrar largo', ENTRAR_CORTO:'↓ Entrar corto',
+    ESPERAR:'⏳ Esperar', REDUCIR_POSICION:'⬇ Reducir',
+    CERRAR_POSICION:'✖ Cerrar', AJUSTAR_STOP:'🛡 Ajustar stop',
+  };
+
+  window._tickerAlertasActual = null;
+  window.cerrarAlertasModal = () => { document.getElementById('alertas-modal').style.display = 'none'; };
+
+  window.cargarAlertasIA = async function(ticker) {
+    if (!ticker) return;
+    window._tickerAlertasActual = ticker;
+    const modal     = document.getElementById('alertas-modal');
+    const contenido = document.getElementById('alertas-modal-contenido');
+    const iaBox     = document.getElementById('alertas-modal-ia');
+    const badge     = document.getElementById('alertas-modal-badge');
+    const tickerLbl = document.getElementById('alertas-modal-ticker');
+    const usarIA    = document.getElementById('toggle-ia-alertas')?.checked || false;
+    const t = ticker.replace(/\.[A-Z]+$/i, '');
+    const fechaHora = new Date().toLocaleString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    modal.style.display = 'block';
+    iaBox.style.display = 'none';
+    tickerLbl.innerHTML = `<strong style="color:#e2e8f0;font-size:13px;letter-spacing:1px;">${t}</strong> <span style="color:#475569;font-size:11px;">· ${fechaHora}</span>`;
+    contenido.innerHTML = `<div style="padding:20px;text-align:center;color:#8899aa;font-size:12px;">
+      <div style="width:20px;height:20px;border:2px solid #333;border-top-color:#e74c3c;border-radius:50%;animation:spin-a .7s linear infinite;margin:0 auto 10px;"></div>
+      Analizando ${t}...</div>`;
+
+    try {
+      const res = await fetch(`/alertas/api/${encodeURIComponent(t)}?ia=${usarIA?1:0}&sistema=indicadores`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      badge.textContent = data.total;
+      badge.style.display = data.total > 0 ? 'inline-flex' : 'none';
+      contenido.innerHTML = data.total === 0
+        ? `<div style="text-align:center;padding:24px 10px;color:#8899aa;font-size:12px;">✅ Sin alertas para <strong style="color:#ccd6e0;">${t}</strong></div>`
+        : data.alertas.map(a => {
+            const cfg = SEVER_CFG[a.severidad] || SEVER_CFG.BAJA;
+            const fecha = a.timestamp
+              ? new Date(a.timestamp).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+              : new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+            return `<div style="border-left:3px solid ${cfg.borde};background:${cfg.bg};border-radius:0 6px 6px 0;padding:9px 11px;margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+                <span style="font-weight:700;font-size:12px;color:#fff;flex:1;line-height:1.3;">${a.icono||''} ${a.titulo}</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-left:6px;">
+                  <span style="background:${cfg.borde};color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;">${a.severidad}</span>
+                  <span style="font-size:9px;color:#8899aa;">📅 ${fecha}</span>
+                </div>
+              </div>
+              <div style="color:#ccd6e0;font-size:11px;line-height:1.5;margin-bottom:5px;">${a.detalle}</div>
+              <div style="font-size:11px;font-weight:600;color:${cfg.borde};">💡 ${a.accion}</div>
+            </div>`;
+          }).join('');
+      if (data.analisis_ia) {
+        const ia = data.analisis_ia;
+        const sc = {ALCISTA:'#00ff88',BAJISTA:'#ff4466',NEUTRO:'#888'}[ia.sesgo]||'#888';
+        iaBox.innerHTML = `<div style="font-size:10px;color:#0af;font-weight:700;letter-spacing:1px;margin-bottom:6px;">🤖 IA · ${t} <span style="color:#445;font-weight:400;">Confianza: ${ia.confianza}</span></div>
+          <div style="color:#aac;font-size:11px;line-height:1.6;margin-bottom:8px;">${ia.interpretacion}</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="background:#1a2a3a;border:1px solid #334;color:#cce;font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;">${REC_TEXTO[ia.recomendacion]||ia.recomendacion}</span>
+            <span style="color:${sc};font-size:11px;font-weight:700;">● ${ia.sesgo}</span>
+          </div>`;
+        iaBox.style.display = 'block';
+      }
+    } catch(err) {
+      contenido.innerHTML = `<div style="color:#ff4466;font-size:11px;padding:10px;">⚠️ ${err.message}</div>`;
+    }
+  };
+
+  // Drag
+  (function() {
+    const modal = document.getElementById('alertas-modal');
+    const bar   = document.getElementById('alertas-drag-bar');
+    let drag=false, sx, sy, il, it;
+    bar.addEventListener('mousedown', e => {
+      if (['BUTTON','INPUT','LABEL'].includes(e.target.tagName)) return;
+      drag=true; bar.style.cursor='grabbing';
+      const r=modal.getBoundingClientRect();
+      modal.style.left=r.left+'px'; modal.style.top=r.top+'px';
+      modal.style.right='auto'; modal.style.bottom='auto';
+      sx=e.clientX; sy=e.clientY; il=r.left; it=r.top; e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!drag) return;
+      modal.style.left=Math.max(0,Math.min(window.innerWidth-modal.offsetWidth,  il+e.clientX-sx))+'px';
+      modal.style.top =Math.max(0,Math.min(window.innerHeight-modal.offsetHeight,it+e.clientY-sy))+'px';
+    });
+    document.addEventListener('mouseup', ()=>{ drag=false; bar.style.cursor='grab'; });
+  })();
+
+  // Conectar ticker
+  document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('ticker');
+    if (sel) {
+      sel.addEventListener('change', function() { if (this.value) cargarAlertasIA(this.value); });
+      if (sel.value) cargarAlertasIA(sel.value);
+    }
+    document.getElementById('btn-actualizar')?.addEventListener('click', () => {
+      const t = document.getElementById('ticker')?.value;
+      if (t) cargarAlertasIA(t);
+    });
+    document.getElementById('toggle-ia-alertas')?.addEventListener('change', () => {
+      if (window._tickerAlertasActual) cargarAlertasIA(window._tickerAlertasActual);
+    });
+  });
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarAlertasModal(); });
+})();
+</script>
+
+</body>
+</html>

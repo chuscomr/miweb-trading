@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - MiWeb Trading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 2em;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+        
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-row input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .resultados {
+            display: none;
+        }
+        
+        .resultados.visible {
+            display: block;
+        }
+        
+        .info-basica {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .info-basica h2 {
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        
+        .info-basica .meta {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+        
+        .seccion {
+            margin-bottom: 25px;
+        }
+        
+        .seccion h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 1.3em;
+        }
+        
+        .grid-ratios {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .ratio-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .ratio-card .label {
+            color: #718096;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .ratio-card .value {
+            color: #2d3748;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        
+        .ratio-card .descripcion {
+            color: #a0aec0;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4a5568;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #2d3748;
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .loading.visible {
+            display: block;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Volver al Hub</a>
+        
+        <div class="header">
+            <h1>💼 {{ titulo }}</h1>
+            <p>{{ descripcion }}</p>
+        </div>
+        
+        <div class="panel">
+            <div class="input-group">
+                <label for="ticker">Ticker del valor:</label>
+                <div class="input-row">
+                    <input type="text" 
+                           id="ticker" 
+                           placeholder="SAN, BBVA, TEF, IBE..."
+                           autocomplete="off">
+                    <button class="btn" onclick="analizarFundamental()">🔍 Analizar</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <p>⏳ Obteniendo datos fundamentales...</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="resultados" id="resultados">
+                <!-- Información básica -->
+                <div class="info-basica">
+                    <h2 id="nombre-empresa">-</h2>
+                    <div class="meta">
+                        <span id="sector">-</span> • 
+                        <span id="industria">-</span><br>
+                        Precio: <strong id="precio">-</strong> € • 
+                        Cap. Mercado: <strong id="capitalizacion">-</strong>
+                    </div>
+                </div>
+                
+                <!-- Ratios de Valoración -->
+                <div class="seccion">
+                    <h3>📊 Ratios de Valoración</h3>
+                    <div class="grid-ratios">
+                        <div class="ratio-card">
+                            <div class="label">PER (P/E)</div>
+                            <div class="value" id="per">-</div>
+                            <div class="descripcion">Precio / Beneficio</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">PEG</div>
+                            <div class="value" id="peg">-</div>
+                            <div class="descripcion">PER / Crecimiento</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">P/B</div>
+                            <div class="value" id="price_to_book">-</div>
+                            <div class="descripcion">Precio / Valor Libros</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">P/S</div>
+                            <div class="value" id="price_to_sales">-</div>
+                            <div class="descripcion">Precio / Ventas</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rentabilidad -->
+                <div class="seccion">
+                    <h3>💰 Rentabilidad</h3>
+                    <div class="grid-ratios">
+                        <div class="ratio-card">
+                            <div class="label">ROE</div>
+                            <div class="value" id="roe">-</div>
+                            <div class="descripcion">Return on Equity</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">ROA</div>
+                            <div class="value" id="roa">-</div>
+                            <div class="descripcion">Return on Assets</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Margen Bruto</div>
+                            <div class="value" id="margen_bruto">-</div>
+                            <div class="descripcion">Gross Margin</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Margen Neto</div>
+                            <div class="value" id="margen_neto">-</div>
+                            <div class="descripcion">Profit Margin</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dividendos y Deuda -->
+                <div class="seccion">
+                    <h3>💵 Dividendos y Deuda</h3>
+                    <div class="grid-ratios">
+                        <div class="ratio-card">
+                            <div class="label">Dividend Yield</div>
+                            <div class="value" id="dividend_yield">-</div>
+                            <div class="descripcion">Rentabilidad dividendo</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Payout Ratio</div>
+                            <div class="value" id="payout_ratio">-</div>
+                            <div class="descripcion">% Beneficios repartidos</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Deuda/Equity</div>
+                            <div class="value" id="deuda_equity">-</div>
+                            <div class="descripcion">Apalancamiento</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Ratio Corriente</div>
+                            <div class="value" id="ratio_corriente">-</div>
+                            <div class="descripcion">Liquidez</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Crecimiento -->
+                <div class="seccion">
+                    <h3>📈 Crecimiento</h3>
+                    <div class="grid-ratios">
+                        <div class="ratio-card">
+                            <div class="label">Crec. Ingresos</div>
+                            <div class="value" id="crecimiento_ingresos">-</div>
+                            <div class="descripcion">Revenue Growth</div>
+                        </div>
+                        <div class="ratio-card">
+                            <div class="label">Crec. Beneficios</div>
+                            <div class="value" id="crecimiento_beneficios">-</div>
+                            <div class="descripcion">Earnings Growth</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Analizar fundamental
+        async function analizarFundamental() {
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            
+            if (!ticker) {
+                mostrarError('Por favor, introduce un ticker');
+                return;
+            }
+            
+            // Ocultar resultados previos y error
+            document.getElementById('resultados').classList.remove('visible');
+            document.getElementById('error').classList.remove('visible');
+            document.getElementById('loading').classList.add('visible');
+            
+            try {
+                const response = await fetch(`/contexto/api/fundamental/${ticker}`);
+                const data = await response.json();
+                
+                document.getElementById('loading').classList.remove('visible');
+                
+                if (data.success) {
+                    mostrarResultados(data.datos);
+                } else {
+                    mostrarError(data.error || 'Error al obtener datos');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('visible');
+                mostrarError('Error de conexión: ' + error.message);
+            }
+        }
+        
+        function mostrarResultados(datos) {
+            // Información básica
+            document.getElementById('nombre-empresa').textContent = datos.nombre;
+            document.getElementById('sector').textContent = datos.sector;
+            document.getElementById('industria').textContent = datos.industria;
+            document.getElementById('precio').textContent = formatNumber(datos.precio);
+            document.getElementById('capitalizacion').textContent = formatMillones(datos.capitalizacion);
+            
+            // Ratios valoración
+            document.getElementById('per').textContent = formatNumber(datos.per);
+            document.getElementById('peg').textContent = formatNumber(datos.peg);
+            document.getElementById('price_to_book').textContent = formatNumber(datos.price_to_book);
+            document.getElementById('price_to_sales').textContent = formatNumber(datos.price_to_sales);
+            
+            // Rentabilidad
+            document.getElementById('roe').textContent = formatPorcentaje(datos.roe);
+            document.getElementById('roa').textContent = formatPorcentaje(datos.roa);
+            document.getElementById('margen_bruto').textContent = formatPorcentaje(datos.margen_bruto);
+            document.getElementById('margen_neto').textContent = formatPorcentaje(datos.margen_neto);
+            
+            // Dividendos y deuda
+            document.getElementById('dividend_yield').textContent = formatPorcentaje(datos.dividend_yield);
+            document.getElementById('payout_ratio').textContent = formatPorcentaje(datos.payout_ratio);
+            document.getElementById('deuda_equity').textContent = formatNumber(datos.deuda_equity);
+            document.getElementById('ratio_corriente').textContent = formatNumber(datos.ratio_corriente);
+            
+            // Crecimiento
+            document.getElementById('crecimiento_ingresos').textContent = formatPorcentaje(datos.crecimiento_ingresos);
+            document.getElementById('crecimiento_beneficios').textContent = formatPorcentaje(datos.crecimiento_beneficios);
+            
+            // Mostrar resultados
+            document.getElementById('resultados').classList.add('visible');
+        }
+        
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + mensaje;
+            errorDiv.classList.add('visible');
+        }
+        
+        function formatNumber(num) {
+            if (!num || num === 0) return 'N/A';
+            return num.toFixed(2);
+        }
+        
+        function formatPorcentaje(num) {
+            if (!num || num === 0) return 'N/A';
+            return (num * 100).toFixed(2) + '%';
+        }
+        
+        function formatMillones(num) {
+            if (!num || num === 0) return 'N/A';
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B€';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M€';
+            return num.toFixed(0) + '€';
+        }
+        
+        // Enter para buscar
+        document.getElementById('ticker').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analizarFundamental();
+            }
+        });
+    </script>
+</body>
+</html>

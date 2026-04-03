@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Historial</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);min-height:100vh;padding:20px;color:#333}
+.container{max-width:1000px;margin:0 auto}
+.back{display:inline-block;color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.85em;margin-bottom:12px}
+.card{background:white;border-radius:12px;padding:16px 20px;margin-bottom:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.metric{background:#f8f9ff;border-radius:8px;padding:12px 14px}
+.metric .lbl{font-size:11px;color:#888;margin-bottom:4px}
+.metric .val{font-size:20px;font-weight:600}
+.sec-title{font-size:0.85em;font-weight:600;color:#667eea;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;text-transform:uppercase;letter-spacing:0.5px}
+table{width:100%;border-collapse:collapse;font-size:0.85em}
+th{text-align:left;color:#888;font-size:0.78em;font-weight:600;padding:6px 8px;border-bottom:1px solid #f0f0f0}
+td{padding:8px 8px;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+tr:last-child td{border:none}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
+.b-swing{background:#dbeafe;color:#1e40af}
+.b-medio{background:#ede9fe;color:#5b21b6}
+.green{color:#16a34a}.red{color:#dc2626}.muted{color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/cartera/" class="back">← Volver a cartera</a>
+
+<div class="grid4">
+    <div class="metric">
+        <div class="lbl">Total trades</div>
+        <div class="val">{{ metricas.total }}</div>
+    </div>
+    <div class="metric">
+        <div class="lbl">Win Rate</div>
+        <div class="val">{{ metricas.wr }}%</div>
+    </div>
+    <div class="metric">
+        <div class="lbl">Expectativa</div>
+        <div class="val {% if metricas.exp >= 0 %}green{% else %}red{% endif %}">{{ "%+.2f"|format(metricas.exp) }}R</div>
+    </div>
+    <div class="metric">
+        <div class="lbl">P&L total</div>
+        <div class="val {% if metricas.pnl_eur >= 0 %}green{% else %}red{% endif %}">{{ "{:+,.0f}".format(metricas.pnl_eur) }}€</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="sec-title">Todos los trades cerrados</div>
+    {% if cerradas %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th><th>Valor</th><th>Sistema</th><th>Entrada</th><th>Salida</th>
+                <th>R final</th><th>Fase salida</th><th>Motivo</th><th>Duracion</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in cerradas %}
+        <tr>
+            <td class="muted" style="font-size:0.8em">{{ loop.index }}</td>
+            <td><strong>{{ p.ticker.replace('.MC','') }}</strong></td>
+            <td><span class="badge {% if p.sistema == 'SWING' %}b-swing{% else %}b-medio{% endif %}">{{ p.sistema }}</span></td>
+            <td>{{ p.fecha_entrada[:10] if p.fecha_entrada else '—' }}</td>
+            <td>{{ p.fecha_cierre[:10] if p.fecha_cierre else '—' }}</td>
+            <td class="{% if (p.r_final or 0) > 0 %}green{% elif (p.r_final or 0) < 0 %}red{% endif %}" style="font-weight:600">
+                {% if p.r_final is not none %}{{ "%+.2f"|format(p.r_final) }}R{% else %}—{% endif %}
+            </td>
+            <td class="muted" style="font-size:0.8em">{{ p.fase or '—' }}</td>
+            <td class="muted" style="font-size:0.8em">{{ p.motivo_cierre or '—' }}</td>
+            <td class="muted" style="font-size:0.8em">
+                {% if p.fecha_entrada and p.fecha_cierre %}
+                {{ (p.fecha_cierre[:10] | replace('-','') | int - p.fecha_entrada[:10] | replace('-','') | int) }}d
+                {% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:#9ca3af;text-align:center;padding:20px">Sin trades cerrados todavia</p>
+    {% endif %}
+</div>
+</div>
+</body>
+</html>

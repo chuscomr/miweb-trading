@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración Sistema Posicional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .page-title {
+            color: white;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .page-sub {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85em;
+            margin-bottom: 18px;
+        }
+        .card {
+            background: white;
+            padding: 22px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 14px;
+        }
+        .card h2 {
+            color: #1e3c72;
+            font-size: 1em;
+            font-weight: 700;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8f0fe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 10px;
+            font-weight: 600;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-new {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge-mod {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .param-grid { display: grid; gap: 8px; }
+        .param-item {
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 3px solid #1e3c72;
+            display: grid;
+            grid-template-columns: 230px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+        .param-item.aviso   { border-left-color: #f59e0b; background: #fffbeb; }
+        .param-item.positivo{ border-left-color: #22c55e; background: #f0fdf4; }
+        .param-item.nuevo   { border-left-color: #7c3aed; background: #f5f3ff; }
+        .param-item.eliminado { border-left-color: #94a3b8; background: #f1f5f9; opacity: 0.8; }
+        .param-label { font-weight: 700; color: #1e293b; font-size: 0.85em; }
+        .param-value { color: #1e3c72; font-size: 1em; font-weight: 800; margin-top: 3px; }
+        .param-desc  { color: #475569; font-size: 0.82em; line-height: 1.6; margin-top: 2px; }
+
+        /* Tabla de score */
+        .score-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 6px; }
+        .score-table th { background: #1e3c72; color: white; padding: 8px 10px; text-align: left; font-weight: 600; }
+        .score-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+        .score-table tr:last-child td { border: none; }
+        .score-table tr:nth-child(even) td { background: #f8fafc; }
+        .pts { font-weight: 700; color: #1e3c72; }
+
+        /* Estados IBEX */
+        .ibex-estados { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 6px; }
+        .ibex-estado { padding: 12px 14px; border-radius: 8px; font-size: 0.82em; }
+        .ibex-alcista    { background: #16a34a; color: white; }
+        .ibex-transicion { background: #f59e0b; color: white; }
+        .ibex-bajista    { background: #dc2626; color: white; }
+        .ibex-estado strong { display: block; font-size: 1em; margin-bottom: 4px; }
+
+        /* Clasificación score */
+        .score-clases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .score-clase { padding: 10px 14px; border-radius: 8px; font-size: 0.82em; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/posicional/" class="back-link">← Volver</a>
+        <div class="page-title">⚙️ Sistema Posicional — Configuración</div>
+        <div class="page-sub">IBEX 35 + Mercado Continuo · Semanal · Trend Following · 6M–2Y</div>
+
+        <!-- FILOSOFÍA -->
+        <div class="card">
+            <h2>🎯 Filosofía del Sistema</h2>
+            <div class="param-grid">
+                <div class="param-item positivo">
+                    <div>
+                        <div class="param-label">Objetivo</div>
+                        <div class="param-value">Capturar tendencias de 6M–2Y</div>
+                    </div>
+                    <div class="param-desc">Compra valores con tendencia estructural alcista, base de consolidación previa y ruptura de máximos. No opera en contra de la tendencia. Deja correr los ganadores con trailing stop amplio.</div>
+                </div>
+                <div class="param-item positivo">
+                    <div>
+                        <div class="param-label">Expectativa por trade</div>
+                        <div class="param-value">8R – 30R en ganadores</div>
+                    </div>
+                    <div class="param-desc">Win rate esperado ~40–60%. Con pocos trades al año pero gran recorrido por operación. El sistema prima la calidad del setup sobre la frecuencia. Una buena operación compensa varias pequeñas pérdidas.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Universo</div>
+                        <div class="param-value">IBEX 35 + Mercado Continuo</div>
+                    </div>
+                    <div class="param-desc">Valores españoles con alta liquidez y seguimiento institucional. El IBEX 35 actúa como filtro de calidad intrínseco — solo empresas líderes con suficiente volumen para operar sin deslizamiento.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTEXTO IBEX -->
+        <div class="card">
+            <h2>🌡️ Contexto de Mercado IBEX <span class="badge badge-new">Nuevo</span></h2>
+            <div class="param-desc" style="margin-bottom:12px;">
+                El sistema evalúa el estado del IBEX con MM200 diaria antes de operar. Cada estado determina cómo actuar:
+            </div>
+            <div class="ibex-estados">
+                <div class="ibex-estado ibex-alcista">
+                    <strong>✅ ALCISTA</strong>
+                    IBEX sobre MM200 con momentum positivo.<br>
+                    Operar con normalidad.
+                </div>
+                <div class="ibex-estado ibex-transicion">
+                    <strong>🚦 TRANSICIÓN</strong>
+                    IBEX entre MM50 y MM200 o girando.<br>
+                    Reducir tamaño. Solo setups A+.
+                </div>
+                <div class="ibex-estado ibex-bajista">
+                    <strong>🛑 RIESGO ALTO</strong>
+                    IBEX bajo MM200 en tendencia bajista.<br>
+                    No abrir nuevas posiciones.
+                </div>
+            </div>
+        </div>
+
+        <!-- SCORE 0-100 -->
+        <div class="card">
+            <h2>📊 Score de Calidad del Setup <span class="badge badge-new">Nuevo · 0–100 pts</span></h2>
+            <div class="param-desc" style="margin-bottom:12px;">
+                Cada señal recibe un score 0–100 que pondera la calidad global del setup. Solo se considera COMPRA si el score supera 40. Por debajo se marca como NO_OPERAR aunque pase los filtros técnicos.
+            </div>
+            <table class="score-table">
+                <tr>
+                    <th>Factor</th>
+                    <th>Peso</th>
+                    <th>Criterio</th>
+                </tr>
+                <tr>
+                    <td>📈 Tendencia de fondo</td>
+                    <td class="pts">25 pts</td>
+                    <td>MM50>MM200 + pendiente fuerte ≥10% = 25 | moderada = 15 | débil = 5</td>
+                </tr>
+                <tr>
+                    <td>📦 Calidad consolidación ⭐</td>
+                    <td class="pts">25 pts</td>
+                    <td>Base ≥16sem + rango ≤12% = 25 | ≥12sem ≤18% = 18 | amplia = 10 | sin base = 0</td>
+                </tr>
+                <tr>
+                    <td>⚡ Fuerza relativa vs IBEX ⭐</td>
+                    <td class="pts">15 pts</td>
+                    <td>Lidera (+10pp sobre IBEX) = 15 | Neutral (−5 a +10pp) = 8 | Rezagado = 0</td>
+                </tr>
+                <tr>
+                    <td>🚀 Breakout / cercanía máximos</td>
+                    <td class="pts">10 pts</td>
+                    <td>Breakout limpio = 10 | Muy cerca (&lt;3%) = 6 | Cerca (&lt;8%) = 3 | Lejos = 0</td>
+                </tr>
+                <tr>
+                    <td>📊 Volumen en breakout</td>
+                    <td class="pts">10 pts</td>
+                    <td>≥1.5× media = 10 | 1–1.5× = 5 | &lt;1× = 0</td>
+                </tr>
+                <tr>
+                    <td>📏 Distancia a MM50</td>
+                    <td class="pts">10 pts</td>
+                    <td>5–20% = 10 (zona óptima) | 20–35% = 5 | &gt;35% = 0 | cerca/bajo = 3</td>
+                </tr>
+                <tr>
+                    <td>🎢 Volatilidad anual</td>
+                    <td class="pts">5 pts</td>
+                    <td>25–50% = 5 (óptima) | 20–25% = 3 | &gt;50% = 2 | &lt;20% = 0</td>
+                </tr>
+            </table>
+            <div class="score-clases">
+                <div class="score-clase" style="background:#dcfce7;color:#166534;">🟢 80–100 — EXCELENTE · Entrar</div>
+                <div class="score-clase" style="background:#fef9c3;color:#854d0e;">🟡 60–79 — BUENO · Vigilar</div>
+                <div class="score-clase" style="background:#ffedd5;color:#9a3412;">🟠 40–59 — MEDIOCRE · Esperar</div>
+                <div class="score-clase" style="background:#fee2e2;color:#991b1b;">🔴 &lt;40 — DÉBIL · No operar</div>
+            </div>
+        </div>
+
+        <!-- TENDENCIA -->
+        <div class="card">
+            <h2>📈 Tendencia de Fondo <span class="badge badge-mod">Actualizado</span></h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Precio vs MM50 semanal</div>
+                        <div class="param-value">Precio &gt; MM50</div>
+                    </div>
+                    <div class="param-desc">El cierre semanal debe estar por encima de la media de 50 semanas (~1 año). Condición obligatoria.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">MM50 vs MM200 semanal</div>
+                        <div class="param-value">MM50 &gt; MM200</div>
+                    </div>
+                    <div class="param-desc">La media de 1 año debe estar sobre la de 4 años. Confirma que la tendencia de fondo es estructuralmente alcista y no un rebote temporal. Condición obligatoria.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Pendiente MM50</div>
+                        <div class="param-value">Positiva</div>
+                    </div>
+                    <div class="param-desc">Las últimas 13 semanas de MM50 deben ser superiores a las 13 anteriores. Confirma que la tendencia está activa. Condición obligatoria.</div>
+                </div>
+                <div class="param-item positivo">
+                    <div>
+                        <div class="param-label">Distancia mínima a MM50</div>
+                        <div class="param-value">≥ {{ parametros.distancia_min_mm50 }}%</div>
+                    </div>
+                    <div class="param-desc">El precio debe superar la MM50 al menos un {{ parametros.distancia_min_mm50 }}% para confirmar fuerza real. Condición obligatoria.</div>
+                </div>
+                <div class="param-item aviso">
+                    <div>
+                        <div class="param-label">Distancia máxima a MM50</div>
+                        <div class="param-value">≤ {{ parametros.distancia_max_mm50 }}% (solo aviso)</div>
+                    </div>
+                    <div class="param-desc">⚠️ Actualizado: ya NO bloquea la señal. Si el precio supera el {{ parametros.distancia_max_mm50 }}% sobre MM50 se emite aviso de sobreextensión pero la señal puede proceder. El score penaliza la distancia excesiva en el factor Dist. MM50.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLIDACIÓN -->
+        <div class="card">
+            <h2>📦 Consolidación Previa <span class="badge">Corazón del sistema ⭐</span></h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Duración</div>
+                        <div class="param-value">{{ parametros.consolidacion_min }}–{{ parametros.consolidacion_max }} semanas</div>
+                    </div>
+                    <div class="param-desc">Mínimo {{ parametros.consolidacion_min }} semanas (3 meses) para que sea acumulación real. Máximo {{ parametros.consolidacion_max }} semanas (6 meses). Es el factor con mayor peso en el score (25 pts) porque distingue entradas de calidad de entradas precipitadas.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Rango máximo de la base</div>
+                        <div class="param-value">≤ {{ parametros.consolidacion_rango }}%</div>
+                    </div>
+                    <div class="param-desc">La diferencia máximo–mínimo no puede superar el {{ parametros.consolidacion_rango }}%. Una base estrecha indica contracción de volatilidad — señal de acumulación institucional. Rangos amplios generan breakouts menos explosivos.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Volatilidad en consolidación</div>
+                        <div class="param-value">&lt; 30% anual</div>
+                    </div>
+                    <div class="param-desc">Durante la base la volatilidad debe ser moderada. Alta volatilidad en lateral indica inestabilidad, no acumulación limpia.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FUERZA RELATIVA -->
+        <div class="card">
+            <h2>⚡ Fuerza Relativa vs IBEX <span class="badge badge-new">Nuevo ⭐</span></h2>
+            <div class="param-grid">
+                <div class="param-item nuevo">
+                    <div>
+                        <div class="param-label">Rendimiento relativo</div>
+                        <div class="param-value">Últimas 26 semanas</div>
+                    </div>
+                    <div class="param-desc">Se calcula la diferencia de rendimiento entre el valor y el IBEX en los últimos 6 meses. Un valor que lidera al índice tiene más probabilidad de seguir liderando. Es el factor que diferencia entre un valor que sube con el mercado y uno que lo bate.</div>
+                </div>
+                <div class="param-item nuevo">
+                    <div>
+                        <div class="param-label">Clasificación</div>
+                        <div class="param-value">LIDERA / NEUTRAL / DÉBIL</div>
+                    </div>
+                    <div class="param-desc">LIDERA: supera al IBEX en +10pp o más (15 pts). NEUTRAL: entre −5pp y +10pp (8 pts). DÉBIL: rezagado más de −5pp (0 pts). No bloquea la señal pero penaliza fuertemente el score.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BREAKOUT -->
+        <div class="card">
+            <h2>🚀 Breakout <span class="badge">Filtro de entrada</span></h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Superación de máximos</div>
+                        <div class="param-value">Máx. 26 sem. + 0.5%</div>
+                    </div>
+                    <div class="param-desc">El cierre semanal debe superar el máximo de los últimos 6 meses con al menos un 0.5% de margen. Filtro obligatorio — si no hay breakout, no hay señal. La calidad del breakout (distancia y volumen) determina hasta 20 pts del score.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Confirmación de volumen</div>
+                        <div class="param-value">≥ {{ parametros.breakout_volumen }}× media (óptimo)</div>
+                    </div>
+                    <div class="param-desc">Volumen ≥1.5× la media de 26 semanas suma 10 pts al score. Por debajo de 1× resta puntos. No bloquea la señal pero el volumen es la gasolina del movimiento — sin volumen el breakout es más frágil.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTIÓN DE SALIDAS -->
+        <div class="card">
+            <h2>📤 Gestión de Salidas <span class="badge badge-mod">Actualizado</span></h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Mover a breakeven</div>
+                        <div class="param-value">+{{ parametros.r_proteger }}R</div>
+                    </div>
+                    <div class="param-desc">Cuando la posición alcanza +{{ parametros.r_proteger }}R, el stop se mueve a precio de entrada. A partir de aquí la operación no puede acabar en pérdida significativa. Fase PROTEGIDO.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Activar trailing stop</div>
+                        <div class="param-value">+{{ parametros.r_trailing }}R → mín. 13 sem.</div>
+                    </div>
+                    <div class="param-desc">A partir de +{{ parametros.r_trailing }}R se activa trailing sobre el mínimo de las últimas 13 semanas. Deja correr el beneficio siguiendo la tendencia. Fase TRAILING.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Trailing ampliado</div>
+                        <div class="param-value">+{{ parametros.r_trailing_final }}R → mín. 26 sem.</div>
+                    </div>
+                    <div class="param-desc">En posiciones muy avanzadas el trailing se amplía a 26 semanas para no ser expulsado por correcciones normales en tendencias maduras.</div>
+                </div>
+                <div class="param-item aviso">
+                    <div>
+                        <div class="param-label">Duración mínima</div>
+                        <div class="param-value">Objetivo: 26 sem. (no obligatorio)</div>
+                    </div>
+                    <div class="param-desc">⚠️ Actualizado: la duración mínima de 26 semanas es ahora un objetivo del sistema, no una obligación. Si hay deterioro real de la tesis (precio bajo stop) se sale antes sin penalización metodológica. El trailing stop gestiona la salida objetivamente.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIESGO -->
+        <div class="card">
+            <h2>🛡️ Gestión de Riesgo</h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Riesgo por operación</div>
+                        <div class="param-value">{{ parametros.riesgo_trade }}% del capital</div>
+                    </div>
+                    <div class="param-desc">El tamaño de posición se calcula para que si salta el stop la pérdida sea exactamente el {{ parametros.riesgo_trade }}% del capital total.</div>
+                </div>
+                <div class="param-item positivo">
+                    <div>
+                        <div class="param-label">Stop mínimo</div>
+                        <div class="param-value">≥ {{ parametros.riesgo_min }}%</div>
+                    </div>
+                    <div class="param-desc">Stops menores del {{ parametros.riesgo_min }}% saltarían por ruido en semanal. Se calcula como el mayor entre: mínimo 26 semanas ó entrada − (2.5 × ATR semanal).</div>
+                </div>
+                <div class="param-item aviso">
+                    <div>
+                        <div class="param-label">Zona de aviso</div>
+                        <div class="param-value">6% – 8%</div>
+                    </div>
+                    <div class="param-desc">Stops válidos pero ajustados para el marco semanal. El sistema los acepta con aviso ⚠️.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Stop máximo</div>
+                        <div class="param-value">≤ {{ parametros.riesgo_max }}%</div>
+                    </div>
+                    <div class="param-desc">Stops mayores del {{ parametros.riesgo_max }}% harían la posición demasiado pequeña para que el beneficio absoluto sea significativo con el {{ parametros.riesgo_trade }}% de riesgo.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="card">
+            <h2>🔍 Filtros de Calidad del Universo</h2>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Volatilidad anual</div>
+                        <div class="param-value">≥ {{ parametros.volatilidad_min }}%</div>
+                    </div>
+                    <div class="param-desc">Mínimo {{ parametros.volatilidad_min }}%: valores más planos no generan movimientos suficientes para el objetivo de 8–30R.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Volumen mínimo diario</div>
+                        <div class="param-value">{{ "{:,.0f}".format(parametros.volumen_min) }}€</div>
+                    </div>
+                    <div class="param-desc">Garantiza entrada y salida sin mover el mercado. El IBEX 35 cumple este criterio por defecto.</div>
+                </div>
+                <div class="param-item">
+                    <div>
+                        <div class="param-label">Histórico mínimo</div>
+                        <div class="param-value">200 semanas (~4 años)</div>
+                    </div>
+                    <div class="param-desc">Se necesita histórico suficiente para calcular MM200, percentiles de volatilidad y validar la tendencia de largo plazo. Valores recientes como PUIG quedan excluidos automáticamente.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

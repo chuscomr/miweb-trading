@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alertas — MiWeb Trading</title>
+<style>
+  :root {
+    --bg:       linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);
+    --surface:  #ffffff;
+    --border:   #cbd5e1;
+    --text:     #1e293b;
+    --muted:    #8b949e;
+    --green:    #3fb950;
+    --red:      #f85149;
+    --yellow:   #d29922;
+    --blue:     #58a6ff;
+    --purple:   #a371f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 24px; min-height: 100vh; }
+  .page-wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .btn { display: inline-block; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-decoration: none; border: none; }
+  .btn-primary { background: var(--blue); color: #000; }
+  .btn-primary:hover { opacity: .85; }
+  .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+  .btn-warning { background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
+  .btn-warning:hover { background: var(--yellow); color: #000; }
+  .btn-danger  { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover  { background: var(--red); color: #fff; }
+  .btn-success { background: transparent; border: 1px solid var(--green); color: var(--green); }
+  .btn-success:hover { background: var(--green); color: #000; }
+  .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+  .badge-alta   { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge-media  { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .badge-baja   { background: rgba(63,185,80,.15);  color: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; padding: 10px 12px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 12px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: top; }
+  tr:hover td { background: rgba(255,255,255,.03); }
+  .ticker { font-weight: 700; color: var(--blue); font-size: 0.9rem; }
+  .tipo   { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .nivel  { font-weight: 600; }
+  .fecha  { color: var(--muted); font-size: 0.78rem; }
+  .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+  .empty { text-align: center; padding: 40px; color: var(--muted); }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; min-width: 130px; }
+  .stat-num  { font-size: 1.6rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+  .back-link:hover { color: var(--text); }
+  .verificar-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 14px; font-size: 0.82rem; cursor: pointer; }
+  .verificar-btn:hover { border-color: var(--blue); color: var(--blue); }
+  #msg-verificar { font-size: 0.82rem; color: var(--green); margin-left: 10px; display: none; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<div class="header-row">
+  <div>
+    <a href="/" class="back-link">← Hub</a>
+    <h1 style="margin-top:6px">🔔 Alertas</h1>
+    <p class="subtitle">Gestión de alertas técnicas y de precio</p>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <button class="verificar-btn" onclick="verificarAlertas()">⚡ Verificar ahora</button>
+    <span id="msg-verificar"></span>
+    <a href="/alertas/nueva" class="btn btn-primary">+ Nueva alerta</a>
+  </div>
+</div>
+
+<!-- Estadísticas -->
+{% set n_activas = activas|length %}
+{% set n_alta    = activas|selectattr('tipo','equalto','PRECIO_SOBRE')|list|length %}
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ n_activas }}</div>
+    <div class="stat-label">Alertas activas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:var(--red)">{{ activas|selectattr('tipo','in',['STOP_LOSS'])|list|length }}</div>
+    <div class="stat-label">Stop Loss</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:var(--green)">{{ activas|selectattr('tipo','equalto','OBJETIVO')|list|length }}</div>
+    <div class="stat-label">Objetivos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:var(--muted)">{{ disparadas|length }}</div>
+    <div class="stat-label">Disparadas recientes</div>
+  </div>
+</div>
+
+<!-- Alertas activas -->
+<div class="section">
+  <div class="section-title">Alertas activas ({{ n_activas }})</div>
+  {% if activas %}
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Tipo</th>
+        <th>Nivel / Umbral</th>
+        <th>Descripción</th>
+        <th>Creada</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in activas %}
+    <tr>
+      <td>
+        <div class="ticker">{{ a.ticker }}</div>
+        <div class="tipo">{{ a.nombre or '' }}</div>
+      </td>
+      <td>
+        <span class="badge badge-{{ 'alta' if a.tipo in ['STOP_LOSS'] else 'media' if a.tipo in ['PRECIO_SOBRE','PRECIO_BAJO'] else 'baja' }}">
+          {{ a.tipo }}
+        </span>
+      </td>
+      <td class="nivel">
+        {% if a.nivel %}{{ '%.2f'|format(a.nivel) }}€{% endif %}
+        {% if a.umbral %}RSI {{ a.umbral }}{% endif %}
+      </td>
+      <td style="color:var(--muted); max-width:220px">{{ a.descripcion or '—' }}</td>
+      <td class="fecha">{{ a.fecha_creacion[:10] if a.fecha_creacion else '—' }}</td>
+      <td>
+        <div class="acciones">
+          <form method="POST" action="/alertas/desactivar/{{ a.id }}" style="display:inline">
+            <button type="submit" class="btn btn-sm btn-warning">Desactivar</button>
+          </form>
+          <form method="POST" action="/alertas/eliminar/{{ a.id }}" style="display:inline"
+                onsubmit="return confirm('¿Eliminar alerta?')">
+            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Sin alertas activas — <a href="/alertas/nueva" style="color:var(--blue)">crear una</a></div>
+  {% endif %}
+</div>
+
+<!-- Historial disparadas -->
+<div class="section">
+  <div class="section-title">Historial reciente ({{ disparadas|length }})</div>
+  {% if disparadas %}
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Tipo</th>
+        <th>Nivel</th>
+        <th>Precio disparo</th>
+        <th>Fecha disparo</th>
+        <th>Reactivar</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in disparadas %}
+    <tr>
+      <td><span class="ticker">{{ a.ticker }}</span></td>
+      <td><span class="badge badge-baja">{{ a.tipo }}</span></td>
+      <td>{% if a.nivel %}{{ '%.2f'|format(a.nivel) }}€{% endif %}</td>
+      <td style="color:var(--yellow); font-weight:600">
+        {% if a.precio_disparo %}{{ '%.2f'|format(a.precio_disparo) }}€{% else %}—{% endif %}
+      </td>
+      <td class="fecha">{{ a.fecha_disparo[:16] if a.fecha_disparo else '—' }}</td>
+      <td>
+        <form method="POST" action="/alertas/reactivar/{{ a.id }}" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-success">Reactivar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty" style="padding:20px">Sin alertas disparadas recientemente</div>
+  {% endif %}
+</div>
+
+<script>
+async function verificarAlertas() {
+  const btn = document.querySelector('.verificar-btn');
+  const msg = document.getElementById('msg-verificar');
+  btn.disabled = true;
+  btn.textContent = '⏳ Verificando...';
+  try {
+    const r = await fetch('/alertas/api/scanner?universo=ibex35', { method: 'GET' });
+    const d = await r.json();
+    msg.style.display = 'inline';
+    msg.textContent   = `✓ ${d.total_alertas || 0} alertas detectadas`;
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+  } catch(e) {
+    msg.style.display = 'inline';
+    msg.style.color   = 'var(--red)';
+    msg.textContent   = 'Error de conexión';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Verificar ahora';
+  }
+}
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Editar Posicion</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);min-height:100vh;padding:20px;color:#333}
+.container{max-width:600px;margin:0 auto}
+.back{display:inline-block;color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.85em;margin-bottom:12px}
+.card{background:white;border-radius:12px;padding:18px 22px;margin-bottom:14px}
+.sec-title{font-size:0.85em;font-weight:600;color:#667eea;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;text-transform:uppercase;letter-spacing:0.5px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:#888;margin-bottom:4px;font-weight:600}
+input,select{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.88em}
+input:focus{outline:none;border-color:#667eea}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;padding:10px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;margin-top:6px}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:white}
+.btn-green{background:#d1fae5;color:#065f46}
+.btn-orange{background:#fef3c7;color:#92400e}
+.back-link{display:block;text-align:center;margin-top:10px;color:#888;font-size:0.85em;text-decoration:none}
+.tab-btns{display:flex;gap:8px;margin-bottom:16px}
+.tab-btn{flex:1;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.82em;font-weight:600;cursor:pointer;background:white;color:#6b7280;text-align:center}
+.tab-btn.active{border-color:#667eea;background:#f0f0ff;color:#667eea}
+.panel{display:none}
+.panel.active{display:block}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+.b-swing{background:#dbeafe;color:#1e40af}
+.b-medio{background:#ede9fe;color:#5b21b6}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/cartera/" class="back">← Volver a cartera</a>
+
+<div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <strong style="font-size:1.1em">{{ pos.ticker.replace('.MC','') }}</strong>
+        <span class="badge {% if pos.sistema == 'SWING' %}b-swing{% else %}b-medio{% endif %}">{{ pos.sistema }}</span>
+        <span style="color:#888;font-size:0.85em">Entrada: {{ "%.2f"|format(pos.precio_entrada) }}€</span>
+    </div>
+
+    <div class="tab-btns">
+        <div class="tab-btn active" onclick="showTab('stop')">Actualizar Stop</div>
+        <div class="tab-btn" onclick="showTab('mitad')">Cerrar Mitad</div>
+        <div class="tab-btn" onclick="showTab('editar')">Editar datos</div>
+    </div>
+
+    <!-- STOP Y FASE -->
+    <div class="panel active" id="panel-stop">
+        <form method="POST">
+            <input type="hidden" name="accion" value="stop_fase">
+            <div class="grid2">
+                <div class="field">
+                    <label>Stop actual (€)</label>
+                    <input type="number" name="stop_actual" step="0.01" value="{{ "%.2f"|format(pos.stop_actual or pos.stop_inicial) }}">
+                </div>
+                <div class="field">
+                    <label>Fase</label>
+                    <select name="fase">
+                        <option value="INICIAL" {% if pos.fase == 'INICIAL' %}selected{% endif %}>INICIAL</option>
+                        <option value="PROTEGIDO" {% if pos.fase == 'PROTEGIDO' %}selected{% endif %}>PROTEGIDO (+2R)</option>
+                        <option value="TRAILING" {% if pos.fase == 'TRAILING' %}selected{% endif %}>TRAILING (+4R)</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-green">Guardar stop y fase</button>
+        </form>
+    </div>
+
+    <!-- MITAD -->
+    <div class="panel" id="panel-mitad">
+        {% if pos.mitad_cerrada %}
+        <p style="color:#888;font-size:0.9em;padding:12px 0;">
+            Ya registraste el cierre de la mitad a {{ "%.2f"|format(pos.precio_mitad) }}€
+            el {{ pos.fecha_mitad }}.
+        </p>
+        {% else %}
+        <form method="POST">
+            <input type="hidden" name="accion" value="mitad">
+            <div class="grid2">
+                <div class="field">
+                    <label>Precio cierre mitad (€)</label>
+                    <input type="number" name="precio_mitad" step="0.01" placeholder="0.00">
+                </div>
+                <div class="field">
+                    <label>Fecha</label>
+                    <input type="date" name="fecha_mitad" value="{{ today }}">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-orange">Registrar cierre de mitad</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- EDITAR -->
+    <div class="panel" id="panel-editar">
+        <form method="POST">
+            <input type="hidden" name="accion" value="editar">
+            <div class="grid2">
+                <div class="field">
+                    <label>Precio entrada (€)</label>
+                    <input type="number" name="precio_entrada" step="0.01" value="{{ "%.2f"|format(pos.precio_entrada) }}">
+                </div>
+                <div class="field">
+                    <label>Stop actual (€)</label>
+                    <input type="number" name="stop_actual" step="0.01" value="{{ "%.2f"|format(pos.stop_actual or pos.stop_inicial) }}">
+                </div>
+                <div class="field">
+                    <label>Objetivo (€)</label>
+                    <input type="number" name="objetivo" step="0.01" value="{{ "%.2f"|format(pos.objetivo) if pos.objetivo else '' }}">
+                </div>
+                <div class="field">
+                    <label>Acciones</label>
+                    <input type="number" name="acciones" value="{{ pos.acciones }}">
+                </div>
+            </div>
+            <div class="field">
+                <label>Notas</label>
+                <input type="text" name="notas" value="{{ pos.notas or '' }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </form>
+    </div>
+</div>
+
+<a href="/cartera/" class="back-link">Cancelar</a>
+
+<script>
+function showTab(t){
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.className='tab-btn'+(b.textContent.toLowerCase().includes(t)?(' active'):'')});
+    document.querySelectorAll('.panel').forEach(p=>p.className='panel');
+    document.getElementById('panel-'+t).className='panel active';
+    // re-highlight correct tab
+    document.querySelectorAll('.tab-btn').forEach(b=>{
+        if(b.onclick.toString().includes("'"+t+"'")) b.className='tab-btn active';
+    });
+}
+</script>
+</body>
+</html>
