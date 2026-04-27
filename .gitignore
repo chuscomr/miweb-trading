@@ -1,7 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Archivos de backup
+# Entorno virtual
+venv/
+.env/
+
+# Variables sensibles
+.env
+
+# Bases de datos
+*.db
+*.sqlite3
+
+# Cache
+data_cache/
+.cache/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Otros
 *.bak
 *.tmp
-*.pyc
-__pycache__/
-data/insiders.db
