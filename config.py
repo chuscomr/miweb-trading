@@ -11,8 +11,8 @@ load_dotenv()
 
 # ── APIs externas ──────────────────────────────────────────
 EODHD_API_KEY      = os.environ.get("EODHD_API_KEY")
-FMP_API_KEY        = os.environ.get("Salva1")
-ANTHROPIC_API_KEY  = os.environ.get("ANTHROPIC_API_KEY")
+FMP_API_KEY        = os.environ.get("FMP_API_KEY")
+ANTHROPIC_API_KEY  = os.environ.get("Salva1")
 
 # ── Flask ──────────────────────────────────────────────────
 # SECRET_KEY se gestiona en app.py directamente
