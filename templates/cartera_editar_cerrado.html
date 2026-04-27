@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Trade Cerrado | MiWeb</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        body { background:#1a1a1a; color:#e4e4e7; font-family:system-ui; padding:20px; margin:0; }
+        .container { max-width:900px; margin:0 auto; }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+        h1 { margin:0; font-size:1.8em; font-weight:600; }
+        .btn-back { background:#374151; color:#fff; padding:10px 20px; border-radius:6px; text-decoration:none; font-size:0.9em; }
+        .btn-back:hover { background:#4b5563; }
+        
+        .card { background:#27272a; border-radius:12px; padding:30px; margin-bottom:20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+        .form-group { margin-bottom:15px; }
+        .form-group.full { grid-column: 1 / -1; }
+        
+        label { display:block; margin-bottom:6px; font-weight:500; color:#a1a1aa; font-size:0.9em; }
+        input, select, textarea { width:100%; padding:10px 12px; background:#18181b; border:1px solid #3f3f46; 
+                                   border-radius:6px; color:#e4e4e7; font-size:1em; box-sizing:border-box; }
+        input:focus, select:focus, textarea:focus { outline:none; border-color:#3b82f6; }
+        textarea { min-height:100px; resize:vertical; }
+        
+        .btn-container { display:flex; gap:15px; justify-content:flex-end; margin-top:25px; }
+        .btn { padding:12px 30px; border:none; border-radius:6px; font-weight:600; cursor:pointer; font-size:1em; }
+        .btn-primary { background:#3b82f6; color:#fff; }
+        .btn-primary:hover { background:#2563eb; }
+        .btn-secondary { background:#52525b; color:#fff; }
+        .btn-secondary:hover { background:#71717a; }
+        
+        .info-box { background:#1e293b; border-left:3px solid #3b82f6; padding:15px; margin-bottom:20px; border-radius:6px; }
+        .info-box strong { color:#60a5fa; }
+        
+        .warning { background:#451a03; border-left:3px solid #ea580c; padding:12px; margin-bottom:15px; border-radius:6px; font-size:0.9em; }
+        .warning strong { color:#fb923c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>✏️ Editar Trade Cerrado</h1>
+        <a href="/cartera/historial" class="btn-back">← Volver al historial</a>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ Advertencia:</strong> Estás editando un trade cerrado. Los cambios afectarán las estadísticas históricas.
+    </div>
+
+    <div class="info-box">
+        <strong>Trade ID:</strong> #{{ posicion.id }} | 
+        <strong>Original:</strong> {{ posicion.ticker }} • {{ posicion.sistema }} • 
+        {% if posicion.r_final is not none %}R: {{ "%+.2f"|format(posicion.r_final) }}{% else %}Sin R{% endif %}
+    </div>
+
+    <form method="POST" action="{{ url_for('cartera.editar_cerrado_guardar', pid=posicion.id) }}">
+        
+        <div class="card">
+            <h3 style="margin-top:0; margin-bottom:20px; color:#a1a1aa;">Datos del Trade</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ticker">Ticker *</label>
+                    <select id="ticker" name="ticker" required>
+                        <option value="">-- Seleccionar --</option>
+                        {% for tk in tickers %}
+                        <option value="{{ tk }}" {% if posicion.ticker == tk %}selected{% endif %}>
+                            {{ tk.replace('.MC','') }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sistema">Sistema *</label>
+                    <select id="sistema" name="sistema" required>
+                        <option value="SWING" {% if posicion.sistema == 'SWING' %}selected{% endif %}>SWING</option>
+                        <option value="MEDIO" {% if posicion.sistema == 'MEDIO' %}selected{% endif %}>MEDIO</option>
+                        <option value="POSICIONAL" {% if posicion.sistema == 'POSICIONAL' %}selected{% endif %}>POSICIONAL</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_entrada">Fecha entrada *</label>
+                    <input type="date" id="fecha_entrada" name="fecha_entrada" 
+                           value="{{ posicion.fecha_entrada[:10] if posicion.fecha_entrada else '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_salida">Fecha salida</label>
+                    <input type="date" id="fecha_salida" name="fecha_salida" 
+                           value="{{ posicion.fecha_cierre[:10] if posicion.fecha_cierre else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="precio_entrada">Precio entrada (€) *</label>
+                    <input type="number" step="0.01" id="precio_entrada" name="precio_entrada" 
+                           value="{{ posicion.precio_entrada }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="salida">Precio salida (€)</label>
+                    <input type="number" step="0.01" id="salida" name="salida" 
+                           value="{{ posicion.precio_cierre if posicion.precio_cierre else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="stop_inicial">Stop inicial (€)</label>
+                    <input type="number" step="0.01" id="stop_inicial" name="stop_inicial" 
+                           value="{{ posicion.stop_inicial if posicion.stop_inicial else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="objetivo">Objetivo (€)</label>
+                    <input type="number" step="0.01" id="objetivo" name="objetivo" 
+                           value="{{ posicion.objetivo if posicion.objetivo else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="acciones">Acciones *</label>
+                    <input type="number" id="acciones" name="acciones" 
+                           value="{{ posicion.acciones }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="motivo">Motivo cierre</label>
+                    <select id="motivo" name="motivo">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="Objetivo alcanzado" {% if posicion.motivo_cierre == 'Objetivo alcanzado' %}selected{% endif %}>Objetivo alcanzado</option>
+                        <option value="Stop" {% if posicion.motivo_cierre == 'Stop' %}selected{% endif %}>Stop</option>
+                        <option value="Trailing" {% if posicion.motivo_cierre == 'Trailing' %}selected{% endif %}>Trailing</option>
+                        <option value="Cierre manual" {% if posicion.motivo_cierre == 'Cierre manual' %}selected{% endif %}>Cierre manual</option>
+                        <option value="Toma de beneficios" {% if posicion.motivo_cierre == 'Toma de beneficios' %}selected{% endif %}>Toma de beneficios</option>
+                        <option value="Venta parcial" {% if posicion.motivo_cierre == 'Venta parcial' %}selected{% endif %}>Venta parcial</option>
+                        <option value="Reducir exposición" {% if posicion.motivo_cierre == 'Reducir exposición' %}selected{% endif %}>Reducir exposición</option>
+                    </select>
+                </div>
+
+                <div class="form-group full">
+                    <label for="notas">Notas</label>
+                    <textarea id="notas" name="notas" placeholder="Observaciones sobre el trade...">{{ posicion.notas if posicion.notas else '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <a href="/cartera/historial" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Calcular R en tiempo real
+function calcularR() {
+    const entrada = parseFloat(document.getElementById('precio_entrada').value) || 0;
+    const salida = parseFloat(document.getElementById('salida').value) || 0;
+    const stop = parseFloat(document.getElementById('stop_inicial').value) || 0;
+    
+    if (entrada && salida && stop && entrada > stop) {
+        const riesgo = entrada - stop;
+        const beneficio = salida - entrada;
+        const r = (beneficio / riesgo).toFixed(2);
+        console.log('R calculado:', r);
+    }
+}
+
+document.getElementById('precio_entrada').addEventListener('input', calcularR);
+document.getElementById('salida').addEventListener('input', calcularR);
+document.getElementById('stop_inicial').addEventListener('input', calcularR);
+</script>
+</body>
+</html>

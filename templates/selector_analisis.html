@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Análisis Técnico - Selector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.05em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            transition: border-color 0.3s;
+            text-transform: uppercase;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input::placeholder {
+            text-transform: none;
+            color: #999;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .error {
+            background: #fee;
+            border-left: 4px solid #c33;
+            padding: 15px;
+            margin-bottom: 25px;
+            color: #c33;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+        
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        .back:hover {
+            text-decoration: underline;
+        }
+        
+        .examples {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .examples strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .examples-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .example-tag {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: 2px solid #667eea;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-tag:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Análisis Técnico</h1>
+        <p class="subtitle">Soportes, Resistencias y Patrones de Velas</p>
+        
+        {% if error %}
+        <div class="error">
+            <strong>❌ Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="post">
+            <div class="form-group">
+                <label>Ticker del Valor</label>
+                <input type="text" 
+                       name="ticker" 
+                       id="ticker-input"
+                       placeholder="Ejemplo: TEF, SAN, BBVA" 
+                       required 
+                       autofocus>
+            </div>
+            
+            <button type="submit">🔍 Analizar</button>
+        </form>
+        
+        <div class="examples">
+            <strong>Ejemplos rápidos:</strong>
+            <div class="examples-list">
+                <span class="example-tag" onclick="setTicker('TEF')">TEF</span>
+                <span class="example-tag" onclick="setTicker('SAN')">SAN</span>
+                <span class="example-tag" onclick="setTicker('BBVA')">BBVA</span>
+                <span class="example-tag" onclick="setTicker('ITX')">ITX</span>
+                <span class="example-tag" onclick="setTicker('IBE')">IBE</span>
+                <span class="example-tag" onclick="setTicker('REP')">REP</span>
+            </div>
+        </div>
+        
+        <a href="/swing/" class="back">← Volver al Sistema Swing</a>
+    </div>
+    
+    <script>
+        function setTicker(ticker) {
+            document.getElementById('ticker-input').value = ticker;
+            document.getElementById('ticker-input').focus();
+        }
+    </script>
+</body>
+</html>

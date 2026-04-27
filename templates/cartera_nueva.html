@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Nueva Posicion</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f8fafc;min-height:100vh;padding:20px;color:#1e293b}
+.container{max-width:700px;margin:0 auto}
+.back{display:inline-block;color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.85em;margin-bottom:12px}
+.card{background:white;border-radius:12px;padding:18px 22px;margin-bottom:14px}
+.sec-title{font-size:0.85em;font-weight:600;color:#667eea;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;text-transform:uppercase;letter-spacing:0.5px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.field label{display:block;font-size:11px;color:#888;margin-bottom:4px;font-weight:600}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.88em;color:#333}
+input:focus,select:focus{outline:none;border-color:#667eea}
+.readonly{background:#f9fafb;color:#6b7280}
+.toggle-btn{display:inline-block;padding:5px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.82em;font-weight:600;cursor:pointer;color:#6b7280;transition:all 0.15s}
+.toggle-btn.active-swing{border-color:#3b82f6;background:#dbeafe;color:#1e40af}
+.toggle-btn.active-medio{border-color:#7c3aed;background:#ede9fe;color:#5b21b6}
+.toggle-btn.active-pos{border-color:#10b981;background:#dcfce7;color:#166534}
+.toggle-btn.active-alta{border-color:#d97706;background:#fef3c7;color:#92400e}
+.toggle-btn.active-solido{border-color:#2563eb;background:#dbeafe;color:#1e40af}
+.toggle-btn.active-basico{border-color:#4b5563;background:#f3f4f6;color:#374151}
+.resumen{background:#f8f9ff;border-radius:8px;padding:14px 16px}
+.res-row{display:flex;justify-content:space-between;font-size:0.85em;padding:5px 0;border-bottom:1px solid #eef0ff}
+.res-row:last-child{border:none;font-weight:600;font-size:0.9em}
+.warn-box{background:#fef3c7;border-left:3px solid #f59e0b;padding:8px 12px;border-radius:0 6px 6px 0;font-size:0.82em;color:#92400e;margin-bottom:12px}
+.danger-box{background:#fee2e2;border-left:3px solid #ef4444;padding:8px 12px;border-radius:0 6px 6px 0;font-size:0.82em;color:#991b1b;margin-bottom:12px}
+.green{color:#16a34a}
+.red{color:#dc2626}
+.btn-guardar{width:100%;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:0.95em;font-weight:600;cursor:pointer}
+.btn-cancel{display:block;text-align:center;margin-top:8px;color:#888;font-size:0.85em;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h1 style="font-size:1.5em;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.2em;">＋</span> Nueva Posición
+    </h1>
+    <a href="/cartera/" style="background:#475569;color:white;padding:8px 18px;border-radius:10px;text-decoration:none;font-size:0.85em;font-weight:600;">← Cancelar</a>
+</div>
+
+
+
+<form method="POST" id="frm">
+{% if excepcion %}<input type="hidden" name="es_excepcion" value="1">{% endif %}
+
+<div class="card">
+    <div class="sec-title">Identificacion</div>
+    <div class="grid2">
+        <div class="field">
+            <label>Ticker * <span style="font-weight:400;color:#9ca3af;">Ej: SAN.MC</span></label>
+            <input type="text" name="ticker" id="ticker" placeholder="Ej: SAN.MC"
+                   style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" required>
+        </div>
+        <div class="field">
+            <label>Nombre <span style="font-weight:400;color:#9ca3af;">Ej: Santander</span></label>
+            <input type="text" name="nombre" id="nombre_empresa" placeholder="Nombre de la empresa">
+        </div>
+        <div class="field">
+            <label>Sistema</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+                <span class="toggle-btn active-swing" id="btn-swing" onclick="setSistema('SWING')">Swing</span>
+                <span class="toggle-btn" id="btn-medio" onclick="setSistema('MEDIO')">Medio plazo</span>
+                <span class="toggle-btn" id="btn-posicional" onclick="setSistema('POSICIONAL')">Posicional</span>
+            </div>
+            <input type="hidden" name="sistema" id="sistema" value="SWING">
+        </div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+        <div class="field">
+            <label>Fecha entrada</label>
+            <input type="date" name="fecha_entrada" value="{{ hoy }}">
+        </div>
+        <div class="field">
+            <label>Calidad del setup</label>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                <span class="toggle-btn" id="btn-alta" onclick="setScore('ALTA')">⭐ Alta</span>
+                <span class="toggle-btn active-solido" id="btn-solido" onclick="setScore('SOLIDO')">🔵 Solido</span>
+                <span class="toggle-btn" id="btn-basico" onclick="setScore('BASICO')">🟡 Basico</span>
+            </div>
+            <input type="hidden" name="score_nivel" id="score_nivel" value="SOLIDO">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="sec-title">Precios del plan</div>
+    <div class="grid3">
+        <div class="field">
+            <label>Entrada / trigger (€)</label>
+            <input type="number" name="precio_entrada" id="precio_entrada" step="0.01" placeholder="sin stop" oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Stop loss (€) <span style="font-weight:400;color:#9ca3af;">— opcional</span></label>
+            <small style="color:#9ca3af;font-size:10px;">Sin stop: solo se calcula G/P, no computa riesgo</small>
+            <input type="number" name="stop_inicial" id="stop_inicial" step="0.01" placeholder="sin stop"  oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Objetivo ref. (€)</label>
+            <input type="number" name="objetivo" id="objetivo" step="0.01" placeholder="opcional" oninput="recalcular()">
+        </div>
+    </div>
+    <div class="grid3" style="margin-top:14px">
+        <div class="field">
+            <label>Acciones</label>
+            <input type="number" name="acciones" id="acciones" step="1" placeholder="0" oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Riesgo por accion</label>
+            <input class="readonly" readonly id="riesgo_acc" value="—">
+        </div>
+        <div class="field">
+            <label>Capital invertido</label>
+            <input class="readonly" readonly id="cap_inv" value="—">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="sec-title">Resumen de riesgo</div>
+    <div id="warn-box" style="display:none" class="warn-box"></div>
+    <div class="resumen">
+        <div class="res-row"><span style="color:#888">Riesgo esta operacion</span><span class="red" id="r-esta">—</span></div>
+        <div class="res-row"><span style="color:#888">Objetivo potencial</span><span class="green" id="r-obj">—</span></div>
+        <div class="res-row"><span style="color:#888">Ratio R/R</span><span id="r-rr">—</span></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="sec-title">Notas (opcional)</div>
+    <textarea name="notas" rows="3" placeholder="Contexto del setup, razon de entrada..."></textarea>
+</div>
+
+<div style="display:flex;gap:10px;margin-top:16px;">
+    <a href="/cartera/" style="flex:1;text-align:center;padding:11px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;font-size:0.9em;font-weight:600;">Cancelar</a>
+    <button type="submit" style="flex:2;padding:11px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;border-radius:8px;font-size:0.95em;font-weight:700;cursor:pointer;">💾 Guardar Posición</button>
+</div>
+
+</form>
+
+<script>
+function setSistema(s){
+    document.getElementById('sistema').value=s;
+    document.getElementById('btn-swing').className='toggle-btn'+(s==='SWING'?' active-swing':'');
+    document.getElementById('btn-medio').className='toggle-btn'+(s==='MEDIO'?' active-medio':'');
+    document.getElementById('btn-posicional').className='toggle-btn'+(s==='POSICIONAL'?' active-pos':'');
+}
+function setScore(s){
+    document.getElementById('score_nivel').value=s;
+    ['alta','solido','basico'].forEach(x=>{
+        document.getElementById('btn-'+x).className='toggle-btn'+(s.toLowerCase()===x?' active-'+x:'');
+    });
+}
+function recalcular(){
+    const e=parseFloat(document.getElementById('precio_entrada').value)||0;
+    const s=parseFloat(document.getElementById('stop_inicial').value)||0;
+    const o=parseFloat(document.getElementById('objetivo').value)||0;
+    const a=parseInt(document.getElementById('acciones').value)||0;
+    const R=e>s?e-s:0;
+    document.getElementById('riesgo_acc').value=R>0?R.toFixed(2)+' €':'—';
+    document.getElementById('cap_inv').value=a>0&&e>0?(a*e).toLocaleString('es',{minimumFractionDigits:2})+'€':'—';
+    const rEsta=R>0&&a>0?R*a:0;
+    document.getElementById('r-esta').textContent=rEsta>0?'-'+rEsta.toFixed(2)+' €':'—';
+    if(o>0&&R>0){
+        const benef=(o-e)*a;
+        const rr=((o-e)/R).toFixed(1);
+        document.getElementById('r-obj').textContent='+'+benef.toFixed(2)+' €';
+        document.getElementById('r-rr').textContent=rr;
+        document.getElementById('r-rr').className=parseFloat(rr)>=2?'green':'red';
+    } else {
+        document.getElementById('r-obj').textContent='—';
+        document.getElementById('r-rr').textContent='—';
+    }
+}
+</script>
+</body>
+</html>

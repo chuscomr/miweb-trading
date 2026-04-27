@@ -1,0 +1,239 @@
+{# _modal_fundamental.html — fragmento HTML para el modal JS #}
+{% set d = datos %}
+{% set s = score %}
+{% set col_map = {'success':'#2ecc71','warning':'#f1c40f','danger':'#e74c3c'} %}
+{% set bg_map  = {'success':'rgba(39,174,96,0.15)','warning':'rgba(243,156,18,0.15)','danger':'rgba(231,76,60,0.15)'} %}
+{% set c_text = col_map.get(s.color,'#aaa') %}
+{% set c_bg   = bg_map.get(s.color,'rgba(100,100,100,0.15)') %}
+
+<div style="background:#1a1f2e;color:#e0e0e0;font-family:-apple-system,sans-serif;line-height:1.5;">
+
+  {# ══ CABECERA ══ #}
+  <div style="display:flex;align-items:center;gap:16px;padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.07);">
+    <div style="width:70px;height:70px;border-radius:50%;background:{{ c_bg }};border:3px solid {{ c_text }};
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;flex-direction:column;">
+      <div style="font-size:1.4rem;font-weight:800;color:{{ c_text }};line-height:1;">{{ s.score|int }}</div>
+      <div style="font-size:0.55rem;color:#64748b;margin-top:1px;">/100</div>
+    </div>
+    <div>
+      <div style="font-size:1.1rem;font-weight:700;color:#fff;">{{ d.nombre or ticker }}</div>
+      <div style="font-size:0.8rem;color:#94a3b8;">{{ ticker }} · {{ d.sector or '' }}{% if d.industria %} · {{ d.industria }}{% endif %}</div>
+      <div style="margin-top:6px;display:inline-block;padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:700;
+        background:{{ c_bg }};color:{{ c_text }};border:1px solid {{ c_text }}50;">
+        {{ s.nivel }} — {{ s.recomendacion }}
+      </div>
+    </div>
+  </div>
+
+  {# ══ MÉTRICAS RÁPIDAS ══ #}
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);">
+    {% for label, val, unit in [
+        ('PER', d.per, 'x'), ('PER Fwd', d.per_forward, 'x'), ('BPA', d.bpa, '€'),
+        ('EV/EBITDA', d.ev_ebitda, 'x'), ('ROE', d.roe, '%'), ('Dividendo', d.dividendo_yield, '%')
+    ] %}
+    <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:9px;text-align:center;">
+      <div style="font-size:0.63rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">{{ label }}</div>
+      <div style="font-size:0.92rem;font-weight:700;color:#e0e0e0;">
+        {%- if val is not none -%}{{ "%.2f"|format(val|float) }}{{ unit }}{%- else -%}—{%- endif -%}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ══ VALORACIÓN Y SOLVENCIA (2 columnas) ══ #}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid rgba(255,255,255,0.07);">
+
+    {# Valoración #}
+    <div style="padding:14px 16px;border-right:1px solid rgba(255,255,255,0.07);">
+      <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">💰 Valoración</div>
+      {% for label, val, unit in [
+          ('PER (trailing)', d.per, 'x'), ('PER (forward)', d.per_forward, 'x'),
+          ('EV/EBITDA', d.ev_ebitda, 'x'), ('P/BV', d.precio_valor_libro, 'x'),
+          ('P/Ventas', d.precio_ventas, 'x'), ('PEG Ratio', d.peg, 'x')
+      ] %}
+      {% if val is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">{{ label }}</span>
+        <span style="font-weight:600;color:
+          {%- if label == 'PER (trailing)' -%}
+            {{ '#2ecc71' if val < 15 else ('#f1c40f' if val < 25 else '#e74c3c') }}
+          {%- elif label == 'PEG Ratio' -%}
+            {{ '#2ecc71' if val < 1 else ('#f1c40f' if val < 2 else '#e74c3c') }}
+          {%- else -%}#e0e0e0{%- endif -%};">
+          {{ "%.2f"|format(val|float) }}{{ unit }}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    {# Rentabilidad #}
+    <div style="padding:14px 16px;">
+      <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">⭐ Rentabilidad</div>
+      {% for label, val, unit in [
+          ('ROE', d.roe, '%'), ('ROA', d.roa, '%'),
+          ('Margen Neto', d.margen_neto, '%'), ('Margen Oper.', d.margen_operativo, '%'),
+          ('Dividendo', d.dividendo_yield, '%'), ('Payout Ratio', d.payout_ratio, '%')
+      ] %}
+      {% if val is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">{{ label }}</span>
+        <span style="font-weight:600;color:
+          {%- if val|float > 0 -%}
+            {{ '#2ecc71' if val|float >= 15 else ('#f1c40f' if val|float >= 5 else '#e74c3c') }}
+          {%- else -%}#e74c3c{%- endif -%};">
+          {{ "%.2f"|format(val|float) }}{{ unit }}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ══ SOLVENCIA Y CRECIMIENTO (2 columnas) ══ #}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid rgba(255,255,255,0.07);">
+
+    {# Solvencia #}
+    <div style="padding:14px 16px;border-right:1px solid rgba(255,255,255,0.07);">
+      <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🏦 Solvencia</div>
+      {% if d.deuda_ebitda is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">Deuda/EBITDA</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.deuda_ebitda < 2 else ('#f1c40f' if d.deuda_ebitda < 4 else '#e74c3c') }};">{{ "%.2f"|format(d.deuda_ebitda) }}x</span>
+      </div>
+      {% endif %}
+      {% if d.ratio_corriente is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">Current Ratio</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.ratio_corriente > 1.5 else ('#f1c40f' if d.ratio_corriente > 1 else '#e74c3c') }};">{{ "%.2f"|format(d.ratio_corriente) }}x</span>
+      </div>
+      {% endif %}
+      {% if d.deuda_neta is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">Deuda Neta</span>
+        <span style="font-weight:600;color:#e0e0e0;">{{ "%.0f"|format(d.deuda_neta) }}M€</span>
+      </div>
+      {% endif %}
+      {% if d.fcf_positivo_anos %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">FCF positivo</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.fcf_positivo_anos.startswith('3') or d.fcf_positivo_anos.startswith('4') else '#e74c3c' }};">{{ d.fcf_positivo_anos }}</span>
+      </div>
+      {% endif %}
+      {% if d.fcf_ultimo_ano is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">FCF último año</span>
+        <span style="font-weight:600;color:#e0e0e0;">{{ "%.0f"|format(d.fcf_ultimo_ano) }}M€</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {# Crecimiento #}
+    <div style="padding:14px 16px;">
+      <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📈 Crecimiento</div>
+      {% if d.cagr_beneficios_3y is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">Beneficio CAGR 3Y</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.cagr_beneficios_3y > 10 else ('#f1c40f' if d.cagr_beneficios_3y > 0 else '#e74c3c') }};">{{ "%+.1f"|format(d.cagr_beneficios_3y) }}%</span>
+      </div>
+      {% endif %}
+      {% if d.cagr_ingresos_3y is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">Ingresos CAGR 3Y</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.cagr_ingresos_3y > 5 else ('#f1c40f' if d.cagr_ingresos_3y > 0 else '#e74c3c') }};">{{ "%+.1f"|format(d.cagr_ingresos_3y) }}%</span>
+      </div>
+      {% endif %}
+      {% if d.crecimiento_bpa is not none %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.82rem;">
+        <span style="color:#94a3b8;">BPA crecim. trim.</span>
+        <span style="font-weight:600;color:{{ '#2ecc71' if d.crecimiento_bpa > 0 else '#e74c3c' }};">{{ "%+.1f"|format(d.crecimiento_bpa) }}%</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ══ MOMENTUM FUNDAMENTAL ══ #}
+  {% if d.momentum_score is not none %}
+  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);">
+    <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🚀 Momentum Fundamental</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:0.82rem;color:#94a3b8;">Score Momentum</span>
+      <span style="font-size:0.85rem;font-weight:700;color:{{ '#2ecc71' if d.momentum_score >= 3 else ('#f1c40f' if d.momentum_score >= 2 else '#e74c3c') }};">
+        {{ d.momentum_score }}/4 · {{ d.momentum_nivel }}
+      </span>
+    </div>
+    {% set mom_pct = (d.momentum_score / 4 * 100)|int %}
+    <div style="background:rgba(255,255,255,0.08);border-radius:2px;height:4px;margin-bottom:10px;">
+      <div style="width:{{ mom_pct }}%;height:100%;border-radius:2px;background:{{ '#2ecc71' if d.momentum_score >= 3 else ('#f1c40f' if d.momentum_score >= 2 else '#e74c3c') }};"></div>
+    </div>
+    {% if d.momentum_detalles %}
+    {% for det in d.momentum_detalles %}
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:3px;">{{ det }}</div>
+    {% endfor %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ══ CATEGORÍAS DE SCORING ══ #}
+  {% if s.categorias %}
+  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);">
+    <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Scoring por Categoría</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for cat_key, cat in s.categorias.items() %}
+      {% set pct = cat.score_normalizado %}
+      {% set bar_col = '#2ecc71' if pct >= 70 else ('#f1c40f' if pct >= 40 else '#e74c3c') %}
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:9px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-size:0.82rem;font-weight:600;color:#cbd5e1;">{{ cat.nombre }}</span>
+          <span style="font-size:0.75rem;color:{{ bar_col }};font-weight:700;">{{ pct|int }}%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:2px;height:3px;margin-bottom:5px;">
+          <div style="width:{{ pct }}%;height:100%;border-radius:2px;background:{{ bar_col }};"></div>
+        </div>
+        {% for detalle in cat.detalles %}
+        <div style="font-size:0.72rem;color:#64748b;padding-left:4px;">
+          {% if detalle is iterable and detalle is not string %}
+            {% set txt = detalle[0] %}
+            {% set ok  = detalle[1] %}
+          {% else %}
+            {% set txt = detalle %}
+            {% set ok  = 'bajo' not in detalle.lower() and 'cayendo' not in detalle.lower() %}
+          {% endif %}
+          {% if ok %}
+            <span style="color:#4ade80;">✓</span>
+          {% else %}
+            <span style="color:#f06060;">✗</span>
+          {% endif %}
+          {{ txt }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ══ FORTALEZAS / DEBILIDADES ══ #}
+  {% if s.fortalezas or s.debilidades %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px;">
+    {% if s.fortalezas %}
+    <div style="background:rgba(39,174,96,0.08);border:1px solid rgba(39,174,96,0.25);border-radius:8px;padding:10px;">
+      <div style="font-size:0.68rem;color:#2ecc71;font-weight:700;margin-bottom:6px;letter-spacing:.5px;">✅ FORTALEZAS</div>
+      {% for f in s.fortalezas %}<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:3px;">• {{ f }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if s.debilidades %}
+    <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:8px;padding:10px;">
+      <div style="font-size:0.68rem;color:#e74c3c;font-weight:700;margin-bottom:6px;letter-spacing:.5px;">⚠️ DEBILIDADES</div>
+      {% for deb in s.debilidades %}<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:3px;">• {{ deb }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ══ FUENTE ══ #}
+  <div style="padding:8px 20px 12px;font-size:0.68rem;color:#475569;border-top:1px solid rgba(255,255,255,0.05);">
+    📊 Fuente: {{ d.fuente or 'yfinance' }} · Datos financieros anuales · Actualizado al cargar
+  </div>
+
+</div>

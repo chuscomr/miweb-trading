@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Medio Plazo - Análisis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-error {
+            background: #fee;
+            border-left: 4px solid #c00;
+            color: #c00;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            color: #856404;
+        }
+        
+        .resultado {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .compra {
+            background: #d4edda;
+            border-left: 6px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .compra h3 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+        
+        .no-operar {
+            background: #f8d7da;
+            border-left: 6px solid #dc3545;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .no-operar h3 {
+            color: #721c24;
+            margin-bottom: 15px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-item {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .info-item label {
+            display: block;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .info-item value {
+            display: block;
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .motivos {
+            margin-top: 15px;
+        }
+        
+        .motivos ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .motivos li {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+        }
+        
+        .motivos li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .no-operar .motivos li:before {
+            content: "✗ ";
+            color: #dc3545;
+        }
+        
+        .score {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/" style="
+        display: inline-block;
+        margin-bottom: 15px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9em;
+    ">← Volver al inicio</a>
+
+    
+        <div class="header">
+            <h1>🎯 Sistema Medio Plazo</h1>
+            <p>Análisis semanal • Pullback en tendencia alcista • 4-24 semanas</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/medio/">📊 Análisis</a>
+            <a href="/medio/backtest">🧪 Backtest</a>
+            <a href="/medio/escaner">🔍 Escáner IBEX</a>
+            <a href="/medio/backtest-sistema">🚀 Backtest Sistema</a>
+            <a href="/medio/config">⚙️ Configuración</a>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Analizar Ticker</h2>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label>Ticker (ej: ACS, TEF, SAN)</label>
+                    <input type="text" name="ticker" placeholder="ACS" required autofocus>
+                </div>
+                
+                <button type="submit" class="btn">Analizar</button>
+            </form>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if resultado %}
+        <div class="card">
+            <h2>{{ resultado.ticker }}</h2>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Precio Actual</label>
+                    <value>{{ resultado.precio_actual }}€</value>
+                </div>
+                <div class="info-item">
+                    <label>Decisión</label>
+                    <value>{{ resultado.decision }}</value>
+                </div>
+                <div class="info-item">
+                    <label>Score</label>
+                    <value><span class="score">{{ resultado.score }}</span></value>
+                </div>
+                <div class="info-item">
+                    <label>Histórico</label>
+                    <value>{{ resultado.semanas_historico }} semanas</value>
+                </div>
+            </div>
+            
+            {% if resultado.decision == "COMPRA" %}
+            <div class="compra">
+                <h3>🟢 SEÑAL DE COMPRA</h3>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Entrada</label>
+                        <value>{{ resultado.entrada }}€</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Stop</label>
+                        <value>{{ resultado.stop }}€</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Riesgo</label>
+                        <value>{{ resultado.riesgo_pct }}%</value>
+                    </div>
+                </div>
+                
+                <div class="motivos">
+                    <strong>Motivos:</strong>
+                    <ul>
+                        {% for motivo in resultado.motivos %}
+                        <li>{{ motivo }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-operar">
+                <h3>🔴 NO OPERAR</h3>
+                
+                <div class="motivos">
+                    <strong>Motivos de rechazo:</strong>
+                    <ul>
+                        {% for motivo in resultado.motivos %}
+                        <li>{{ motivo }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if resultado.detalles %}
+            <div class="resultado">
+                <h4>Detalles Técnicos</h4>
+                <ul style="list-style: none; padding: 10px 0;">
+                    {% if resultado.detalles.tendencia %}
+                    <li>📈 Tendencia: <strong>{{ resultado.detalles.tendencia }}</strong></li>
+                    {% endif %}
+                    {% if resultado.detalles.retroceso_pct %}
+                    <li>↩️ Retroceso: <strong>{{ resultado.detalles.retroceso_pct }}%</strong></li>
+                    {% endif %}
+                    {% if resultado.detalles.volatilidad_pct %}
+                    <li>📊 Volatilidad: <strong>{{ resultado.detalles.volatilidad_pct }}%</strong></li>
+                    {% endif %}
+                    {% if resultado.detalles.mm20 %}
+                    <li>📉 MM20: <strong>{{ resultado.detalles.mm20 }}€</strong></li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if resultado.advertencias %}
+            <div class="alert alert-warning">
+                <strong>Advertencias:</strong>
+                <ul style="margin-top: 10px;">
+                    {% for adv in resultado.advertencias %}
+                    <li>{{ adv }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <p style="margin-top: 20px; color: #666; font-size: 0.9em;">
+                Datos desde {{ resultado.fecha_desde }} hasta {{ resultado.fecha_hasta }}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

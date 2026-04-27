@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Backtest Sistema Posicional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+        .back-home { display: inline-block; margin-bottom: 10px; color: white; text-decoration: none; font-size: 0.9em; }
+        .back-home:hover { text-decoration: underline; }
+        .header { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        .header h1 { color: #1e3c72; font-size: 2em; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.1em; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h2 { color: #1e3c72; margin-bottom: 20px; font-size: 1.3em; }
+        .mercado-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mercado-btn { flex: 1; padding: 12px; border: 2px solid #1e3c72; background: white; color: #1e3c72; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s; }
+        .mercado-btn.active { background: #1e3c72; color: white; }
+        .grupos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px; }
+        .grupo-btn { padding: 15px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: left; }
+        .grupo-btn:hover { border-color: #1e3c72; background: #e8f0fe; }
+        .grupo-btn .titulo { font-weight: bold; color: #1e3c72; margin-bottom: 4px; }
+        .grupo-btn .desc { color: #666; font-size: 12px; }
+        .grupo-btn.ejecutado { border-color: #4CAF50; background: #f0fff0; }
+        .grupo-btn.ejecutado .titulo { color: #4CAF50; }
+        .grupo-btn.cargando { border-color: #ff9800; background: #fff8e1; pointer-events: none; }
+        .grupo-btn.cargando .titulo { color: #ff9800; }
+        .spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top: 2px solid #ff9800; border-radius: 50%; animation: spin 1s linear infinite; vertical-align: middle; margin-right: 5px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .combinado-btn { width: 100%; padding: 15px; background: #1e3c72; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; transition: all 0.2s; margin-top: 5px; }
+        .combinado-btn:hover { background: #2a5298; }
+        .combinado-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .resultados-grupos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .resultado-grupo { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: none; }
+        .resultado-grupo.visible { display: block; }
+        .resultado-grupo-header { padding: 12px 15px; background: #1e3c72; color: white; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .resultado-grupo-body { padding: 15px; }
+        .mini-stat { margin-bottom: 8px; }
+        .mini-stat-label { color: #999; font-size: 11px; }
+        .mini-stat-value { color: #1e3c72; font-size: 1.2em; font-weight: bold; }
+        .mini-stat-value.positivo { color: #4CAF50; }
+        .mini-stat-value.negativo { color: #f44336; }
+        .ver-detalle-btn { width: 100%; padding: 8px; background: #e8f0fe; color: #1e3c72; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; margin-top: 10px; transition: all 0.2s; }
+        .ver-detalle-btn:hover { background: #1e3c72; color: white; }
+        .resultado-detalle { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display: none; }
+        .resultado-detalle.visible { display: block; }
+        .resultado-detalle h2 { color: #1e3c72; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-label { color: #666; font-size: 0.85em; margin-bottom: 5px; }
+        .stat-value { color: #1e3c72; font-size: 1.4em; font-weight: bold; }
+        .stat-value.positivo { color: #4CAF50; }
+        .stat-value.negativo { color: #f44336; }
+        .tabla-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #1e3c72; color: white; padding: 10px 8px; text-align: left; }
+        td { padding: 9px 8px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f5f5f5; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .badge-verde { background: #e8f5e9; color: #2e7d32; }
+        .badge-rojo { background: #ffebee; color: #c62828; }
+        .error-box { background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px; padding: 15px; color: #c62828; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/posicional/" class="back-home">← Volver al Sistema Posicional</a>
+
+    <div class="header">
+        <h1>🚀 Backtest Sistema Posicional</h1>
+        <p>Ejecuta por grupos · Ve resultados parciales · Combina al final</p>
+    </div>
+
+    <div class="card">
+        <h2>📊 Seleccionar Mercado y Grupo</h2>
+        <div class="mercado-tabs">
+            <button class="mercado-btn active" onclick="setMercado('ibex', this)">🇪🇸 IBEX 35</button>
+            <button class="mercado-btn" onclick="setMercado('continuo', this)">🔄 Mercado Continuo</button>
+        </div>
+        <div class="grupos-grid">
+            <button class="grupo-btn" id="btn-grupo1" onclick="ejecutarGrupo('grupo1')">
+                <div class="titulo">Grupo 1</div>
+                <div class="desc" id="desc-grupo1">ACX · AENA · AMS · ANA · ANE · ACS · BKT · BBVA · CABK · CLNX · COL · ELE</div>
+            </button>
+            <button class="grupo-btn" id="btn-grupo2" onclick="ejecutarGrupo('grupo2')">
+                <div class="titulo">Grupo 2</div>
+                <div class="desc" id="desc-grupo2">ENG · FCC · FER · GRF · IAG · IBE · IDR · ITX · LOG · MAP · MRL · MTS</div>
+            </button>
+            <button class="grupo-btn" id="btn-grupo3" onclick="ejecutarGrupo('grupo3')">
+                <div class="titulo">Grupo 3</div>
+                <div class="desc" id="desc-grupo3">NTGY · PUIG · RED · REP · ROVI · SAB · SAN · SCYR · SLR · TEF · UNI</div>
+            </button>
+            <button class="grupo-btn" id="btn-todos" onclick="ejecutarGrupo('todos')">
+                <div class="titulo">⚡ Todos a la vez</div>
+                <div class="desc">Ejecutar universo completo (puede tardar)</div>
+            </button>
+        </div>
+        <button class="combinado-btn" id="btn-combinado" onclick="combinarResultados()" disabled>
+            🔗 Combinar Grupos 1 + 2 + 3
+        </button>
+        <p style="color:#999; font-size:12px; text-align:center; margin-top:8px;" id="txt-combinado">
+            Ejecuta los 3 grupos primero para habilitar Combinar
+        </p>
+    </div>
+
+    <div class="resultados-grupos" id="resumen-grupos">
+        <div class="resultado-grupo" id="resumen-grupo1">
+            <div class="resultado-grupo-header"><span id="titulo-grupo1">Grupo 1</span><span>✅</span></div>
+            <div class="resultado-grupo-body" id="body-grupo1"></div>
+        </div>
+        <div class="resultado-grupo" id="resumen-grupo2">
+            <div class="resultado-grupo-header"><span id="titulo-grupo2">Grupo 2</span><span>✅</span></div>
+            <div class="resultado-grupo-body" id="body-grupo2"></div>
+        </div>
+        <div class="resultado-grupo" id="resumen-grupo3">
+            <div class="resultado-grupo-header"><span id="titulo-grupo3">Grupo 3</span><span>✅</span></div>
+            <div class="resultado-grupo-body" id="body-grupo3"></div>
+        </div>
+    </div>
+
+    <div class="resultado-detalle" id="resultado-detalle">
+        <h2 id="detalle-titulo">📈 Resultados</h2>
+        <div id="detalle-contenido"></div>
+    </div>
+</div>
+
+<script>
+    let mercadoActual = 'ibex';
+    let datosGrupos = { ibex: {}, continuo: {} };
+
+    const descripcionesIbex = {
+        grupo1: 'ACX · AENA · AMS · ANA · ANE · ACS · BKT · BBVA · CABK · CLNX · COL · ELE',
+        grupo2: 'ENG · FCC · FER · GRF · IAG · IBE · IDR · ITX · LOG · MAP · MRL · MTS',
+        grupo3: 'NTGY · PUIG · RED · REP · ROVI · SAB · SAN · SCYR · SLR · TEF · UNI'
+    };
+    const descripcionesContinuo = {
+        grupo1: 'A3M · AEDAS · AMP · ANE · APAM · ATRY · CAF · CASH · CIE · CIRSA · DIA · DOM · ECR',
+        grupo2: 'EBROM · ENC · ENO · FAE · GEST · GRE · HBX · HOME · IMC · IZER · LDA · LIB · MEL',
+        grupo3: 'MVC · NEA · OHLA · PHM · PSG · R4 · RLIA · TRE · TUB · VID · VIS'
+    };
+
+    function setMercado(mercado, btn) {
+        mercadoActual = mercado;
+        document.querySelectorAll('.mercado-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const descs = mercado === 'ibex' ? descripcionesIbex : descripcionesContinuo;
+        document.getElementById('desc-grupo1').textContent = descs.grupo1;
+        document.getElementById('desc-grupo2').textContent = descs.grupo2;
+        document.getElementById('desc-grupo3').textContent = descs.grupo3;
+        ['grupo1','grupo2','grupo3'].forEach(g => {
+            const datos = datosGrupos[mercado][g];
+            if (datos) {
+                mostrarResumenGrupo(g, datos);
+                document.getElementById('btn-' + g).classList.add('ejecutado');
+            } else {
+                document.getElementById('resumen-' + g).classList.remove('visible');
+                document.getElementById('btn-' + g).classList.remove('ejecutado');
+            }
+        });
+        actualizarCombinado();
+        document.getElementById('resultado-detalle').classList.remove('visible');
+    }
+
+    function ejecutarGrupo(grupo) {
+        const btn = document.getElementById('btn-' + grupo);
+        if (btn) {
+            btn.classList.add('cargando');
+            btn.querySelector('.titulo').innerHTML =
+                `<span class="spinner-inline"></span> Ejecutando...`;
+        }
+
+        const form = new FormData();
+        form.append('grupo', grupo);
+        form.append('mercado', mercadoActual);
+
+        fetch('/posicional/backtest', { method: 'POST', body: form })
+            .then(r => {
+                console.log('Status:', r.status);
+                return r.text();
+            })
+            .then(texto => {
+                console.log('Respuesta raw:', texto.substring(0, 300));
+                let data;
+                try {
+                    data = JSON.parse(texto);
+                } catch(e) {
+                    console.error('Error parseando JSON:', e);
+                    alert('Error: respuesta no válida del servidor');
+                    if (btn) btn.classList.remove('cargando');
+                    return;
+                }
+                if (btn) {
+                    btn.classList.remove('cargando');
+                    btn.querySelector('.titulo').textContent =
+                        grupo === 'todos' ? '⚡ Todos a la vez' :
+                        grupo.charAt(0).toUpperCase() + grupo.slice(1);
+                }
+                if (['grupo1','grupo2','grupo3'].includes(grupo)) {
+                    datosGrupos[mercadoActual][grupo] = data;
+                    mostrarResumenGrupo(grupo, data);
+                    document.getElementById('btn-' + grupo).classList.add('ejecutado');
+                    actualizarCombinado();
+                }
+                mostrarDetalle(data, grupo);
+            })
+            .catch(err => {
+                console.error('Error fetch:', err);
+                if (btn) btn.classList.remove('cargando');
+                alert('Error: ' + err.message);
+            });
+    }
+
+    function mostrarResumenGrupo(grupo, r) {
+        const card = document.getElementById('resumen-' + grupo);
+        const body = document.getElementById('body-' + grupo);
+        const titulo = document.getElementById('titulo-' + grupo);
+        const mercadoLabel = mercadoActual === 'ibex' ? 'IBEX' : 'Continuo';
+        titulo.textContent = mercadoLabel + ' · ' + grupo.charAt(0).toUpperCase() + grupo.slice(1);
+        const trades = r.total_trades || 0;
+        const exp = parseFloat(r.expectancy_global || 0).toFixed(2);
+        const wr = parseFloat(r.winrate_global || 0).toFixed(1);
+        const equity = parseFloat(r.equity_total || 0).toFixed(1);
+        body.innerHTML = `
+            <div class="mini-stat">
+                <div class="mini-stat-label">Trades</div>
+                <div class="mini-stat-value">${trades}</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-label">Expectancy</div>
+                <div class="mini-stat-value ${exp > 0 ? 'positivo' : 'negativo'}">${exp}R</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-label">Win Rate</div>
+                <div class="mini-stat-value">${wr}%</div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-label">Equity</div>
+                <div class="mini-stat-value ${equity > 0 ? 'positivo' : 'negativo'}">${equity}R</div>
+            </div>
+            <button class="ver-detalle-btn" onclick="mostrarDetalle(datosGrupos['${mercadoActual}']['${grupo}'], '${grupo}')">
+                Ver detalle →
+            </button>`;
+        card.classList.add('visible');
+    }
+
+    function mostrarDetalle(r, grupo) {
+        const detalle = document.getElementById('resultado-detalle');
+        const contenido = document.getElementById('detalle-contenido');
+        const titulo = document.getElementById('detalle-titulo');
+        const mercadoLabel = mercadoActual === 'ibex' ? 'IBEX 35' : 'Mercado Continuo';
+        const grupoLabel = grupo === 'combinado' ? 'Combinado' :
+                           grupo === 'todos' ? 'Todos' :
+                           grupo.charAt(0).toUpperCase() + grupo.slice(1);
+        titulo.textContent = `📈 ${mercadoLabel} · ${grupoLabel}`;
+        const trades = r.total_trades || 0;
+        const exp = parseFloat(r.expectancy_global || 0).toFixed(2);
+        const wr = parseFloat(r.winrate_global || 0).toFixed(1);
+        const pf = parseFloat(r.profit_factor_global || 0).toFixed(2);
+        const equity = parseFloat(r.equity_total || 0).toFixed(1);
+        const analizados = r.tickers_analizados || 0;
+        const total = r.total_tickers || 0;
+        let html = `
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Analizados</div><div class="stat-value">${analizados} / ${total}</div></div>
+                <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value">${trades}</div></div>
+                <div class="stat-card"><div class="stat-label">Expectancy</div><div class="stat-value ${exp > 0 ? 'positivo' : 'negativo'}">${exp}R</div></div>
+                <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value">${wr}%</div></div>
+                <div class="stat-card"><div class="stat-label">Profit Factor</div><div class="stat-value ${pf > 1 ? 'positivo' : 'negativo'}">${pf}</div></div>
+                <div class="stat-card"><div class="stat-label">Equity Final</div><div class="stat-value ${equity > 0 ? 'positivo' : 'negativo'}">${equity}R</div></div>
+            </div>`;
+        const mejores = (r.resultados_detallados || [])
+            .filter(x => x.total_trades > 0)
+            .sort((a,b) => (b.expectancy||0) - (a.expectancy||0))
+            .slice(0, 10);
+        if (mejores.length > 0) {
+            html += `<h3 style="margin:15px 0 10px; color:#1e3c72;">🏆 Ranking por Expectancy</h3>
+            <div class="tabla-container"><table>
+                <tr><th>Ticker</th><th>Trades</th><th>Expectancy</th><th>Win Rate</th><th>Equity</th><th>Duración</th></tr>`;
+            mejores.forEach(v => {
+                const e = (v.expectancy || 0).toFixed(2);
+                const w = (v.winrate || 0).toFixed(1);
+                const eq = (v.equity_final || 0).toFixed(1);
+                const dur = Math.round(v.duracion_media || 0);
+                html += `<tr>
+                    <td><strong>${v.ticker}</strong></td>
+                    <td>${v.total_trades}</td>
+                    <td><span class="badge ${e > 0 ? 'badge-verde' : 'badge-rojo'}">${e}R</span></td>
+                    <td>${w}%</td>
+                    <td><span class="badge ${eq > 0 ? 'badge-verde' : 'badge-rojo'}">${eq}R</span></td>
+                    <td>${dur} sem</td>
+                </tr>`;
+            });
+            html += `</table></div>`;
+        }
+        contenido.innerHTML = html;
+        detalle.classList.add('visible');
+        detalle.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function combinarResultados() {
+        const g1 = datosGrupos[mercadoActual]['grupo1'];
+        const g2 = datosGrupos[mercadoActual]['grupo2'];
+        const g3 = datosGrupos[mercadoActual]['grupo3'];
+        const todos = [g1, g2, g3];
+        const detallados = todos.flatMap(g => g.resultados_detallados || []);
+        const total_trades = todos.reduce((s,g) => s + (g.total_trades||0), 0);
+        const equity_total = todos.reduce((s,g) => s + (g.equity_total||0), 0);
+        const tickers_analizados = todos.reduce((s,g) => s + (g.tickers_analizados||0), 0);
+        const total_tickers = todos.reduce((s,g) => s + (g.total_tickers||0), 0);
+        const wins = detallados.reduce((s,v) => s + Math.round((v.winrate||0)/100 * (v.total_trades||0)), 0);
+        const winrate_global = total_trades > 0 ? (wins / total_trades * 100) : 0;
+        const expectancy_global = total_trades > 0 ? (equity_total / total_trades) : 0;
+        const combinado = {
+            total_trades, equity_total, tickers_analizados, total_tickers,
+            winrate_global, expectancy_global,
+            profit_factor_global: Math.max(...todos.map(g => g.profit_factor_global||0)),
+            resultados_detallados: detallados
+        };
+        mostrarDetalle(combinado, 'combinado');
+    }
+
+    function actualizarCombinado() {
+        const e = datosGrupos[mercadoActual];
+        const listo = e.grupo1 && e.grupo2 && e.grupo3;
+        document.getElementById('btn-combinado').disabled = !listo;
+        document.getElementById('txt-combinado').textContent = listo
+            ? '✅ Listo para combinar'
+            : 'Ejecuta los 3 grupos primero para habilitar Combinar';
+    }
+</script>
+</body>
+</html>

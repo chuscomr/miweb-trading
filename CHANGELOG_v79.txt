@@ -1,0 +1,38 @@
+=================================================================
+  MiWebCompleto v79 - VENTA PARCIAL
+=================================================================
+
+NUEVA FUNCIONALIDAD:
+
+✅ Botón "📊 Venta Parcial" en cada posición abierta
+
+FUNCIONA ASÍ:
+
+1. Click en "Venta Parcial" de cualquier posición
+2. Ingresas:
+   - Acciones vendidas (ej: 166 de 847)
+   - Precio de venta
+   - Fecha
+   - Motivo (opcional)
+   
+3. El sistema automáticamente:
+   ✓ Crea un trade CERRADO en historial con las 166 acc vendidas
+   ✓ Calcula el R de esa venta parcial
+   ✓ Reduce la posición abierta (quedan 681 acciones)
+   ✓ Mantiene precio entrada y stop originales
+
+EJEMPLO REAL:
+- Colonial: 847 acciones a 5.51€, stop 5.10€
+- Vendes 166 a 5.49€
+- → Historial: 1 trade cerrado (166 acc, R=-0.10)
+- → Cartera: quedan 681 acciones abiertas
+
+ARCHIVOS MODIFICADOS:
+- cartera/cartera_db.py → función venta_parcial()
+- web/routes/cartera_routes.py → ruta POST
+- templates/cartera.html → botón + modal
+
+INSTALACIÓN:
+Ver LEEME_IMPORTANTE.txt
+
+=================================================================

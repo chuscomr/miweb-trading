@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Cerrar Posicion</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background: linear-gradient(135deg, #dde4f0 0%, #c8d4e8 50%, #b8c8de 100%);min-height:100vh;padding:20px;color:#333}
+.container{max-width:500px;margin:0 auto}
+.back{display:inline-block;color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.85em;margin-bottom:12px}
+.card{background:white;border-radius:12px;padding:20px 24px;margin-bottom:14px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:#888;margin-bottom:4px;font-weight:600}
+input,select{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.9em}
+input:focus{outline:none;border-color:#dc2626}
+.resumen{background:#fef9f9;border-radius:8px;padding:12px 14px;margin:14px 0}
+.res-row{display:flex;justify-content:space-between;font-size:0.85em;padding:4px 0;border-bottom:1px solid #fce4e4}
+.res-row:last-child{border:none;font-weight:600}
+.green{color:#16a34a}.red{color:#dc2626}
+.btn-cerrar{width:100%;padding:10px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:0.95em;font-weight:600;cursor:pointer}
+.back-link{display:block;text-align:center;margin-top:10px;color:#888;font-size:0.85em;text-decoration:none}
+.info{background:#f8f9ff;border-radius:8px;padding:12px;margin-bottom:14px;font-size:0.85em;color:#555}
+.info strong{display:block;font-size:1em;color:#333;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/cartera/" class="back">← Volver a cartera</a>
+<div class="card">
+    <div class="info">
+        <strong>{{ pos.ticker.replace('.MC','') }} — {{ pos.sistema }}</strong>
+        Entrada: {{ "%.2f"|format(pos.precio_entrada) }}€ ·
+        Stop: {{ "%.2f"|format(pos.stop_actual or pos.stop_inicial or 0) }}€ ·
+        {{ pos.acciones }} acciones
+        {% if pos.mitad_cerrada %}· Mitad ya cerrada a {{ "%.2f"|format(pos.precio_mitad or 0) }}€{% endif %}
+    </div>
+
+    <form method="POST" id="frm">
+        <div class="field">
+            <label>Precio de cierre (€)</label>
+            <input type="number" name="precio_cierre" id="precio_cierre" step="0.01" placeholder="0.00"
+                   required autofocus oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Fecha cierre</label>
+            <input type="date" name="fecha_cierre" value="{{ hoy }}">
+        </div>
+        <div class="field">
+            <label>Motivo</label>
+            <select name="motivo_cierre">
+                <option value="Stop inicial">Stop inicial</option>
+                <option value="Stop breakeven">Stop breakeven</option>
+                <option value="Trailing stop">Trailing stop</option>
+                <option value="Objetivo alcanzado">Objetivo alcanzado</option>
+                <option value="Cierre manual">Cierre manual</option>
+                <option value="FIN_BACKTEST">Fin periodo</option>
+            </select>
+        </div>
+        <div class="resumen">
+            <div class="res-row"><span style="color:#888">R/R estimado</span><span id="est-rr">—</span></div>
+            <div class="res-row"><span style="color:#888">P&L estimado</span><span id="est-pnl">—</span></div>
+        </div>
+        <button type="submit" class="btn-cerrar">Confirmar cierre</button>
+    </form>
+</div>
+<a href="/cartera/" class="back-link">Cancelar</a>
+
+<script>
+const entrada = {{ pos.precio_entrada }};
+const stopIni = {{ pos.stop_inicial or pos.stop_actual or pos.precio_entrada }};
+const acciones= {{ pos.acciones }};
+const R_unit  = entrada - stopIni;
+function recalcular(){
+    const pc = parseFloat(document.getElementById('precio_cierre').value)||0;
+    if(!pc||R_unit<=0) return;
+    const rr  = ((pc-entrada)/R_unit).toFixed(2);
+    const pnl = ((pc-entrada)*acciones).toFixed(2);
+    const rrEl= document.getElementById('est-rr');
+    const pEl = document.getElementById('est-pnl');
+    rrEl.textContent = (parseFloat(rr)>=0?'+':'')+rr+'R';
+    rrEl.className   = parseFloat(rr)>=0?'green':'red';
+    pEl.textContent  = (parseFloat(pnl)>=0?'+':'')+pnl+'€';
+    pEl.className    = parseFloat(pnl)>=0?'green':'red';
+}
+</script>
+</body>
+</html>

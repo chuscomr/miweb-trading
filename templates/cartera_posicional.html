@@ -1,0 +1,109 @@
+{% extends "index_posicional.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">📁 Cartera Posicional</h4>
+    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+      + Añadir posición
+    </button>
+  </div>
+
+  {% set posiciones = cartera.get('posiciones', []) %}
+
+  {% if not posiciones %}
+  <div class="alert alert-secondary">No hay posiciones abiertas.</div>
+  {% else %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Ticker</th><th>Entrada</th><th>Stop</th><th>Acciones</th>
+          <th>Riesgo €</th><th>Riesgo %</th><th>Fecha</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in posiciones %}
+        <tr>
+          <td><strong>{{ p.ticker }}</strong></td>
+          <td>{{ "%.2f"|format(p.precio_entrada) }}</td>
+          <td>{{ "%.2f"|format(p.stop) }}</td>
+          <td>{{ p.acciones }}</td>
+          <td>{{ "%.0f"|format(p.riesgo_euros) }} €</td>
+          <td>{{ "%.1f"|format(p.riesgo_pct) }}%</td>
+          <td>{{ p.fecha_entrada }}</td>
+          <td>
+            <button class="btn btn-xs btn-danger"
+              onclick="eliminarPosicion('{{ p.ticker }}')">✕</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal añadir posición -->
+<div class="modal fade" id="modalAgregar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title">Añadir posición</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Ticker</label>
+          <select id="inp-ticker" class="form-select bg-dark text-light">
+            <optgroup label="IBEX 35">
+              {% for t in valores_ibex %}<option>{{ t }}</option>{% endfor %}
+            </optgroup>
+            <optgroup label="Mercado Continuo">
+              {% for t in valores_continuo %}<option>{{ t }}</option>{% endfor %}
+            </optgroup>
+          </select>
+        </div>
+        <div class="row g-2">
+          <div class="col"><label>Entrada</label>
+            <input type="number" id="inp-entrada" class="form-control bg-dark text-light" step="0.01"></div>
+          <div class="col"><label>Stop</label>
+            <input type="number" id="inp-stop" class="form-control bg-dark text-light" step="0.01"></div>
+          <div class="col"><label>Acciones</label>
+            <input type="number" id="inp-acciones" class="form-control bg-dark text-light" min="1"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" onclick="agregarPosicion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function agregarPosicion() {
+  const body = {
+    ticker:         document.getElementById('inp-ticker').value,
+    precio_entrada: parseFloat(document.getElementById('inp-entrada').value),
+    stop:           parseFloat(document.getElementById('inp-stop').value),
+    acciones:       parseInt(document.getElementById('inp-acciones').value),
+  };
+  const r = await fetch('/posicional/api/cartera/agregar', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) location.reload();
+  else alert('Error: ' + d.error);
+}
+
+async function eliminarPosicion(ticker) {
+  if (!confirm('¿Eliminar ' + ticker + '?')) return;
+  const r = await fetch('/posicional/api/cartera/eliminar/' + ticker, {method:'DELETE'});
+  const d = await r.json();
+  if (d.success) location.reload();
+  else alert('Error: ' + d.error);
+}
+</script>
+{% endblock %}

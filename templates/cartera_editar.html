@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Editar Posición</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+     background:#f8fafc;min-height:100vh;padding:20px;color:#1e293b}
+.container{max-width:700px;margin:0 auto}
+
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.page-header h1{font-size:1.4em;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:10px;}
+.btn-back{background:#475569;color:white;padding:8px 18px;border-radius:10px;
+          text-decoration:none;font-size:0.85em;font-weight:600;}
+
+.info-bar{background:#e0f2fe;border:1px solid #bae6fd;border-radius:10px;
+          padding:12px 16px;margin-bottom:16px;font-size:0.85em;color:#0369a1;}
+.info-bar strong{display:block;font-weight:700;margin-bottom:2px;}
+
+.card{background:white;border-radius:14px;padding:22px 24px;margin-bottom:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+
+.field{margin-bottom:0;}
+.field label{display:block;font-size:11px;color:#64748b;margin-bottom:5px;font-weight:600;}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid #e2e8f0;
+                      border-radius:8px;font-size:0.88em;color:#1e293b;background:white;}
+input:focus,select:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+.readonly{background:#f8fafc;color:#64748b;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+
+/* CÁLCULOS */
+.calc-card{background:#f8fafc;border-radius:12px;padding:16px 18px;margin-bottom:14px;}
+.calc-title{font-size:0.78em;font-weight:700;color:#64748b;text-transform:uppercase;
+            letter-spacing:1px;margin-bottom:12px;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px;}
+.calc-item .lbl{font-size:10px;color:#94a3b8;margin-bottom:3px;}
+.calc-item .val{font-size:1.05em;font-weight:700;color:#1e293b;}
+.calc-item .val.green{color:#16a34a;}
+.calc-item .val.red{color:#dc2626;}
+.calc-item .val.orange{color:#d97706;}
+.calc-item .val.purple{color:#7c3aed;}
+
+/* NIVELES R */
+.niveles-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;
+              padding:16px 18px;margin-bottom:14px;}
+.niveles-title{font-size:0.78em;font-weight:700;color:#0369a1;text-transform:uppercase;
+               letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.niveles-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.niveles-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:8px;}
+.nivel-item .lbl{font-size:10px;color:#94a3b8;margin-bottom:2px;display:flex;align-items:center;gap:3px;}
+.nivel-item .val{font-size:1em;font-weight:700;cursor:pointer;padding:4px 8px;
+                 border-radius:6px;transition:background .15s;}
+.nivel-item .val:hover{background:rgba(0,0,0,0.06);}
+.nivel-r{color:#6366f1;}
+.nivel-be{color:#16a34a;}
+.nivel-seg{color:#d97706;}
+.nivel-trail{color:#16a34a;}
+.nivel-4r{color:#d97706;}
+.nivel-5r{color:#d97706;}
+.niveles-hint{font-size:11px;color:#94a3b8;margin-top:6px;}
+
+/* FASE */
+.fase-btns{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.fase-btn{padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;
+          font-size:0.82em;font-weight:600;cursor:pointer;color:#64748b;
+          background:white;transition:all .15s;}
+.fase-btn.active-inicial{border-color:#94a3b8;background:#f1f5f9;color:#475569;}
+.fase-btn.active-protegido{border-color:#16a34a;background:#d1fae5;color:#065f46;}
+.fase-btn.active-trailing{border-color:#d97706;background:#fef3c7;color:#92400e;}
+
+/* SCORE */
+.score-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.score-btn{padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:8px;
+           font-size:0.82em;font-weight:600;cursor:pointer;color:#64748b;background:white;}
+.score-btn.active{border-color:#6366f1;background:#eef2ff;color:#4f46e5;}
+
+/* BOTONES ACCIÓN */
+.btn-footer{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:16px;}
+.btn-eliminar{background:#ef4444;color:white;border:none;padding:9px 18px;
+              border-radius:8px;font-size:0.88em;font-weight:600;cursor:pointer;margin-right:auto;}
+.btn-cancel{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:9px 18px;
+            border-radius:8px;font-size:0.88em;font-weight:600;text-decoration:none;}
+.btn-guardar{background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;
+             padding:9px 22px;border-radius:8px;font-size:0.88em;font-weight:700;cursor:pointer;
+             display:flex;align-items:center;gap:6px;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+    <h1>✏️ Editar Posición</h1>
+    <a href="/cartera/" class="btn-back">← Volver</a>
+</div>
+
+<div class="info-bar">
+    <strong>📋 Editando posición de {{ pos.ticker }}</strong>
+    Puedes modificar cualquier campo. Los cálculos se actualizarán automáticamente.
+</div>
+
+<form method="POST" id="frm">
+<input type="hidden" name="accion" value="editar">
+
+<!-- IDENTIFICACIÓN -->
+<div class="card">
+    <div class="grid2">
+        <div class="field">
+            <label>Ticker *</label>
+            <input type="text" name="ticker" id="f-ticker"
+                   value="{{ pos.ticker or '' }}"
+                   style="text-transform:uppercase;"
+                   oninput="this.value=this.value.toUpperCase();recalcular()">
+        </div>
+        <div class="field">
+            <label>Nombre</label>
+            <input type="text" name="nombre" value="{{ pos.nombre or '' }}" placeholder="Nombre de la empresa">
+        </div>
+    </div>
+    <div class="grid3">
+        <div class="field">
+            <label>Fecha entrada *</label>
+            <input type="date" name="fecha_entrada" id="f-fecha"
+                   value="{{ pos.fecha_entrada[:10] if pos.fecha_entrada else '' }}">
+        </div>
+        <div class="field">
+            <label>Precio entrada (€) *</label>
+            <input type="number" name="precio_entrada" id="f-entrada"
+                   step="0.01" value="{{ '%.2f'|format(pos.precio_entrada) }}"
+                   oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Stop loss (€) *</label>
+            <input type="number" name="stop_actual" id="f-stop"
+                   step="0.01"
+                   value="{{ '%.2f'|format(pos.stop_actual or pos.stop_inicial or 0) }}"
+                   oninput="recalcular()">
+        </div>
+    </div>
+    <div class="grid2">
+        <div class="field">
+            <label>Objetivo (€)</label>
+            <input type="number" name="objetivo" id="f-objetivo"
+                   step="0.01"
+                   value="{{ '%.2f'|format(pos.objetivo) if pos.objetivo else '' }}"
+                   oninput="recalcular()">
+        </div>
+        <div class="field">
+            <label>Acciones *</label>
+            <input type="number" name="acciones" id="f-acciones"
+                   value="{{ pos.acciones }}" oninput="recalcular()">
+        </div>
+    </div>
+</div>
+
+<!-- CÁLCULOS AUTOMÁTICOS -->
+<div class="calc-card">
+    <div class="calc-title">📊 Cálculos automáticos</div>
+    <div class="calc-grid">
+        <div class="calc-item">
+            <div class="lbl">Riesgo por acción</div>
+            <div class="val" id="c-r-acc">—</div>
+        </div>
+        <div class="calc-item">
+            <div class="lbl">Riesgo %</div>
+            <div class="val" id="c-r-pct">—</div>
+        </div>
+        <div class="calc-item">
+            <div class="lbl">R/R</div>
+            <div class="val" id="c-rr">—</div>
+        </div>
+        <div class="calc-item">
+            <div class="lbl">Capital invertido</div>
+            <div class="val" id="c-capital">—</div>
+        </div>
+    </div>
+    <div class="calc-item">
+        <div class="lbl">Riesgo máximo</div>
+        <div class="val purple" id="c-riesgo-max">—</div>
+    </div>
+</div>
+
+<!-- NIVELES DE GESTIÓN POR R -->
+<div class="niveles-card">
+    <div class="niveles-title">📊 Niveles de gestión por R</div>
+    <div class="niveles-sub" id="niveles-sub">Introduce precio de entrada y stop para calcular niveles</div>
+    <div class="niveles-grid">
+        <div class="nivel-item">
+            <div class="lbl">Riesgo (R)</div>
+            <div class="val nivel-r" id="n-r">—</div>
+        </div>
+        <div class="nivel-item">
+            <div class="lbl">🟢 +1R (BE)</div>
+            <div class="val nivel-be" id="n-1r" onclick="copiarStop('n-1r')" title="Click para copiar al stop">—</div>
+        </div>
+        <div class="nivel-item">
+            <div class="lbl">🟡 +2R (+1R seg.)</div>
+            <div class="val nivel-seg" id="n-2r" onclick="copiarStop('n-2r')" title="Click para copiar al stop">—</div>
+        </div>
+        <div class="nivel-item">
+            <div class="lbl">🟢 +3R (trailing)</div>
+            <div class="val nivel-trail" id="n-3r" onclick="copiarStop('n-3r')" title="Click para copiar al stop">—</div>
+        </div>
+        <div class="nivel-item">
+            <div class="lbl">⭐ +4R</div>
+            <div class="val nivel-4r" id="n-4r" onclick="copiarStop('n-4r')" title="Click para copiar al stop">—</div>
+        </div>
+    </div>
+    <div class="nivel-item" style="display:inline-block;">
+        <div class="lbl">⭐ +5R</div>
+        <div class="val nivel-5r" id="n-5r" onclick="copiarStop('n-5r')" title="Click para copiar al stop">—</div>
+    </div>
+    <div class="niveles-hint">💡 Sugerencia: Haz clic en el nivel que quieras aplicar y se pegará en "Stop loss" arriba</div>
+</div>
+
+<!-- FASE Y SCORE -->
+<div class="card">
+    <!-- SISTEMA -->
+    <div class="field" style="margin-bottom:16px;">
+        <label>Sistema</label>
+        <select name="sistema" id="f-sistema" onchange="recalcular()" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:7px;font-size:0.9em;">
+            <option value="SWING"      {{ 'selected' if (pos.sistema or 'SWING') == 'SWING' }}>⚡ Swing Trading</option>
+            <option value="MEDIO"      {{ 'selected' if pos.sistema == 'MEDIO' }}>📊 Medio Plazo</option>
+            <option value="POSICIONAL" {{ 'selected' if pos.sistema == 'POSICIONAL' }}>🏛️ Posicional</option>
+        </select>
+    </div>
+    <div class="grid2">
+        <div class="field">
+            <label>Fase de la posición</label>
+            <div class="fase-btns">
+                <span class="fase-btn" id="fase-inicial" onclick="setFase('INICIAL')">INICIAL</span>
+                <span class="fase-btn" id="fase-protegido" onclick="setFase('PROTEGIDO')">PROTEGIDO</span>
+                <span class="fase-btn" id="fase-trailing" onclick="setFase('TRAILING')">TRAILING</span>
+            </div>
+            <input type="hidden" name="fase" id="f-fase" value="{{ pos.fase or 'INICIAL' }}">
+        </div>
+        <div class="field">
+            <label>Setup Score</label>
+            <select name="score_nivel" id="f-score">
+                <option value="">Sin puntuar</option>
+                <option value="ALTA" {{ 'selected' if pos.score_nivel == 'ALTA' }}>⭐⭐⭐⭐⭐ 5/5</option>
+                <option value="SOLIDO" {{ 'selected' if pos.score_nivel == 'SOLIDO' }}>⭐⭐⭐⭐ Sólido</option>
+                <option value="BASICO" {{ 'selected' if pos.score_nivel == 'BASICO' }}>⭐⭐⭐ Básico</option>
+            </select>
+        </div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+        <label>Contexto IBEX</label>
+        <select name="contexto_ibex">
+            <option value="">Sin especificar</option>
+            <option value="ALCISTA" {{ 'selected' if pos.contexto_ibex == 'ALCISTA' }}>🟢 ALCISTA</option>
+            <option value="TRANSICION" {{ 'selected' if pos.contexto_ibex == 'TRANSICION' }}>🟡 TRANSICIÓN</option>
+            <option value="BAJISTA" {{ 'selected' if pos.contexto_ibex == 'BAJISTA' }}>🔴 RIESGO BAJO</option>
+        </select>
+    </div>
+    <div class="field" style="margin-top:14px;">
+        <label>Notas (opcional)</label>
+        <textarea name="notas" rows="3"
+                  placeholder="Motivos de la operación, análisis técnico, etc.">{{ pos.notas or '' }}</textarea>
+    </div>
+</div>
+
+<div class="btn-footer">
+    <button type="button" class="btn-eliminar"
+            onclick="if(confirm('¿Eliminar esta posición?')) window.location='/cartera/eliminar/{{ pos.id }}'">
+        🗑 Eliminar
+    </button>
+    <a href="/cartera/" class="btn-cancel">Cancelar</a>
+    <button type="submit" class="btn-guardar">💾 Guardar Cambios</button>
+</div>
+
+</form>
+
+<script>
+// Inicializar fase
+(function(){
+    const fase = document.getElementById('f-fase').value || 'INICIAL';
+    setFase(fase);
+})();
+
+function setFase(f) {
+    document.getElementById('f-fase').value = f;
+    ['inicial','protegido','trailing'].forEach(x => {
+        const el = document.getElementById('fase-'+x);
+        el.className = 'fase-btn' + (f.toLowerCase() === x ? ' active-'+x : '');
+    });
+}
+
+function copiarStop(id) {
+    const val = document.getElementById(id).textContent.replace('€','').trim();
+    if (val && val !== '—') {
+        document.getElementById('f-stop').value = parseFloat(val).toFixed(2);
+        recalcular();
+    }
+}
+
+function recalcular() {
+    const e = parseFloat(document.getElementById('f-entrada').value) || 0;
+    const s = parseFloat(document.getElementById('f-stop').value) || 0;
+    const o = parseFloat(document.getElementById('f-objetivo').value) || 0;
+    const a = parseInt(document.getElementById('f-acciones').value) || 0;
+    const capital = {{ config.capital_total if config else 30000 }};
+    const sistema = document.getElementById('f-sistema').value || 'SWING';
+    const riesgoMap = {
+        'SWING':      {{ config.riesgo_swing_pct if config else 1.0 }},
+        'MEDIO':      {{ config.riesgo_medio_pct if config else 1.0 }},
+        'POSICIONAL': {{ config.riesgo_posicional_pct if config else 2.0 }},
+    };
+    const riesgoPct = riesgoMap[sistema] || 1.0;
+
+    const R = (e > s && s > 0) ? e - s : 0;
+
+    // Riesgo por acción
+    document.getElementById('c-r-acc').textContent = R > 0 ? R.toFixed(2) + '€' : 'N/A (stop en BE o superior)';
+    document.getElementById('c-r-acc').className = 'val ' + (R > 0 ? 'red' : 'orange');
+
+    // Riesgo %
+    const rPct = (R > 0 && a > 0) ? (R * a / capital * 100) : 0;
+    document.getElementById('c-r-pct').textContent = R > 0 ? rPct.toFixed(1) + '%' : 'N/A';
+
+    // R/R
+    if (o > e && R > 0) {
+        const rr = ((o - e) / R).toFixed(1);
+        document.getElementById('c-rr').textContent = rr;
+        document.getElementById('c-rr').className = 'val ' + (parseFloat(rr) >= 2 ? 'green' : 'red');
+    } else {
+        document.getElementById('c-rr').textContent = 'N/A';
+        document.getElementById('c-rr').className = 'val';
+    }
+
+    // Capital invertido
+    document.getElementById('c-capital').textContent = (e > 0 && a > 0) ?
+        (e * a).toLocaleString('es', {minimumFractionDigits: 2}) + '€' : '—';
+
+    // Riesgo máximo
+    const rMax = R > 0 && a > 0 ? R * a : 0;
+    document.getElementById('c-riesgo-max').textContent = rMax > 0 ? 'Protegido' : '—';
+
+    // Niveles R
+    if (R > 0 && s > 0) {
+        document.getElementById('niveles-sub').textContent =
+            `Niveles calculados desde el stop ORIGINAL (${s.toFixed(2)}€). Úsalos como referencia para gestionar tu posición:`;
+        document.getElementById('n-r').textContent = R.toFixed(2) + '€';
+        document.getElementById('n-1r').textContent = (e).toFixed(2) + '€';         // BE
+        document.getElementById('n-2r').textContent = (e + R).toFixed(2) + '€';     // +1R seg
+        document.getElementById('n-3r').textContent = (e + 2*R).toFixed(2) + '€';   // trailing
+        document.getElementById('n-4r').textContent = (e + 3*R).toFixed(2) + '€';
+        document.getElementById('n-5r').textContent = (e + 4*R).toFixed(2) + '€';
+    } else {
+        ['n-r','n-1r','n-2r','n-3r','n-4r','n-5r'].forEach(id => {
+            document.getElementById(id).textContent = '—';
+        });
+        document.getElementById('niveles-sub').textContent = 'Introduce precio de entrada y stop para calcular niveles';
+    }
+}
+
+// Calcular al cargar
+recalcular();
+</script>
+</body>
+</html>
