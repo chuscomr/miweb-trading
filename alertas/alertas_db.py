@@ -21,7 +21,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "alertas.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "alertas.db")
 
 TIPOS_VALIDOS = {
     "PRECIO_SOBRE", "PRECIO_BAJO",

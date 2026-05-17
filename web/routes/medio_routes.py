@@ -147,12 +147,35 @@ def _construir_resultado(ticker, señal):
 
     # Detalles técnicos — incluye MM50, MM200 del nuevo evaluar()
     detalles = señal.get("detalles", {})
+    
+    # NUEVA FUNCIONALIDAD: Calcular scores fundamental y global
+    score_tecnico = señal.get("setup_score", 0)
+    score_fundamental = None
+    score_global = None
+    
+    try:
+        # Intentar obtener score fundamental
+        from analisis.fundamental.scoring import calcular_score_fundamental
+        from analisis.fundamental.proveedor import obtener_datos_fundamentales
+        
+        datos_fund = obtener_datos_fundamentales(ticker)
+        if datos_fund and datos_fund.get("disponible", False):
+            scoring_fund = calcular_score_fundamental(datos_fund)
+            score_fundamental = scoring_fund.get("score_total", 0)
+            
+            # Calcular score global (70% técnico / 30% fundamental)
+            if score_fundamental is not None:
+                from estrategias.medio.logica_medio import calcular_setup_global
+                resultado_global = calcular_setup_global(score_tecnico, score_fundamental)
+                score_global = resultado_global.get("score_global")
+    except Exception as e:
+        logger.debug(f"No se pudo calcular fundamental/global para {ticker}: {e}")
 
-    return {
+    resultado = {
         "ticker":            ticker,
         "precio_actual":     señal.get("precio_actual") or entrada,
         "decision":          "COMPRA" if señal.get("valido") else "NO OPERAR",
-        "score":             señal.get("setup_score", 0),
+        "score":             score_tecnico,
         "score_max":         señal.get("setup_max", 10),
         "semanas_historico": señal.get("semanas", 260),
         "entrada":           entrada,
@@ -167,6 +190,14 @@ def _construir_resultado(ticker, señal):
         "fecha_desde":       señal.get("fecha_desde", ""),
         "fecha_hasta":       señal.get("fecha_hasta", ""),
     }
+    
+    # Añadir scores adicionales si existen
+    if score_fundamental is not None:
+        resultado["score_fundamental"] = score_fundamental
+    if score_global is not None:
+        resultado["score_global"] = score_global
+    
+    return resultado
 
 
 # ── PANEL PRINCIPAL ───────────────────────────────────────────

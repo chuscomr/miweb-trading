@@ -253,3 +253,68 @@ def _validar_alerta(ticker, tipo, nivel, umbral) -> list:
     if umbral is not None and not (0 <= umbral <= 100):
         errores.append("El umbral RSI debe estar entre 0 y 100")
     return errores
+
+
+# ─────────────────────────────────────────────────────────────
+# VERIFICACIÓN MANUAL DE ALERTAS
+# ─────────────────────────────────────────────────────────────
+
+@alertas_bp.route("/verificar", methods=["POST"])
+def verificar_alertas_manual():
+    """Verifica todas las alertas activas y dispara las que correspondan"""
+    import yfinance as yf
+    from alertas.notificaciones import enviar_email_alerta
+    
+    alertas_activas = _db.obtener_activas()
+    disparadas = []
+    
+    for alerta in alertas_activas:
+        try:
+            # Obtener precio actual
+            ticker_obj = yf.Ticker(alerta['ticker'])
+            hist = ticker_obj.history(period='1d')
+            if len(hist) == 0:
+                continue
+            precio_actual = float(hist['Close'].iloc[-1])
+            
+            # Verificar condición
+            debe_disparar = False
+            if alerta['tipo'] == 'OBJETIVO' and precio_actual >= alerta['nivel']:
+                debe_disparar = True
+            elif alerta['tipo'] == 'STOP-LOSS' and precio_actual <= alerta['nivel']:
+                debe_disparar = True
+            elif alerta['tipo'] == 'STOP_LOSS' and precio_actual <= alerta['nivel']:
+                debe_disparar = True
+            
+            if debe_disparar:
+                _db.marcar_disparada(alerta['id'], precio_actual)
+                disparadas.append({
+                    'ticker': alerta['ticker'],
+                    'nombre': alerta.get('nombre', alerta['ticker']),
+                    'tipo': alerta['tipo'],
+                    'nivel': alerta['nivel'],
+                    'precio_actual': precio_actual
+                })
+                logger.info(f"🔔 ALERTA DISPARADA: {alerta['ticker']} {alerta['tipo']} @ {precio_actual:.2f}€")
+                
+                # Enviar email individual
+                try:
+                    enviar_email_alerta(
+                        ticker=alerta['ticker'],
+                        nombre=alerta.get('nombre', alerta['ticker']),
+                        tipo=alerta['tipo'],
+                        nivel=alerta['nivel'],
+                        precio_actual=precio_actual
+                    )
+                except Exception as email_err:
+                    logger.error(f"Error enviando email para {alerta['ticker']}: {email_err}")
+        
+        except Exception as e:
+            logger.error(f"Error verificando {alerta.get('ticker', 'UNKNOWN')}: {e}")
+    
+    return jsonify({
+        'ok': True,
+        'verificadas': len(alertas_activas),
+        'disparadas': disparadas,
+        'total_disparadas': len(disparadas)
+    })

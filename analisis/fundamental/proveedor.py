@@ -223,10 +223,15 @@ def _enriquecer_con_financials(ticker: str, datos: dict) -> dict:
                 if net_key:
                     net = [v for v in fin.loc[net_key].values[:4]
                            if v is not None and not (isinstance(v, float) and np.isnan(v))]
-                    if len(net) >= 3 and net[-1] and net[-1] != 0:
+                    # Solo calcular CAGR si hay valores positivos (no pérdidas)
+                    if len(net) >= 3 and net[-1] and net[-1] > 0 and net[0] and net[0] > 0:
                         n = len(net) - 1
-                        cagr_ben = ((net[0] / net[-1]) ** (1/n) - 1) * 100
-                        datos["cagr_beneficios_3y"] = round(cagr_ben, 1)
+                        try:
+                            cagr_ben = ((net[0] / net[-1]) ** (1/n) - 1) * 100
+                            datos["cagr_beneficios_3y"] = round(cagr_ben, 1)
+                        except (ValueError, ZeroDivisionError):
+                            pass
+                        
                         if len(net) >= 2 and net[1] and net[1] != 0:
                             crec_1 = (net[0] - net[1]) / abs(net[1]) * 100
                             datos["aceleracion_beneficios"] = round(crec_1, 1)
