@@ -264,11 +264,11 @@
         </div>
 
         <div class="config-section">
-            <h3>🎯 Parámetros de Entrada — Pullback</h3>
+            <h3>🎯 Parámetros de Entrada — Pullback <span style="background:#10b981;color:white;padding:2px 8px;border-radius:12px;font-size:0.7em;margin-left:8px;">V2.2</span></h3>
             <div class="config-grid">
                 <div class="config-item">
-                    <label>Retroceso válido</label>
-                    <value>5% – 15%</value>
+                    <label>Retroceso DUAL</label>
+                    <value>Profundo 5-15% | Superficial 3-5% (con estructura)</value>
                 </div>
                 <div class="config-item">
                     <label>RSI pullback sano</label>
@@ -280,15 +280,15 @@
                 </div>
                 <div class="config-item">
                     <label>Estructura alcista</label>
-                    <value>Precio > MM50</value>
+                    <value>Precio > MM50 + MM20↗</value>
                 </div>
                 <div class="config-item">
                     <label>Tendencia macro</label>
-                    <value>Precio > MM200</value>
+                    <value>Precio > MM200 + MM50 > MM200</value>
                 </div>
                 <div class="config-item">
-                    <label>Pendiente MM20</label>
-                    <value>Positiva</value>
+                    <label>Score mínimo</label>
+                    <value>6.0 pts (LATERAL) | 6.5 pts (ALCISTA)</value>
                 </div>
             </div>
         </div>
@@ -588,13 +588,58 @@
 
         <!-- CONDICIONES PULLBACK -->
         <div class="box box-green" style="margin-top:16px;">
-            <h4>🔄 Condiciones de Entrada — Pullback</h4>
+            <h4>🔄 Condiciones de Entrada — Pullback <span style="background:#10b981;color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;margin-left:8px;">V2.2 PRO</span></h4>
             <p><strong>1. Tendencia macro:</strong> Precio > MM200 × 0.95 <strong>Y</strong> MM50 > MM200 — doble confirmación alcista — <strong>obligatorio</strong></p>
-            <p><strong>2. Retroceso válido:</strong> Corrección 5–15% desde el máximo de los últimos 60 días — <strong>obligatorio</strong></p>
-            <p><strong>3. RSI pullback sano:</strong> RSI entre 38–57 — retroceso ordenado sin sobreventa. +0.5 bonus si el RSI lleva 3 días rebotando.</p>
-            <p><strong>4. Soporte cercano:</strong> Nivel de soporte entre 2% y 8% por debajo del precio</p>
-            <p><strong>5. Patrón de giro alcista:</strong> Martillo, Envolvente, Estrella de mañana, Piercing Line (1.5 pts) o Harami alcista / Doji (1.0 pts) en las últimas 5 velas</p>
-            <p><strong>6. Estructura alcista:</strong> Precio > MM50 + MM20 con pendiente positiva — criterio más pesado (4.0 pts)</p>
+            
+            <p style="margin-top:12px;"><strong>2. Retroceso válido — SISTEMA DUAL:</strong></p>
+            <div style="margin-left:20px; padding:10px; background:#f0fdf4; border-left:3px solid #10b981; border-radius:0 6px 6px 0;">
+                <p style="margin-bottom:8px;"><strong>🟢 Pullback PROFUNDO (5-15%):</strong> Válido siempre — setup clásico de libro</p>
+                <p><strong>🔵 Pullback SUPERFICIAL (3-5%):</strong> Válido SOLO con estructura fuerte:</p>
+                <ul style="margin-left:20px; margin-top:6px;">
+                    <li>Precio > MM50 ✓</li>
+                    <li>MM20 con pendiente positiva (≥ MM20 hace 3 días) ✓</li>
+                </ul>
+                <p style="margin-top:8px; font-size:0.9em; color:#059669;">
+                    💡 <strong>Razón:</strong> Pullbacks poco profundos necesitan confirmación de fuerza. Sin estructura son micro-caídas sin edge.
+                </p>
+            </div>
+            
+            <p style="margin-top:12px;"><strong>3. Score ponderado (umbral 6.0):</strong></p>
+            <div style="margin-left:20px; padding:10px; background:#fffbf0; border-left:3px solid #f59e0b; border-radius:0 6px 6px 0;">
+                <table style="width:100%; font-size:0.9em;">
+                    <tr>
+                        <td style="padding:4px 0;"><strong>Tendencia fuerte</strong> (MM50>MM200 + pendiente >2%):</td>
+                        <td style="text-align:right; color:#10b981; font-weight:700;">2.0 pts</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:4px 0;"><strong>Estructura alcista</strong> (precio>MM50 + MM20↗):</td>
+                        <td style="text-align:right; color:#10b981; font-weight:700;">3.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:4px 0;"><strong>Soporte cercano</strong> (2-8% debajo):</td>
+                        <td style="text-align:right; color:#10b981; font-weight:700;">2.5 pts</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:4px 0;"><strong>RSI pullback sano</strong> (38-57, +0.5 si rebotando):</td>
+                        <td style="text-align:right; color:#10b981; font-weight:700;">1.5-2.0 pts</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:4px 0;"><strong>Patrón vela giro</strong> (Martillo/Envolvente/etc):</td>
+                        <td style="text-align:right; color:#10b981; font-weight:700;">1.0-1.5 pts</td>
+                    </tr>
+                    <tr style="border-top:2px solid #f59e0b;">
+                        <td style="padding:8px 0; font-weight:700;">TOTAL MÁXIMO:</td>
+                        <td style="text-align:right; font-weight:700; color:#059669;">10.5-11.0 pts</td>
+                    </tr>
+                </table>
+                <p style="margin-top:10px; font-size:0.85em; color:#78716c;">
+                    ✨ <strong>Múltiples caminos a 6.0:</strong><br>
+                    • Tendencia (2.0) + Soporte (2.5) + RSI (2.0) = 6.5 ✓<br>
+                    • Estructura (3.5) + Soporte (2.5) = 6.0 ✓<br>
+                    • Estructura (3.5) + RSI (2.0) + Vela (1.5) = 7.0 ✓
+                </p>
+            </div>
+            
             <p style="margin-top:10px;"><strong>🎯 Trigger de entrada (orden en broker):</strong></p>
             <p>&nbsp;&nbsp;→ <strong>Principal:</strong> Buy Stop al máximo de la vela de giro + 0.1% — si hay patrón de vela alcista detectado</p>
             <p>&nbsp;&nbsp;→ <strong>Alternativo:</strong> Buy Stop al máximo de la sesión anterior + 0.1% — si no hay vela de giro clara</p>
@@ -604,8 +649,8 @@
             <p>&nbsp;&nbsp;→ <strong>Buffer:</strong> × 0.98 (−2%) para evitar stop-hunts en niveles obvios</p>
             <p>&nbsp;&nbsp;→ <strong>Validación ATR:</strong> si el stop queda a más de 1.5× ATR del precio de entrada, el setup está sobreextendido y se descarta</p>
             <p>&nbsp;&nbsp;→ <strong>Máximo absoluto:</strong> 10% del precio de entrada</p>
-            <p style="margin-top:10px; padding:8px 12px; background:#fffbf0; border-left:3px solid #f39c12; border-radius:0 6px 6px 0; font-size:0.9em;">
-                ⚠️ <strong>Score como filtro orientativo:</strong> El umbral general es 5.5 (mercado alcista) y 7.0 en transición. No es verdad absoluta — un setup con estructura perfecta puede ser mejor que uno con criterios dispersos. Valora siempre el contexto de mercado.
+            <p style="margin-top:10px; padding:8px 12px; background:#eff6ff; border-left:3px solid #3b82f6; border-radius:0 6px 6px 0; font-size:0.9em;">
+                💡 <strong>V2.2 PRO:</strong> Sistema dual de pullbacks + scoring flexible. Se adapta a mercados con pullbacks superficiales manteniendo calidad alta mediante filtro cualitativo.
             </p>
         </div>
 

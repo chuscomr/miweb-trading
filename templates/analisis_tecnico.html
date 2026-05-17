@@ -56,18 +56,6 @@
             margin: 15px 0;
         }
         
-        /* GRID LAYOUT */
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 968px) {
-            .grid { grid-template-columns: 1fr; }
-        }
-        
         /* CARDS */
         .card {
             background: white;
@@ -82,67 +70,6 @@
             margin-bottom: 20px;
             padding-bottom: 12px;
             border-bottom: 3px solid #667eea;
-        }
-        
-        /* SOPORTES/RESISTENCIAS */
-        .sr-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .sr-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            border-radius: 8px;
-            font-size: 1.05em;
-        }
-        
-        .sr-soporte {
-            background: #d4edda;
-            border-left: 4px solid #28a745;
-        }
-        
-        .sr-resistencia {
-            background: #f8d7da;
-            border-left: 4px solid #dc3545;
-        }
-        
-        .sr-nivel {
-            font-weight: bold;
-            font-size: 1.2em;
-            color: #333;
-        }
-        
-        .sr-detalles {
-            font-size: 0.9em;
-            color: #666;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        
-        .badge-fuerte {
-            background: #28a745;
-            color: white;
-        }
-        
-        .badge-medio {
-            background: #ffc107;
-            color: #333;
-        }
-        
-        .badge-debil {
-            background: #e0e0e0;
-            color: #666;
         }
         
         /* PATRÓN VELAS */
@@ -401,55 +328,6 @@
             <h1>📊 Análisis Técnico Complementario</h1>
             <div class="ticker-info">{{ ticker }}</div>
             <div class="precio-actual">{{ precio_actual }}€</div>
-        </div>
-        
-        <!-- GRID PRINCIPAL -->
-        <div class="grid">
-            <!-- SOPORTES -->
-            <div class="card">
-                <h2>🟢 Soportes</h2>
-                {% if soportes %}
-                <div class="sr-list">
-                    {% for soporte in soportes %}
-                    <div class="sr-item sr-soporte">
-                        <div>
-                            <span class="sr-nivel">{{ soporte.nivel }}€</span>
-                            <span class="badge badge-{{ soporte.fuerza|lower }}">{{ soporte.fuerza }}</span>
-                        </div>
-                        <div class="sr-detalles">{{ soporte.toques }} toques</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">😴</div>
-                    <p>No se detectaron soportes significativos</p>
-                </div>
-                {% endif %}
-            </div>
-            
-            <!-- RESISTENCIAS -->
-            <div class="card">
-                <h2>🔴 Resistencias</h2>
-                {% if resistencias %}
-                <div class="sr-list">
-                    {% for resistencia in resistencias %}
-                    <div class="sr-item sr-resistencia">
-                        <div>
-                            <span class="sr-nivel">{{ resistencia.nivel }}€</span>
-                            <span class="badge badge-{{ resistencia.fuerza|lower }}">{{ resistencia.fuerza }}</span>
-                        </div>
-                        <div class="sr-detalles">{{ resistencia.toques }} toques</div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">😴</div>
-                    <p>No se detectaron resistencias significativas</p>
-                </div>
-                {% endif %}
-            </div>
         </div>
         
         <!-- ANÁLISIS POSICIÓN -->

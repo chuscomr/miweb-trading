@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico Profesional - {{ ticker }}</title>
+    
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/grafico_pro.css') }}">
+</head>
+<body>
+    <!-- BARRA SUPERIOR -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <!-- Selector Ticker -->
+            <div class="control-group">
+                <label>📈 Ticker:</label>
+                <select id="ticker-select" class="select-ticker">
+                    {% for t in tickers %}
+                    {% if t.value == '---CONTINUO---' %}
+                    <option disabled>{{ t.label }}</option>
+                    {% else %}
+                    <option value="{{ t.value }}" {% if t.value == ticker %}selected{% endif %}>
+                        {{ t.label }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Timeframe -->
+            <div class="control-group">
+                <label>⏱️ Período:</label>
+                <div class="btn-group">
+                    <button class="btn-tf active" data-tf="1d">1D</button>
+                    <button class="btn-tf" data-tf="1wk">1S</button>
+                    <button class="btn-tf" data-tf="1mo">1M</button>
+                </div>
+            </div>
+            
+            <!-- Tipo Gráfico -->
+            <div class="control-group">
+                <label>📊 Tipo:</label>
+                <div class="btn-group">
+                    <button class="btn-tipo active" data-tipo="candlestick" title="Velas japonesas">
+                        🕯️
+                    </button>
+                    <button class="btn-tipo" data-tipo="line" title="Línea">
+                        📈
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Escala -->
+            <div class="control-group">
+                <label>📏 Escala:</label>
+                <div class="btn-group">
+                    <button class="btn-escala active" data-escala="linear" title="Escala lineal">
+                        Lin
+                    </button>
+                    <button class="btn-escala" data-escala="log" title="Escala logarítmica">
+                        Log
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Herramientas de Dibujo -->
+            <div class="control-group">
+                <label>✏️ Dibujo:</label>
+                <div class="btn-group">
+                    <button class="btn-dibujo" data-herramienta="tendencia" title="Línea de tendencia">
+                        📈
+                    </button>
+                    <button class="btn-dibujo" data-herramienta="canal" title="Canal paralelo">
+                        📐
+                    </button>
+                    <button class="btn-dibujo" data-herramienta="horizontal" title="Línea horizontal">
+                        ═
+                    </button>
+                    <button class="btn-dibujo" data-herramienta="borrar" title="Borrar dibujos">
+                        🗑️
+                    </button>
+                    <button id="btn-pan" class="btn-dibujo" title="Desplazar gráfico (mantener para mover)">
+                        ✋
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Indicadores -->
+            <div class="control-group">
+                <label>📊 Indicadores:</label>
+                <div class="dropdown-indicator">
+                    <button class="btn-dropdown" id="btn-indicators">
+                        Seleccionar... <span class="arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="indicators-menu">
+                        <!-- Sección TENDENCIA -->
+                        <div class="menu-section">
+                            <div class="menu-header">📈 TENDENCIA</div>
+                            <label class="menu-item">
+                                <input type="checkbox" value="MM" class="indicator-check">
+                                <span>MM20 / MM50 / MM200</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="VWAP" class="indicator-check">
+                                <span>VWAP</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="ADX" class="indicator-check">
+                                <span>ADX - Fuerza Tendencia</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Sección MOMENTUM -->
+                        <div class="menu-section">
+                            <div class="menu-header">⚡ MOMENTUM</div>
+                            <label class="menu-item">
+                                <input type="checkbox" value="RSI" class="indicator-check">
+                                <span>RSI</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="MACD" class="indicator-check">
+                                <span>MACD</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="STOCH" class="indicator-check">
+                                <span>Stochastic</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Sección VOLATILIDAD -->
+                        <div class="menu-section">
+                            <div class="menu-header">📉 VOLATILIDAD</div>
+                            <label class="menu-item">
+                                <input type="checkbox" value="BB" class="indicator-check">
+                                <span>Bollinger Bands</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Sección NIVELES -->
+                        <div class="menu-section">
+                            <div class="menu-header">🎯 NIVELES</div>
+                            <label class="menu-item">
+                                <input type="checkbox" value="SR" class="indicator-check">
+                                <span>Soportes/Resistencias</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="FIBO" class="indicator-check">
+                                <span>Fibonacci 📐</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="PIVOT" class="indicator-check">
+                                <span>Pivot Points 🎯</span>
+                            </label>
+                            <!-- Sub-selector para Pivots -->
+                            <div class="menu-sub-item" id="pivot-selector" style="display: none;">
+                                <label class="menu-radio">
+                                    <input type="radio" name="pivot-tipo" value="diario">
+                                    <span>Diarios</span>
+                                </label>
+                                <label class="menu-radio">
+                                    <input type="radio" name="pivot-tipo" value="semanal" checked>
+                                    <span>Semanales</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección PATRONES -->
+                        <div class="menu-section">
+                            <div class="menu-header">📐 PATRONES</div>
+                            <label class="menu-item">
+                                <input type="checkbox" value="VELAS" class="indicator-check">
+                                <span>Patrones Velas</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="CHARTISTAS" class="indicator-check">
+                                <span>Patrones Chartistas</span>
+                            </label>
+                            <label class="menu-item">
+                                <input type="checkbox" value="DIVERG" class="indicator-check">
+                                <span>Divergencias RSI</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="toolbar-right">
+            <!-- Herramientas -->
+            <button class="btn-tool" id="btn-refresh" title="Actualizar">
+                🔄
+            </button>
+            <button class="btn-tool" id="btn-screenshot" title="Captura">
+                📸
+            </button>
+            <button class="btn-tool" id="btn-glosario" title="Glosario de indicadores (abre laboratorio técnico)">
+                📖
+            </button>
+            <button class="btn-tool" id="btn-fullscreen" title="Pantalla completa">
+                ⛶
+            </button>
+        </div>
+    </div>
+    
+    <!-- ÁREA DEL GRÁFICO -->
+    <div class="grafico-container">
+        <div id="grafico-pro" class="grafico-main"></div>
+        
+        <!-- Loading overlay -->
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Cargando datos...</p>
+        </div>
+    </div>
+    
+    <!-- TOOLTIP PERSONALIZADO (Hover Info) -->
+    <div id="custom-tooltip" class="custom-tooltip" style="display: none;">
+        <div class="tooltip-header">
+            <span id="tooltip-date"></span>
+            <span id="tooltip-weekday"></span>
+        </div>
+        <div class="tooltip-body">
+            <div class="tooltip-row">
+                <span class="label">🟢 Apertura:</span>
+                <span id="tooltip-open"></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="label">🔴 Máximo:</span>
+                <span id="tooltip-high"></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="label">🟢 Mínimo:</span>
+                <span id="tooltip-low"></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="label">⚫ Cierre:</span>
+                <span id="tooltip-close"></span>
+            </div>
+            <div class="tooltip-divider"></div>
+            <div class="tooltip-row">
+                <span class="label">📊 Variación:</span>
+                <span id="tooltip-var"></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="label">📈 Volumen:</span>
+                <span id="tooltip-vol"></span>
+            </div>
+            <div class="tooltip-divider"></div>
+            <div class="tooltip-row">
+                <span class="label">💹 ATR (14):</span>
+                <span id="tooltip-atr"></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="label">📉 RSI (14):</span>
+                <span id="tooltip-rsi"></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL GLOSARIO -->
+    <div id="modalDefiniciones" class="modal-overlay">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <div class="modal-titulo">
+                    <span class="modal-icono">📖</span>
+                    <h2>Glosario de Indicadores Técnicos</h2>
+                </div>
+                <div class="modal-controles">
+                    <input type="text" id="buscadorIndicador" 
+                           placeholder="🔍 Buscar indicador..." 
+                           oninput="filtrarIndicadores(this.value)"
+                           autocomplete="off">
+                    <button class="modal-cerrar" onclick="cerrarGlosario()" title="Cerrar">✕</button>
+                </div>
+            </div>
+            <div class="modal-body" id="listaIndicadores"></div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Variables globales
+        const TICKER_ACTUAL = '{{ ticker }}';
+        const API_BASE = '/grafico-pro/api';
+    </script>
+    <script src="{{ url_for('static', filename='js/glosario.js') }}?v=1.0"></script>
+    <script src="{{ url_for('static', filename='js/grafico_pro.js') }}?v=3.2"></script>
+</body>
+</html>

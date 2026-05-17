@@ -374,18 +374,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 
         <!-- HITO 1: Breakeven -->
         <div class="gestion-hito">
-            {% if fase == 'INICIAL' and pnl_r < r_proteger %}
+            {% set stop_ya_protegido = (p.stop_actual and p.precio_entrada and p.stop_actual >= p.precio_entrada) %}
+            
+            {% if fase == 'INICIAL' and pnl_r < r_proteger and not stop_ya_protegido %}
             <span class="hito-icon">⏳</span>
             <span class="hito-texto hito-pendiente">
                 Mover stop a breakeven en <span class="hito-precio">+{{ r_proteger|int }}R 
                 ({{ "%.2f"|format(precio_proteger) }}€)</span>
                 — faltan {{ "%.1f"|format(r_proteger - pnl_r) }}R
             </span>
+            
             {% elif fase in ['PROTEGIDO','TRAILING'] %}
             <span class="hito-icon">✅</span>
             <span class="hito-texto hito-activo">Stop en breakeven activado
                 ({{ "%.2f"|format(precio_breakeven) }}€)
             </span>
+            
+            {% elif stop_ya_protegido %}
+            {% set r_protegido = ((p.stop_actual - p.precio_entrada) / (p.R_unit if p.R_unit > 0 else 1)) %}
+            <span class="hito-icon">✅</span>
+            <span class="hito-texto hito-activo">
+                Stop protegido en +{{ "%.1f"|format(r_protegido) }}R ({{ "%.2f"|format(p.stop_actual) }}€)
+                {% if pnl_r >= r_trailing %}
+                — siguiente: activar trailing stop
+                {% else %}
+                — siguiente nivel +{{ r_trailing|int }}R ({{ "%.2f"|format(precio_trailing) }}€)
+                {% endif %}
+            </span>
+            
             {% else %}
             <span class="hito-icon">🎯</span>
             <span class="hito-texto hito-urgente">

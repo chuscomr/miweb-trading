@@ -94,7 +94,7 @@ const UI = {
             const nombres = {
                 'MM20': 'MM20', 'MM50': 'MM50', 'MM200': 'MM200',
                 'RSI': 'RSI', 'MACD': 'MACD', 'BB': 'Bollinger',
-                'ATR': 'ATR', 'SR': 'S/R'
+                'ATR': 'ATR', 'ATR_BARRAS': 'ATR Barras', 'SR': 'S/R'
             };
             return `<span class="badge-indicador">${nombres[ind] || ind}</span>`;
         }).join('');
