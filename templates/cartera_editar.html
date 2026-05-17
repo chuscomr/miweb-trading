@@ -297,6 +297,15 @@ function copiarStop(id) {
 }
 
 function recalcular() {
+    // Fix: Asegurar que el select sistema esté habilitado
+    const selectSistema = document.getElementById('f-sistema');
+    if (selectSistema) {
+        selectSistema.disabled = false;
+        selectSistema.style.pointerEvents = 'auto';
+        selectSistema.style.opacity = '1';
+        selectSistema.style.cursor = 'pointer';
+    }
+    
     const e = parseFloat(document.getElementById('f-entrada').value) || 0;
     const s = parseFloat(document.getElementById('f-stop').value) || 0;
     const o = parseFloat(document.getElementById('f-objetivo').value) || 0;
@@ -310,13 +319,22 @@ function recalcular() {
     };
     const riesgoPct = riesgoMap[sistema] || 1.0;
 
-    const R = (e > s && s > 0) ? e - s : 0;
+    // STOP INICIAL (referencia para calcular R) - permanece fijo
+    const stopInicial = {{ pos.stop_inicial if pos.stop_inicial else pos.stop_actual or 0 }};
+    
+    // R se calcula desde el STOP INICIAL (riesgo original de la operación)
+    const R = (e > stopInicial && stopInicial > 0) ? e - stopInicial : 0;
 
-    // Riesgo por acción
-    document.getElementById('c-r-acc').textContent = R > 0 ? R.toFixed(2) + '€' : 'N/A (stop en BE o superior)';
-    document.getElementById('c-r-acc').className = 'val ' + (R > 0 ? 'red' : 'orange');
+    // Estado de la posición actual
+    const enGanancias = (s > e);
+    const enPerdidas = (s < e && s > 0);
+    const enBreakeven = (Math.abs(s - e) < 0.01);
 
-    // Riesgo %
+    // Riesgo por acción (desde stop inicial)
+    document.getElementById('c-r-acc').textContent = R > 0 ? R.toFixed(2) + '€' : '—';
+    document.getElementById('c-r-acc').className = 'val red';
+
+    // Riesgo % (desde stop inicial)
     const rPct = (R > 0 && a > 0) ? (R * a / capital * 100) : 0;
     document.getElementById('c-r-pct').textContent = R > 0 ? rPct.toFixed(1) + '%' : 'N/A';
 
@@ -334,30 +352,60 @@ function recalcular() {
     document.getElementById('c-capital').textContent = (e > 0 && a > 0) ?
         (e * a).toLocaleString('es', {minimumFractionDigits: 2}) + '€' : '—';
 
-    // Riesgo máximo
-    const rMax = R > 0 && a > 0 ? R * a : 0;
-    document.getElementById('c-riesgo-max').textContent = rMax > 0 ? 'Protegido' : '—';
+    // Riesgo máximo protegido
+    let riesgoTexto = '—';
+    if (enGanancias) {
+        const gananciaProtegida = (s - e).toFixed(2);
+        riesgoTexto = `Protegido (+${gananciaProtegida}€)`;
+        document.getElementById('c-riesgo-max').className = 'val green';
+    } else if (enBreakeven) {
+        riesgoTexto = 'Breakeven';
+        document.getElementById('c-riesgo-max').className = 'val blue';
+    } else if (R > 0 && a > 0) {
+        riesgoTexto = (R * a).toFixed(2) + '€';
+        document.getElementById('c-riesgo-max').className = 'val purple';
+    }
+    document.getElementById('c-riesgo-max').textContent = riesgoTexto;
 
-    // Niveles R
-    if (R > 0 && s > 0) {
-        document.getElementById('niveles-sub').textContent =
-            `Niveles calculados desde el stop ORIGINAL (${s.toFixed(2)}€). Úsalos como referencia para gestionar tu posición:`;
+    // Niveles R (SIEMPRE desde stop inicial)
+    if (R > 0 && stopInicial > 0) {
+        let mensaje = `Niveles calculados desde el stop INICIAL (${stopInicial.toFixed(2)}€)`;
+        if (s !== stopInicial) {
+            mensaje += ` · Stop actual: ${s.toFixed(2)}€`;
+            if (enGanancias) {
+                const rActual = ((s - e) / R).toFixed(1);
+                mensaje += ` (+${rActual}R protegido)`;
+            }
+        }
+        mensaje += ':';
+        
+        document.getElementById('niveles-sub').textContent = mensaje;
+        document.getElementById('niveles-sub').style.color = enGanancias ? '#10b981' : '';
+        document.getElementById('niveles-sub').style.fontWeight = enGanancias ? '600' : '';
+        
         document.getElementById('n-r').textContent = R.toFixed(2) + '€';
         document.getElementById('n-1r').textContent = (e).toFixed(2) + '€';         // BE
         document.getElementById('n-2r').textContent = (e + R).toFixed(2) + '€';     // +1R seg
-        document.getElementById('n-3r').textContent = (e + 2*R).toFixed(2) + '€';   // trailing
-        document.getElementById('n-4r').textContent = (e + 3*R).toFixed(2) + '€';
-        document.getElementById('n-5r').textContent = (e + 4*R).toFixed(2) + '€';
+        document.getElementById('n-3r').textContent = (e + 2*R).toFixed(2) + '€';   // +2R trailing
+        document.getElementById('n-4r').textContent = (e + 3*R).toFixed(2) + '€';   // +3R
+        document.getElementById('n-5r').textContent = (e + 4*R).toFixed(2) + '€';   // +4R
     } else {
         ['n-r','n-1r','n-2r','n-3r','n-4r','n-5r'].forEach(id => {
             document.getElementById(id).textContent = '—';
         });
         document.getElementById('niveles-sub').textContent = 'Introduce precio de entrada y stop para calcular niveles';
+        document.getElementById('niveles-sub').style.color = '';
+        document.getElementById('niveles-sub').style.fontWeight = '';
     }
 }
 
 // Calcular al cargar
 recalcular();
+
+// Ejecutar recalcular al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    recalcular();
+});
 </script>
 </body>
 </html>

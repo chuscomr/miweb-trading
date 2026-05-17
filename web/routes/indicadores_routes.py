@@ -163,7 +163,7 @@ def _calcular_pivot_points(df):
     }.items()}
 
 
-def _detectar_patrones_chartistas(df, n=200):
+def _detectar_patrones_chartistas(df, n=100):
     """
     Detecta patrones chartistas clásicos en las últimas n velas.
     Los patrones en formación caducan si el 2º punto tiene más de 20 sesiones.
@@ -387,6 +387,8 @@ def _detectar_patrones_chartistas(df, n=200):
                     "resistencia": resistencia,
                     "soporte_inicio": round(float(mins[0]), 2),
                     "soporte_fin": round(float(mins[-1]), 2),
+                    "fecha1": fechas[minimos[-3]],
+                    "fecha2": fechas[minimos[-1]],
                     "objetivo": objetivo,
                     "confirmado": confirmado,
                     "descripcion": f"Resistencia en {resistencia}€ con soporte ascendente. {'Rotura confirmada.' if confirmado else 'Vigilar rotura de ' + str(resistencia) + '€.'}",
@@ -408,6 +410,8 @@ def _detectar_patrones_chartistas(df, n=200):
                     "soporte": soporte,
                     "resist_inicio": round(float(maxs[0]), 2),
                     "resist_fin": round(float(maxs[-1]), 2),
+                    "fecha1": fechas[maximos[-3]],
+                    "fecha2": fechas[maximos[-1]],
                     "objetivo": objetivo,
                     "confirmado": confirmado,
                     "descripcion": f"Soporte en {soporte}€ con resistencia descendente. {'Rotura confirmada.' if confirmado else 'Vigilar pérdida de ' + str(soporte) + '€.'}",
@@ -417,22 +421,51 @@ def _detectar_patrones_chartistas(df, n=200):
     if len(maximos) >= 3 and len(minimos) >= 3:
         maxs = [highs[i] for i in maximos[-3:]]
         mins = [lows[i] for i in minimos[-3:]]
-        # Máximos bajando y mínimos subiendo
-        if maxs[-1] < maxs[0] and mins[-1] > mins[0]:
+        
+        # Calcular pendientes de las líneas de tendencia
+        pendiente_res = (maxs[-1] - maxs[0]) / len(maxs)  # Debe ser < 0
+        pendiente_sop = (mins[-1] - mins[0]) / len(mins)  # Debe ser > 0
+        
+        # Criterios ESTRICTOS para triángulo simétrico
+        rango_inicial = maxs[0] - mins[0]
+        rango_final = maxs[-1] - mins[-1]
+        compresion_pct = ((rango_inicial - rango_final) / rango_inicial * 100) if rango_inicial > 0 else 0
+        
+        # Tolerancia para detectar líneas planas
+        precio_medio = (maxs[0] + mins[0]) / 2
+        tolerancia_plana = precio_medio * 0.005  # 0.5%
+        
+        # Condiciones TODAS deben cumplirse
+        maximos_descendentes = maxs[-1] < maxs[-2] < maxs[0]
+        minimos_ascendentes = mins[-1] > mins[-2] > mins[0]
+        resistencia_baja_real = abs(pendiente_res) > tolerancia_plana
+        convergencia = compresion_pct >= 25
+        
+        if (maximos_descendentes and minimos_ascendentes and 
+            pendiente_res < 0 and pendiente_sop > 0 and
+            resistencia_baja_real and convergencia):
+            
             vertice = round(float((maxs[-1] + mins[-1]) / 2), 2)
             amplitud = round(float(maxs[0] - mins[0]), 2)
             dir_actual = "alcista" if precio_actual > vertice else "bajista"
             objetivo = round(vertice + amplitud if dir_actual == "alcista" else vertice - amplitud, 2)
             confirmado = precio_actual > maxs[-1] or precio_actual < mins[-1]
+            
+            idx_inicio = min(maximos[-3], minimos[-3])
+            idx_fin = max(maximos[-1], minimos[-1])
+            
             patrones.append({
                 "tipo": "triangulo_simetrico",
                 "direccion": dir_actual,
                 "resistencia": round(float(maxs[-1]), 2),
                 "soporte": round(float(mins[-1]), 2),
                 "vertice": vertice,
+                "fecha1": fechas[idx_inicio],
+                "fecha2": fechas[idx_fin],
                 "objetivo": objetivo,
                 "confirmado": confirmado,
-                "descripcion": f"Compresión entre {round(float(mins[-1]),2)}€ y {round(float(maxs[-1]),2)}€. {'Rotura al ' + dir_actual + '.' if confirmado else 'Pendiente de definir dirección.'}",
+                "compresion_pct": round(compresion_pct, 1),
+                "descripcion": f"Compresión {round(compresion_pct,1)}% entre {round(float(mins[-1]),2)}€ y {round(float(maxs[-1]),2)}€. {'Rotura al ' + dir_actual + '.' if confirmado else 'Pendiente de definir dirección.'}",
             })
 
     # ── Bandera Alcista ───────────────────────────────────────
@@ -461,6 +494,8 @@ def _detectar_patrones_chartistas(df, n=200):
                         "fin_asta": round(float(closes[fin_asta]), 2),
                         "subida_pct": round(subida, 1),
                         "semanas_consolidacion": len(consol),
+                        "fecha1": fechas[inicio_asta],
+                        "fecha2": fechas[len(closes) - 1],
                         "objetivo": objetivo,
                         "confirmado": confirmado,
                         "descripcion": f"Asta alcista +{round(subida,1)}% seguida de pausa. {'Rotura al alza confirmada.' if confirmado else 'Esperando rotura de la consolidación.'}",
@@ -492,6 +527,8 @@ def _detectar_patrones_chartistas(df, n=200):
                         "fin_asta": round(float(closes[fin_asta]), 2),
                         "caida_pct": round(caida, 1),
                         "semanas_consolidacion": len(consol),
+                        "fecha1": fechas[inicio_asta],
+                        "fecha2": fechas[len(closes) - 1],
                         "objetivo": objetivo,
                         "confirmado": confirmado,
                         "descripcion": f"Asta bajista {round(caida,1)}% seguida de pausa. {'Rotura a la baja confirmada.' if confirmado else 'Esperando rotura de la consolidación.'}",
@@ -1113,8 +1150,8 @@ def api_datos():
 
     # Validar indicadores con lista blanca
     IND_VALIDOS = {"RSI","MACD","MM20","MM50","MM200","EMA9","EMA21","EMA50",
-                   "BB","ATR","OBV","ADX","PSAR","ICHIMOKU","SR","FIBO",
-                   "PIVOT","MFI","STOCH","CCI","WILLIAMS","ROC","CMF","VWAP"}
+                   "BB","ATR","ATR_BARRAS","OBV","ADX","PSAR","ICHIMOKU","SR","FIBO",
+                   "PIVOT","MFI","STOCH","CCI","WILLIAMS","ROC","CMF","VWAP","PATRONES"}
     inds = {i.strip().upper() for i in ind_param.split(",")
             if i.strip().upper() in IND_VALIDOS}
 
@@ -1175,6 +1212,7 @@ def api_datos():
     # ATR siempre — necesario para panel lateral
     try:
         df["ATR"] = pd.Series(calcular_atr(df, 14).values, index=df.index).bfill()
+        df["ATR_PCT"] = (df["ATR"] / df["Close"]) * 100  # ATR en porcentaje
     except Exception: pass
 
     # ── Indicadores siempre calculados para el resumen técnico ──
@@ -1326,7 +1364,7 @@ def api_datos():
     patrones_chartistas_json = []
     if "PATRONES" in inds:
         try:
-            raw = _detectar_patrones_chartistas(df, n=200)
+            raw = _detectar_patrones_chartistas(df, n=100)
             # Convertir numpy bools/floats a tipos Python nativos
             def _san(o):
                 if isinstance(o, dict): return {k: _san(v) for k,v in o.items()}
@@ -1531,7 +1569,7 @@ def scan_patrones():
             df = get_df(ticker, periodo="1y", cache=None)
             if df is None or not hasattr(df, "__len__") or len(df) < 60:
                 continue
-            patrones = _detectar_patrones_chartistas(df, n=200)
+            patrones = _detectar_patrones_chartistas(df, n=100)
             if patrones:
                 nombre = get_nombre(ticker)
                 precio = round(float(df["Close"].iloc[-1]), 2)
@@ -1594,3 +1632,143 @@ def scan_patrones():
 
     resultados = _sanitize(resultados)
     return jsonify({"resultados": resultados, "mercado": mercado, "total": len(resultados)})
+
+
+@indicadores_bp.route("/vela-info/<ticker>", methods=["GET"])
+def get_vela_info(ticker):
+    """
+    Información completa de una vela específica para el tooltip custom
+    
+    Query params:
+        date: YYYY-MM-DD
+        tf: timeframe (1d, 1wk, 1mo)
+    """
+    try:
+        from flask import current_app
+        import pandas as pd
+        from core.indicadores import calcular_atr, calcular_rsi
+        
+        date_str = request.args.get('date')
+        tf = request.args.get('tf', '1d')
+        
+        if not date_str:
+            return jsonify({'error': 'Fecha requerida'}), 400
+        
+        # Obtener cache
+        cache = current_app.config.get("CACHE_INSTANCE")
+        
+        # Obtener datos diarios
+        df = get_df(ticker, periodo='2y', cache=cache)
+        
+        if df is None or df.empty:
+            return jsonify({'error': 'No hay datos'}), 404
+        
+        # ✅ FIX: Normalizar Volume a int64 SIEMPRE
+        if 'Volume' in df.columns:
+            df['Volume'] = df['Volume'].fillna(0).round().astype('int64')
+        
+        # Resamplear si es necesario
+        if tf == '1wk':
+            df_resampled = pd.DataFrame({
+                "Open":   df["Open"].resample("W-FRI").first(),
+                "High":   df["High"].resample("W-FRI").max(),
+                "Low":    df["Low"].resample("W-FRI").min(),
+                "Close":  df["Close"].resample("W-FRI").last(),
+                "Volume": df["Volume"].resample("W-FRI").sum().round().astype("int64"),
+            }).dropna()
+            df = df_resampled[df_resampled["Close"] > 0]
+            
+        elif tf == '1mo':
+            df_resampled = pd.DataFrame({
+                "Open":   df["Open"].resample("M").first(),
+                "High":   df["High"].resample("M").max(),
+                "Low":    df["Low"].resample("M").min(),
+                "Close":  df["Close"].resample("M").last(),
+                "Volume": df["Volume"].resample("M").sum().round().astype("int64"),
+            }).dropna()
+            df = df_resampled[df_resampled["Close"] > 0]
+        
+        # Buscar la vela por fecha
+        df_date = df[df.index.strftime('%Y-%m-%d') == date_str]
+        
+        if df_date.empty:
+            return jsonify({'error': 'Vela no encontrada'}), 404
+        
+        row = df_date.iloc[0]
+        prev_close = df['Close'].shift(1).loc[row.name] if len(df) > 1 else None
+        
+        # Calcular variación
+        if pd.notna(prev_close) and prev_close > 0:
+            var_abs = row['Close'] - prev_close
+            var_pct = (var_abs / prev_close) * 100
+        else:
+            var_abs = 0
+            var_pct = 0
+        
+        # Calcular ATR (14 períodos) - siempre del diario para consistencia
+        df_diario = get_df(ticker, periodo='2y', cache=cache)
+        atr_series = calcular_atr(df_diario, periodo=14) if df_diario is not None else None
+        
+        # Buscar ATR de la fecha más cercana
+        atr_value = None
+        if atr_series is not None and not atr_series.empty:
+            fecha_buscar = pd.Timestamp(date_str)
+            if fecha_buscar in atr_series.index:
+                atr_value = atr_series.loc[fecha_buscar]
+            else:
+                idx_cercano = atr_series.index.searchsorted(fecha_buscar)
+                if 0 <= idx_cercano < len(atr_series):
+                    atr_value = atr_series.iloc[idx_cercano]
+        
+        # RSI - también del diario
+        rsi_series = calcular_rsi(df_diario['Close'], periodo=14) if df_diario is not None else None
+        rsi_value = None
+        if rsi_series is not None and not rsi_series.empty:
+            fecha_buscar = pd.Timestamp(date_str)
+            if fecha_buscar in rsi_series.index:
+                rsi_value = rsi_series.loc[fecha_buscar]
+            else:
+                idx_cercano = rsi_series.index.searchsorted(fecha_buscar)
+                if 0 <= idx_cercano < len(rsi_series):
+                    rsi_value = rsi_series.iloc[idx_cercano]
+        
+        # Calcular volumen vs media 20d
+        vol_vs_media_pct = None
+        rvol = None
+        if df_diario is not None and len(df_diario) >= 20:
+            # Encontrar el índice de la fecha actual
+            fecha_buscar = pd.Timestamp(date_str)
+            if fecha_buscar in df_diario.index:
+                idx = df_diario.index.get_loc(fecha_buscar)
+                if idx >= 20:
+                    # Calcular media de los 20 días anteriores (sin incluir el día actual)
+                    vol_media_20d = df_diario['Volume'].iloc[idx-20:idx].mean()
+                    vol_actual = df_diario['Volume'].iloc[idx]
+                    
+                    if vol_media_20d > 0:
+                        vol_vs_media_pct = ((vol_actual - vol_media_20d) / vol_media_20d) * 100
+                        rvol = vol_actual / vol_media_20d
+        
+        info = {
+            'fecha': row.name.strftime('%Y-%m-%d'),
+            'dia_semana': row.name.strftime('%A'),
+            'open': round(float(row['Open']), 2),
+            'high': round(float(row['High']), 2),
+            'low': round(float(row['Low']), 2),
+            'close': round(float(row['Close']), 2),
+            'volume': int(round(float(row['Volume']))) if pd.notna(row['Volume']) else 0,
+            'variacion_abs': round(float(var_abs), 2),
+            'variacion_pct': round(float(var_pct), 2),
+            'atr': round(float(atr_value), 2) if pd.notna(atr_value) else None,
+            'rsi': round(float(rsi_value), 1) if pd.notna(rsi_value) else None,
+            'vol_vs_media_pct': round(float(vol_vs_media_pct), 1) if vol_vs_media_pct is not None else None,
+            'rvol': round(float(rvol), 2) if rvol is not None else None
+        }
+        
+        return jsonify(info)
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo info de vela {ticker} {date_str}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500

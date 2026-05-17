@@ -382,37 +382,107 @@
 
         <!-- Tier badge -->
         {% if tier is defined %}
-        <p style="margin-top:8px;">
-            {% if tier == 1 %}
-            <span style="display:inline-block; padding:3px 10px; border-radius:12px;
-                background:#dcfce7; color:#166534; border:1px solid #bbf7d0;
-                font-size:0.82em; font-weight:600;">🟢 IBEX35</span>
-            {% else %}
-            <span style="display:inline-block; padding:3px 10px; border-radius:12px;
-                background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
-                font-size:0.82em; font-weight:600;">🟡 Continuo — priorizar señal IBEX si existe</span>
-            {% endif %}
-        </p>
+
         {% endif %}
 
         <!-- Calidad del setup — score + confirmaciones unificados -->
         {% if resultado.score is defined %}
         {% set score = resultado.score | float %}
-        <div style="margin-top:12px; padding:12px 16px; border-radius:8px;
-            {% if score >= 8.5 %}background:#fef9c3; border-left:4px solid #f59e0b;
-            {% elif score >= 7.0 %}background:#dbeafe; border-left:4px solid #3b82f6;
-            {% else %}background:#f8f9fa; border-left:4px solid #94a3b8;{% endif %}">
-            <div style="font-weight:700; font-size:1em; margin-bottom:8px;">
-                {% if score >= 8.5 %}⭐ Setup Excelente
-                {% elif score >= 7.0 %}🔵 Setup Sólido
-                {% else %}🟡 Setup Básico{% endif %}
-                <span style="font-weight:400; font-size:0.85em; opacity:0.7; margin-left:6px;">({{ resultado.score }}/10)</span>
+        
+        <!-- NOMENCLATURA DUAL: Setup Técnico + Fundamental + Global -->
+        <div style="margin-top:16px; padding:16px; background:#ffffff; border-radius:8px; border:1px solid #e2e8f0;">
+            
+            <!-- Setup Técnico -->
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:1.1em;">📊</span>
+                    <span style="font-weight:700; color:#1e293b;">Setup Técnico:</span>
+                    <span style="font-weight:800; color:
+                        {% if score >= 8.5 %}#16a34a
+                        {% elif score >= 6.5 %}#3b82f6
+                        {% else %}#f59e0b{% endif %};">
+                        {% if score >= 8.5 %}EXCELENTE
+                        {% elif score >= 6.5 %}BUENO
+                        {% elif score >= 5.5 %}MEDIOCRE
+                        {% else %}DÉBIL{% endif %}
+                    </span>
+                    <span style="color:#64748b; font-size:0.9em;">({{ resultado.score }}/10)</span>
+                </div>
+                <div style="height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:{{ (resultado.score / 10 * 100)|int }}%;
+                        background:{% if score >= 8.5 %}#16a34a{% elif score >= 6.5 %}#3b82f6{% else %}#f59e0b{% endif %};
+                        border-radius:3px; transition:width 0.3s;"></div>
+                </div>
             </div>
+            
+            <!-- Fundamental (si existe) -->
+            {% if resultado.score_fundamental is defined %}
+            {% set score_fund = resultado.score_fundamental | float %}
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:1.1em;">💼</span>
+                    <span style="font-weight:700; color:#1e293b;">Fundamental:</span>
+                    <!-- Emoji según score -->
+                    {% if score_fund >= 8.0 %}
+                        <span style="font-size:1.1em;">🟢</span>
+                        <span style="font-weight:800; color:#10b981;">SÓLIDO</span>
+                    {% elif score_fund >= 6.0 %}
+                        <span style="font-size:1.1em;">🟡</span>
+                        <span style="font-weight:800; color:#f59e0b;">ACEPTABLE</span>
+                    {% elif score_fund >= 4.0 %}
+                        <span style="font-size:1.1em;">🟠</span>
+                        <span style="font-weight:800; color:#f97316;">DÉBIL</span>
+                    {% else %}
+                        <span style="font-size:1.1em;">🔴</span>
+                        <span style="font-weight:800; color:#ef4444;">RIESGO</span>
+                    {% endif %}
+                    <span style="color:#64748b; font-size:0.9em;">({{ score_fund }}/10)</span>
+                </div>
+                <div style="height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:{{ (score_fund / 10 * 100)|int }}%;
+                        background:{% if score_fund >= 8 %}#10b981{% elif score_fund >= 6 %}#f59e0b{% elif score_fund >= 4 %}#f97316{% else %}#ef4444{% endif %};
+                        border-radius:3px; transition:width 0.3s;"></div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Setup Global (si existe) -->
+            {% if resultado.score_global is defined %}
+            {% set score_glob = resultado.score_global | float %}
+            <div style="padding-top:12px; border-top:1px solid #e2e8f0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:1.1em;">🎯</span>
+                    <span style="font-weight:700; color:#1e293b;">Setup Global:</span>
+                    <span style="font-weight:800; color:
+                        {% if score_glob >= 8.5 %}#16a34a
+                        {% elif score_glob >= 7.5 %}#3b82f6
+                        {% elif score_glob >= 6.5 %}#0891b2
+                        {% elif score_glob >= 5.5 %}#f59e0b
+                        {% else %}#dc2626{% endif %};">
+                        {% if score_glob >= 8.5 %}EXCELENTE
+                        {% elif score_glob >= 7.5 %}MUY BUENO
+                        {% elif score_glob >= 6.5 %}BUENO
+                        {% elif score_glob >= 5.5 %}ACEPTABLE
+                        {% else %}DÉBIL{% endif %}
+                    </span>
+                    <span style="color:#64748b; font-size:0.9em;">({{ score_glob }}/10)</span>
+                </div>
+                <div style="height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:{{ (score_glob / 10 * 100)|int }}%;
+                        background:{% if score_glob >= 8.5 %}#16a34a{% elif score_glob >= 7.5 %}#3b82f6{% elif score_glob >= 6.5 %}#0891b2{% else %}#f59e0b{% endif %};
+                        border-radius:3px; transition:width 0.3s;"></div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Confirmaciones técnicas -->
             {% if resultado.semaforo %}
-            <div style="font-size:0.82em; color:#555; display:flex; gap:16px; flex-wrap:wrap;">
-                {% for c in resultado.semaforo.confirmaciones %}
-                <span>{{ "✔" if c.ok else "❌" }} {{ c.texto }}</span>
-                {% endfor %}
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid #e2e8f0;">
+                <div style="font-size:0.82em; color:#64748b; display:flex; gap:12px; flex-wrap:wrap;">
+                    {% for c in resultado.semaforo.confirmaciones %}
+                    <span>{{ "✔" if c.ok else "❌" }} {{ c.texto }}</span>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         </div>

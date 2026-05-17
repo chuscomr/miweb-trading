@@ -197,15 +197,38 @@ async function verificarAlertas() {
   btn.disabled = true;
   btn.textContent = '⏳ Verificando...';
   try {
-    const r = await fetch('/alertas/api/scanner?universo=ibex35', { method: 'GET' });
+    const r = await fetch('/alertas/verificar', { method: 'POST' });
     const d = await r.json();
-    msg.style.display = 'inline';
-    msg.textContent   = `✓ ${d.total_alertas || 0} alertas detectadas`;
-    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+    
+    if (d.ok) {
+      msg.style.display = 'inline';
+      msg.style.color = 'var(--green)';
+      
+      if (d.total_disparadas > 0) {
+        msg.textContent = `🔔 ${d.total_disparadas} alerta(s) disparada(s)!`;
+        
+        // Mostrar detalles de las alertas disparadas
+        const detalles = d.disparadas.map(a => 
+          `${a.ticker} ${a.tipo}: ${a.precio_actual.toFixed(2)}€ (nivel: ${a.nivel.toFixed(2)}€)`
+        ).join('\n');
+        
+        alert(`🔔 ALERTAS DISPARADAS:\n\n${detalles}\n\nRecarga la página para ver los cambios.`);
+        
+        // Recargar página para mostrar alertas actualizadas
+        setTimeout(() => location.reload(), 2000);
+      } else {
+        msg.textContent = `✓ ${d.verificadas} alertas verificadas, ninguna disparada`;
+      }
+      
+      setTimeout(() => { msg.style.display = 'none'; }, 6000);
+    } else {
+      throw new Error('Error en verificación');
+    }
   } catch(e) {
     msg.style.display = 'inline';
-    msg.style.color   = 'var(--red)';
-    msg.textContent   = 'Error de conexión';
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Error de conexión';
+    console.error('Error:', e);
   } finally {
     btn.disabled = false;
     btn.textContent = '⚡ Verificar ahora';

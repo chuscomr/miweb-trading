@@ -4,7 +4,8 @@ from datetime import datetime
 from typing import Optional
 
 logger  = logging.getLogger(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "cartera.db")
+# Ruta relativa: cartera/cartera.db (funciona en D:\ y C:\)
+DB_PATH = os.path.join(os.path.dirname(__file__), "cartera.db")
 
 
 class CarteraDB:
@@ -208,34 +209,3 @@ class CarteraDB:
         with self._conexion() as con:
             n = con.execute("DELETE FROM posiciones WHERE id=?", (pid,)).rowcount
         return n > 0
-
-    def actualizar_trade_cerrado(self, pid: int, datos: dict) -> bool:
-        """
-        Actualiza un trade cerrado con todos sus campos.
-        Permite corregir errores en trades históricos.
-        """
-        with self._conexion() as con:
-            sets = []
-            vals = []
-            
-            # Campos editables de un trade cerrado
-            campos_permitidos = [
-                'ticker', 'sistema', 'fecha_entrada', 'precio_entrada',
-                'acciones', 'stop_inicial', 'objetivo', 'fecha_cierre',
-                'precio_cierre', 'motivo_cierre', 'notas', 'r_final'
-            ]
-            
-            for campo in campos_permitidos:
-                if campo in datos:
-                    sets.append(f"{campo}=?")
-                    vals.append(datos[campo])
-            
-            if not sets:
-                return False
-            
-            vals.append(pid)
-            query = f"UPDATE posiciones SET {', '.join(sets)} WHERE id=?"
-            n = con.execute(query, vals).rowcount
-        
-        return n > 0
-

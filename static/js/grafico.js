@@ -21,6 +21,11 @@ class GraficoIndicadores {
             this.cargar();
         });
 
+        // Botón Analizar Zona
+        document.getElementById('btn-analizar-zona').addEventListener('click', () => {
+            this.activarModoSeleccionZona();
+        });
+
         // Botón de pantalla completa
         document.getElementById('btn-fullscreen').addEventListener('click', () => {
             const container = document.querySelector('.container');
@@ -32,7 +37,7 @@ class GraficoIndicadores {
                 document.exitFullscreen();
             }
         });
-
+        
         // Botón de limpiar líneas dibujadas
         // ── Escala Logarítmica / Lineal ─────────────────────────
         const btnEscalaLog = document.getElementById('btn-escala-log');
@@ -53,51 +58,70 @@ class GraficoIndicadores {
             });
         }
 
-        document.getElementById('btn-limpiar-lineas').addEventListener('click', () => {
-            const grafico = document.getElementById('grafico');
-            if (grafico && grafico.layout) {
-                // Mantener solo las shapes del análisis técnico automático
-                // (soportes, resistencias, fibonacci, divergencias, patrones)
-                const shapesOriginales = (grafico.layout.shapes || []).filter(shape => {
-                    if (!shape.line) return false;
+        const btnLimpiar = document.getElementById('btn-limpiar-lineas');
+        if (btnLimpiar) {
+            btnLimpiar.addEventListener('click', async () => {
+                const grafico = document.getElementById('grafico');
+                if (!grafico || !grafico.layout) {
+                    console.warn('⚠️ Gráfico no disponible');
+                    return;
+                }
+                
+                try {
+                    const currentShapes = grafico.layout.shapes || [];
                     
-                    // Mantener líneas punteadas de S/R
-                    if (shape.line.dash === 'dot') return true;
-                    
-                    // Mantener canales y líneas de tendencia automáticas
-                    if (shape.name && (
-                        shape.name.includes('tendencia_') ||
-                        shape.name.includes('canal_')
-                    )) {
-                        return true;
-                    }
-
-                    // Mantener líneas con name específico del sistema
-                    if (shape.name && (
-                        shape.name.includes('soporte_') || 
-                        shape.name.includes('resistencia_') ||
-                        shape.name.includes('patron_')
-                    )) {
-                        return true;
-                    }
-                    
-                    // Mantener líneas con colores del análisis técnico
-                    if (shape.line.color) {
-                        const color = shape.line.color.toString().toLowerCase();
-                        // Verde soporte, rojo resistencia, fibonacci, divergencias
-                        if (color.includes('22c55e') || color.includes('ef4444') ||
-                            color.includes('10b981') || color.includes('8b5cf6') ||
-                            color.includes('f59e0b')) {
-                            return true;
+                    // Identificar índices de shapes del USUARIO (sin nombre del sistema)
+                    const indicesABorrar = [];
+                    currentShapes.forEach((shape, idx) => {
+                        // Si NO tiene nombre del sistema → es del usuario
+                        if (!shape.name || !(
+                            shape.name.startsWith('soporte_') || 
+                            shape.name.startsWith('resistencia_') ||
+                            shape.name.startsWith('patron_') ||
+                            shape.name.startsWith('fibonacci_') ||
+                            shape.name.startsWith('divergencia_')
+                        )) {
+                            indicesABorrar.push(idx);
                         }
+                    });
+                    
+                    if (indicesABorrar.length === 0) {
+                        alert('No hay líneas dibujadas para borrar');
+                        return;
                     }
                     
-                    return false;
-                });
-
-                Plotly.relayout('grafico', { shapes: shapesOriginales });
-            }
-        });
+                    if (!confirm(`¿Borrar ${indicesABorrar.length} línea(s) dibujada(s)?`)) {
+                        return;
+                    }
+                    
+                    // Deshabilitar el botón durante el borrado
+                    btnLimpiar.disabled = true;
+                    btnLimpiar.textContent = '⏳';
+                    
+                    // Borrar shapes del usuario manteniendo las del sistema
+                    const shapesFinales = currentShapes.filter((shape, idx) => 
+                        !indicesABorrar.includes(idx)
+                    );
+                    
+                    // Actualizar en un solo paso
+                    await Plotly.relayout('grafico', { 
+                        shapes: shapesFinales
+                    });
+                    
+                    console.log(`🗑️ ${indicesABorrar.length} líneas borradas`);
+                    
+                } catch (error) {
+                    console.error('❌ Error al borrar:', error);
+                    alert('Error al borrar líneas');
+                } finally {
+                    // Rehabilitar el botón
+                    btnLimpiar.disabled = false;
+                    btnLimpiar.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                }
+            });
+        } else {
+            console.warn('⚠️ Botón btn-limpiar-lineas no encontrado');
+        }
 
         // Botones de tipo de gráfico
         document.getElementById('btn-velas').addEventListener('click', () => {
@@ -135,10 +159,15 @@ class GraficoIndicadores {
      * Obtener indicadores seleccionados
      */
     obtenerIndicadoresSeleccionados() {
-        const indicadores = [];
-        document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
-            indicadores.push(cb.value);
-        });
+        // Usar el nuevo selector de indicadores si existe, sino checkboxes legacy
+        let indicadores = [];
+        if (typeof window.getSelectedIndicadores === 'function') {
+            indicadores = window.getSelectedIndicadores();
+        } else {
+            document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
+                indicadores.push(cb.value);
+            });
+        }
         return indicadores;
     }
 
@@ -211,7 +240,14 @@ class GraficoIndicadores {
             return;
         }
 
-        const fechas = data.data.map(d => d.Date.substring(0, 10));
+        // Función para convertir YYYY-MM-DD a dd.mm.yy (formato grafico_pro)
+        const formatearFechaEje = (fechaISO) => {
+            // fechaISO = "2025-11-12" -> "12.11.25"
+            const [año, mes, dia] = fechaISO.substring(0, 10).split('-');
+            return `${dia}.${mes}.${año.substring(2)}`;
+        };
+
+        const fechas = data.data.map(d => formatearFechaEje(d.Date));
         const traces = [];
         const shapes = [];
         const annotations = [];
@@ -246,16 +282,14 @@ class GraficoIndicadores {
                 decreasing: { line: { color: '#ef4444' } },
                 xaxis: 'x',
                 yaxis: 'y',
-                hovertext: fechas.map((fecha, i) => {
-                    const d = data.data[i];
-                    const fechaFormateada = formatearFechaTooltip(fecha);
-                    return `${fechaFormateada}<br>` +
-                           `Apertura: ${d.Open.toFixed(2)}€<br>` +
-                           `Máximo: ${d.High.toFixed(2)}€<br>` +
-                           `Mínimo: ${d.Low.toFixed(2)}€<br>` +
-                           `Cierre: ${d.Close.toFixed(2)}€`;
-                }),
-                hoverinfo: 'text'
+                hovertemplate: 
+                    '<b>%{x}</b><br>' +
+                    '<br>' +
+                    '🟢 Apertura: %{open:.2f} €<br>' +
+                    '🔴 Máximo: %{high:.2f} €<br>' +
+                    '🟢 Mínimo: %{low:.2f} €<br>' +
+                    '⚫ Cierre: %{close:.2f} €<br>' +
+                    '<extra></extra>'
             });
         } else {
             traces.push({
@@ -687,7 +721,7 @@ class GraficoIndicadores {
         const tieneOBV = indicadores.includes('OBV');
         const tieneMFI = indicadores.includes('MFI');
         const tieneADX = indicadores.includes('ADX');
-        const tieneATR = indicadores.includes('ATR');
+        const tieneATR = indicadores.includes('ATR') || indicadores.includes('ATR_BARRAS');
 
         const GAP = 0.01;
         const pVolumen = tieneVolumen ? 0.16 : 0;
@@ -872,7 +906,7 @@ class GraficoIndicadores {
             
             traces.push({
                 x: fechas,
-                y: data.data.map(d => d.ATR),
+                y: data.data.map(d => d.ATR_PCT || (d.ATR / d.Close * 100)),
                 type: 'scatter',
                 mode: 'lines',
                 name: 'ATR',
@@ -883,22 +917,57 @@ class GraficoIndicadores {
             });
         }
 
+        
+        // ATR BARRAS (Histograma)
+        // ========================
+        console.log("🔍 Verificando ATR_BARRAS:", indicadores.includes('ATR_BARRAS'), "ATR existe:", data.data[0]?.ATR);
+        if (indicadores.includes('ATR_BARRAS') && data.data[0].ATR !== undefined) {
+            console.log("🎨 Dibujando ATR BARRAS");
+            let yaxisName = 'y7';  // Usa el mismo panel que ATR línea si ambos activos
+            
+            traces.push({
+                x: fechas,
+                y: data.data.map(d => d.ATR_PCT || (d.ATR / d.Close * 100)),
+                type: 'bar',
+                name: 'ATR Barras',
+                marker: { 
+                    color: '#a78bfa',
+                    opacity: 0.6,
+                    line: { width: 0 }
+                },
+                xaxis: 'x',
+                yaxis: yaxisName,
+                hovertemplate: '<b>ATR Barras</b><br>%{y:.2f}%<extra></extra>'
+            });
+        }
         // VOLUMEN
         if (indicadores.includes('VOLUMEN')) {
-            // Normalizar última vela si es de hoy (mercado aún abierto — volumen parcial)
+            // Calcular media de volumen para clipping
+            const volumenes = data.data.map(d => d.Volume || 0);
+            const volMedia = volumenes.reduce((sum, v) => sum + v, 0) / volumenes.length;
+            const volMax = volMedia * 2;  // Clip al 200% de la media
+            
+            // Normalizar y clipear
             const volData = data.data.map((d, i) => {
                 let vol = d.Volume ? d.Volume / 1000000 : 0;
+                
                 // Si es la última vela y el volumen es anormalmente alto, normalizar
                 if (i === data.data.length - 1 && i > 20) {
                     const volMedio = data.data.slice(-21, -1)
                         .reduce((s, x) => s + (x.Volume || 0), 0) / 20;
                     if (volMedio > 0 && vol * 1000000 > volMedio * 3) {
-                        // Escalar proporcionalmente a las horas de mercado transcurridas
                         vol = volMedio / 1000000;
                     }
                 }
+                
+                // Clipear picos extremos al 200% de la media
+                if (d.Volume > volMax) {
+                    vol = volMax / 1000000;
+                }
+                
                 return vol;
             });
+            
             traces.push({
                 x: fechas,
                 y: volData,
@@ -924,12 +993,12 @@ class GraficoIndicadores {
             plot_bgcolor: '#f1f5f9',
             font: { color: '#334155', size: 11, family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
             margin: { l: 60, r: 30, t: 20, b: 15 },
-            hovermode: 'x',
+            hovermode: 'closest',  // Activa spikes en X e Y
             hoverlabel: {
                 namelength: -1,
                 font: { size: 11 },
             },
-            dragmode: 'pan',
+            dragmode: 'zoom',
             showlegend: false,
             xaxis: {
                 type: 'category',
@@ -971,7 +1040,13 @@ class GraficoIndicadores {
             linecolor: '#94a3b8',
             title: { text: 'Precio (€)', font: { size: 11 } },
             fixedrange: false,
-            type: _usarLog ? 'log' : 'linear'
+            type: _usarLog ? 'log' : 'linear',
+            showspikes: true,
+            spikemode: 'across',
+            spikesnap: 'cursor',
+            spikecolor: '#3b82f6',
+            spikethickness: 1,
+            spikedash: 'dot'
         };
 
         // Panel RSI
@@ -1132,14 +1207,37 @@ class GraficoIndicadores {
 
             const gdEl = document.getElementById('grafico');
 
+            // ── CONFIGURAR PANEL ÚLTIMA VELA DINÁMICO ────────────────
+            configurarPanelUltimaVela();
+
             // ── Listener eraseshape (único, registrado una vez) ──────
             if (!window._listenersRegistrados) {
                 window._listenersRegistrados = true;
                 gdEl.on('plotly_relayout', (eventData) => {
-                    if (eventData && 'shapes' in eventData &&
-                        Array.isArray(eventData.shapes) &&
-                        eventData.shapes.length === 0) {
-                        Plotly.relayout('grafico', { shapes: [], annotations: [] });
+                    // Solo actuar si el usuario usó el botón "erase shape"
+                    if (eventData && 'shapes' in eventData && Array.isArray(eventData.shapes)) {
+                        const nShapesNuevas = eventData.shapes.length;
+                        const nShapesPermanentes = window._nShapesAntes || 0;
+                        
+                        console.log('📊 Eraseshape detectado:', {
+                            shapes_nuevas: nShapesNuevas,
+                            shapes_permanentes: nShapesPermanentes
+                        });
+                        
+                        // Si el usuario borró TODO (shapes.length === 0)
+                        // necesitamos restaurar solo las permanentes (S/R)
+                        if (nShapesNuevas === 0 && nShapesPermanentes > 0) {
+                            const layoutActual = gdEl.layout;
+                            
+                            // Obtener shapes permanentes del layout previo
+                            if (window._shapesPermanentes && window._shapesPermanentes.length > 0) {
+                                console.log('🔄 Restaurando shapes permanentes (S/R)');
+                                Plotly.relayout('grafico', { 
+                                    shapes: window._shapesPermanentes,
+                                    annotations: []  // Borrar solo anotaciones de dibujos
+                                });
+                            }
+                        }
                     }
                 });
             }
@@ -1205,6 +1303,48 @@ class GraficoIndicadores {
                 return;
             }
 
+            // Obtener rango visible del eje X para posicionar etiquetas
+            const xaxis = grafico.layout.xaxis;
+            let primeraFecha = null;
+            
+            if (grafico.data && grafico.data[0] && grafico.data[0].x) {
+                // Si hay rango definido, usar el inicio del rango
+                if (xaxis.range && Array.isArray(xaxis.range)) {
+                    const indiceInicio = Math.floor(xaxis.range[0]);
+                    primeraFecha = grafico.data[0].x[Math.max(0, indiceInicio)];
+                } else {
+                    // Si no hay rango, usar la primera fecha
+                    primeraFecha = grafico.data[0].x[0];
+                }
+            }
+            
+            console.log('📅 Primera fecha para etiquetas:', primeraFecha);
+
+            // ✅ FILTRAR S/R FUERA DE RANGO para evitar aplanar el gráfico
+            // Calcular rango de precios visible con un margen del 20%
+            const preciosVisibles = [];
+            if (grafico.data && grafico.data[0]) {
+                // Extraer high y low del trace de velas
+                const trace = grafico.data[0];
+                if (trace.high && trace.low) {
+                    preciosVisibles.push(...trace.high, ...trace.low);
+                } else if (trace.y) {
+                    preciosVisibles.push(...trace.y);
+                }
+            }
+            
+            let limiteInferior = -Infinity;
+            let limiteSuperior = Infinity;
+            
+            if (preciosVisibles.length > 0) {
+                const minPrecio = Math.min(...preciosVisibles);
+                const maxPrecio = Math.max(...preciosVisibles);
+                const margen = (maxPrecio - minPrecio) * 0.2; // 20% de margen
+                limiteInferior = minPrecio - margen;
+                limiteSuperior = maxPrecio + margen;
+                console.log(`📊 Rango precios: ${minPrecio.toFixed(2)} - ${maxPrecio.toFixed(2)} (con margen: ${limiteInferior.toFixed(2)} - ${limiteSuperior.toFixed(2)})`);
+            }
+
             // CRÍTICO: Obtener shapes existentes para NO borrarlas
             const shapesExistentes = grafico.layout.shapes || [];
             const annotationsExistentes = grafico.layout.annotations || [];
@@ -1214,9 +1354,12 @@ class GraficoIndicadores {
 
             // Añadir soportes (líneas verdes punteadas)
             if (soportes && soportes.length > 0) {
-                console.log(`📗 Añadiendo ${soportes.length} soportes:`, soportes.map(s => s.precio));
+                const soportesFiltrados = soportes.filter(s => 
+                    s.precio >= limiteInferior && s.precio <= limiteSuperior
+                );
+                console.log(`📗 Soportes: ${soportes.length} totales → ${soportesFiltrados.length} en rango`);
                 
-                soportes.forEach((s, index) => {
+                soportesFiltrados.forEach((s, index) => {
                     // Línea horizontal de soporte
                     newShapes.push({
                         type: 'line',
@@ -1232,38 +1375,38 @@ class GraficoIndicadores {
                             dash: 'dot'
                         },
                         layer: 'below',
-                        name: 'soporte_' + s.precio,
                         editable: false
                     });
                     
-                    // Etiqueta del soporte
+                    // Etiqueta del soporte (en la línea)
                     newAnnotations.push({
-                        x: 1,
+                        x: primeraFecha,
                         y: s.precio,
-                        xref: 'paper',
+                        xref: 'x',
                         yref: 'y',
-                        text: `S ${s.precio.toFixed(2)}€`,
+                        text: `${s.precio.toFixed(2)} €`,
                         showarrow: false,
                         xanchor: 'left',
-                        xshift: 5,
                         font: { 
                             size: 10, 
                             color: '#22c55e',
                             weight: 'bold'
                         },
-                        bgcolor: 'rgba(34, 197, 94, 0.1)',
-                        bordercolor: '#22c55e',
-                        borderwidth: 1,
-                        borderpad: 2
+                        captureevents: false
+                        
+                        
                     });
                 });
             }
 
             // Añadir resistencias (líneas rojas punteadas)
             if (resistencias && resistencias.length > 0) {
-                console.log(`📕 Añadiendo ${resistencias.length} resistencias:`, resistencias.map(r => r.precio));
+                const resistenciasFiltradas = resistencias.filter(r => 
+                    r.precio >= limiteInferior && r.precio <= limiteSuperior
+                );
+                console.log(`📕 Resistencias: ${resistencias.length} totales → ${resistenciasFiltradas.length} en rango`);
                 
-                resistencias.forEach((r, index) => {
+                resistenciasFiltradas.forEach((r, index) => {
                     // Línea horizontal de resistencia
                     newShapes.push({
                         type: 'line',
@@ -1279,29 +1422,25 @@ class GraficoIndicadores {
                             dash: 'dot'
                         },
                         layer: 'below',
-                        name: 'resistencia_' + r.precio,
                         editable: false
                     });
                     
-                    // Etiqueta de la resistencia
+                    // Etiqueta de la resistencia (en la línea)
                     newAnnotations.push({
-                        x: 1,
+                        x: primeraFecha,
                         y: r.precio,
-                        xref: 'paper',
+                        xref: 'x',
                         yref: 'y',
-                        text: `R ${r.precio.toFixed(2)}€`,
+                        text: `${r.precio.toFixed(2)} €`,
                         showarrow: false,
                         xanchor: 'left',
-                        xshift: 5,
                         font: { 
                             size: 10, 
                             color: '#ef4444',
                             weight: 'bold'
                         },
-                        bgcolor: 'rgba(239, 68, 68, 0.1)',
-                        bordercolor: '#ef4444',
-                        borderwidth: 1,
-                        borderpad: 2
+                        captureevents: false
+                    
                     });
                 });
             }
@@ -1318,7 +1457,7 @@ class GraficoIndicadores {
                     shapes: totalShapes,
                     annotations: totalAnnotations
                 }).then(() => {
-                    console.log('✅ S/R dibujadas correctamente en el gráfico');
+                    console.log('✅ S/R dibujadas (etiquetas a la izquierda)');
                 }).catch(err => {
                     console.error('❌ Error al dibujar S/R:', err);
                 });
@@ -1392,9 +1531,17 @@ class GraficoIndicadores {
         const shapesExistentes = layoutActual.shapes || [];
         const annsExistentes = layoutActual.annotations || [];
 
+        const nuevasShapes = [...shapesExistentes, ...shapes];
+        const nuevasAnns = [...annsExistentes, ...annotations];
+
         Plotly.relayout('grafico', {
-            shapes: [...shapesExistentes, ...shapes],
-            annotations: [...annsExistentes, ...annotations]
+            shapes: nuevasShapes,
+            annotations: nuevasAnns
+        }).then(() => {
+            // Guardar shapes permanentes (S/R) para poder restaurarlas al borrar
+            window._shapesPermanentes = nuevasShapes;
+            window._nShapesAntes = nuevasShapes.length;
+            console.log('💾 Guardadas', window._nShapesAntes, 'shapes permanentes (S/R)');
         });
     }
 
@@ -1488,6 +1635,14 @@ class GraficoIndicadores {
     dibujarPatronesChartistas(patrones) {
         if (!patrones || patrones.length === 0) return;
 
+        console.log('🎨 Patrones recibidos para dibujar:', patrones.map(p => ({
+            tipo: p.tipo,
+            direccion: p.direccion,
+            confirmado: p.confirmado,
+            fecha1: p.fecha1,
+            fecha2: p.fecha2
+        })));
+
         const shapes = [];
         const layoutActual = document.getElementById('grafico')._fullLayout || {};
         const shapesExistentes = ((layoutActual.shapes || [])).filter(s =>
@@ -1503,14 +1658,27 @@ class GraficoIndicadores {
         const graficoEl = document.getElementById('grafico');
         const gd = graficoEl._fullLayout || {};
 
+        // Función para convertir fechas del backend (yyyy-mm-dd) al formato del gráfico (dd.mm.yy)
+        const convertirFecha = (fechaBackend) => {
+            if (!fechaBackend) return null;
+            // Si ya está en formato dd.mm.yy, devolverla tal cual
+            if (fechaBackend.match(/^\d{2}\.\d{2}\.\d{2}$/)) return fechaBackend;
+            // Convertir yyyy-mm-dd a dd.mm.yy
+            const [año, mes, dia] = fechaBackend.split('-');
+            return `${dia}.${mes}.${año.slice(-2)}`;
+        };
+
         patrones.forEach(patron => {
             const colorBase = patron.direccion === 'alcista' ? '#10b981' : '#ef4444';
             const colorNeck = patron.confirmado ? colorBase : '#f59e0b';
             const bgLabel   = patron.confirmado ? colorBase : '#f59e0b';
             const fontColor = patron.confirmado ? 'white' : '#111';
             const estado    = patron.confirmado ? '✓ Confirmado' : '⏱ En formación';
-            const f1 = patron.fecha1;
-            const f2 = patron.fecha2;
+            
+            // Convertir fechas al formato del gráfico
+            const f1 = convertirFecha(patron.fecha1);
+            const f2 = convertirFecha(patron.fecha2);
+            const fc = patron.fecha_cabeza ? convertirFecha(patron.fecha_cabeza) : null;
 
             if (!f1 || !f2) return;
 
@@ -1539,8 +1707,15 @@ class GraficoIndicadores {
 
             } else if (patron.tipo === 'hch' || patron.tipo === 'hch_invertido') {
                 const label = patron.tipo === 'hch' ? 'HCH' : 'HCH Invertido';
-                const fc    = patron.fecha_cabeza || f2;
                 const esHCH = patron.tipo === 'hch';
+
+                console.log('🎨 Dibujando HCH con fechas convertidas:', {
+                    f1, fc, f2,
+                    hombro1: patron.hombro1,
+                    cabeza: patron.cabeza,
+                    hombro2: patron.hombro2,
+                    neckline: patron.neckline
+                });
 
                 shapes.push({ type:'rect', xref:'x', yref:'y',
                     x0:f1, y0:patron.neckline,
@@ -1551,13 +1726,60 @@ class GraficoIndicadores {
                     x0:0, y0:patron.neckline, x1:1, y1:patron.neckline,
                     line:{ color:colorNeck, width:2.5, dash: patron.confirmado ? 'solid' : 'dash' },
                     name:'patron_neck' });
-                shapes.push({ type:'line', xref:'x', yref:'y',
-                    x0:f1, y0:patron.hombro1, x1:fc, y1:patron.cabeza,
-                    line:{ color:colorBase, width:2.5 }, name:'patron_hch1' });
-                shapes.push({ type:'line', xref:'x', yref:'y',
-                    x0:fc, y0:patron.cabeza, x1:f2, y1:patron.hombro2,
-                    line:{ color:colorBase, width:2.5 }, name:'patron_hch2' });
+                
+                // Líneas que conectan los 3 picos
+                if (fc) {
+                    shapes.push({ type:'line', xref:'x', yref:'y',
+                        x0:f1, y0:patron.hombro1, x1:fc, y1:patron.cabeza,
+                        line:{ color:colorBase, width:2.5 }, name:'patron_hch1' });
+                    shapes.push({ type:'line', xref:'x', yref:'y',
+                        x0:fc, y0:patron.cabeza, x1:f2, y1:patron.hombro2,
+                        line:{ color:colorBase, width:2.5 }, name:'patron_hch2' });
+                }
+                
                 if (patron.confirmado) {
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.objetivo, x1:1, y1:patron.objetivo,
+                        line:{ color:colorBase, width:1.5, dash:'dot' }, name:'patron_obj' });
+                }
+            } else if (patron.tipo === 'triangulo_ascendente' || patron.tipo === 'triangulo_descendente' || patron.tipo === 'triangulo_simetrico') {
+                // Dibujar triángulos como líneas horizontales
+                if (patron.tipo === 'triangulo_ascendente') {
+                    // Resistencia horizontal + soporte ascendente
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.resistencia, x1:1, y1:patron.resistencia,
+                        line:{ color:colorNeck, width:2, dash: patron.confirmado ? 'solid' : 'dash' },
+                        name:'patron_triangulo_resist' });
+                } else if (patron.tipo === 'triangulo_descendente') {
+                    // Soporte horizontal + resistencia descendente
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.soporte, x1:1, y1:patron.soporte,
+                        line:{ color:colorNeck, width:2, dash: patron.confirmado ? 'solid' : 'dash' },
+                        name:'patron_triangulo_sop' });
+                } else if (patron.tipo === 'triangulo_simetrico') {
+                    // Líneas de soporte y resistencia convergentes
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.resistencia, x1:1, y1:patron.resistencia,
+                        line:{ color:'#f59e0b', width:2, dash:'dash' },
+                        name:'patron_triangulo_sup' });
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.soporte, x1:1, y1:patron.soporte,
+                        line:{ color:'#f59e0b', width:2, dash:'dash' },
+                        name:'patron_triangulo_inf' });
+                }
+                if (patron.confirmado && patron.objetivo) {
+                    shapes.push({ type:'line', xref:'paper', yref:'y',
+                        x0:0, y0:patron.objetivo, x1:1, y1:patron.objetivo,
+                        line:{ color:colorBase, width:1.5, dash:'dot' }, name:'patron_obj' });
+                }
+            } else if (patron.tipo === 'bandera_alcista' || patron.tipo === 'bandera_bajista') {
+                // Dibujar banderas como rectángulo de consolidación
+                shapes.push({ type:'rect', xref:'x', yref:'y',
+                    x0:f1, y0:patron.fin_asta * 0.97,
+                    x1:f2, y1:patron.fin_asta * 1.03,
+                    fillcolor: colorBase + '15',
+                    line:{ color:colorBase, width:1, dash:'dot' }, name:'patron_bandera_consol' });
+                if (patron.confirmado && patron.objetivo) {
                     shapes.push({ type:'line', xref:'paper', yref:'y',
                         x0:0, y0:patron.objetivo, x1:1, y1:patron.objetivo,
                         line:{ color:colorBase, width:1.5, dash:'dot' }, name:'patron_obj' });
@@ -1744,96 +1966,36 @@ class GraficoIndicadores {
             return;
         }
 
-        const ultimo = data.data[data.data.length - 1];
-
-        // ── Variables de color — declaradas fuera del if(panelVela) ──
-        // para que el strip también pueda usarlas aunque el div no exista
-        const prev   = data.data.length >= 2 ? data.data[data.data.length - 2] : null;
-        const atrPct = ultimo.ATR && ultimo.Close
-            ? ((ultimo.ATR / ultimo.Close) * 100).toFixed(2) + '%'
-            : '--';
-        const atrValor = ultimo.ATR ? this.formatearPrecio(ultimo.ATR) : '--';
-
-        const open = ultimo.Open;
-
-        const _colVsOpen = (val) => {
-            if (val == null || open == null || open === 0) return '';
-            const diff = val - open;
-            if (Math.abs(diff / open) < 0.0001) return '';
-            return diff > 0 ? 'color:#16a34a;' : 'color:#dc2626;';
-        };
-
-        const _badgeVsOpen = (val) => {
-            if (val == null || open == null || open === 0) return '';
-            const diff = val - open;
-            const pct  = diff / open * 100;
-            if (Math.abs(pct) < 0.01) return '';
-            const color = diff > 0 ? '#16a34a' : '#dc2626';
-            const arrow = diff > 0 ? '▲' : '▼';
-            const pctStr = Math.abs(pct) < 10 ? Math.abs(pct).toFixed(1) + '%' : Math.round(Math.abs(pct)) + '%';
-            return `<span style="font-size:0.72em;color:${color};margin-left:5px;font-weight:600;">${arrow} ${pctStr}</span>`;
-        };
-
-        const cierreColor = _colVsOpen(ultimo.Close);
-        const cierreBadge = _badgeVsOpen(ultimo.Close);
-        const maxColor    = _colVsOpen(ultimo.High);
-        const maxBadge    = _badgeVsOpen(ultimo.High);
-        const minColor    = _colVsOpen(ultimo.Low);
-        const minBadge    = _badgeVsOpen(ultimo.Low);
-
-        const volColor = '';
-        const volBadge = (() => {
-            if (!prev || !prev.Volume || !ultimo.Volume) return '';
-            const diff = ultimo.Volume - prev.Volume;
-            const pct  = diff / prev.Volume * 100;
-            if (Math.abs(pct) < 1) return '';
-            const arrow = diff > 0 ? '▲' : '▼';
-            const pctStr = Math.abs(pct) < 10 ? Math.abs(pct).toFixed(1) + '%' : Math.round(Math.abs(pct)) + '%';
-                return `<span style="font-size:0.72em;color:#94a3b8;margin-left:5px;font-weight:600;">${arrow} ${pctStr}</span>`;
-            })();
-
-        // ATR — neutro
-        const atrColor = '';
-        const atrBadge = '';
-
-        // Rango intradía vs día anterior
-        const rango    = ultimo.High - ultimo.Low;
-        const rangoAnt = prev ? (prev.High - prev.Low) : null;
-        const rangoStr = rango > 0 ? `${(rango / ultimo.Close * 100).toFixed(2)}%` : '--';
-
-        // ── Rellenar div#ultima-vela si existe (sidebar) ─────────────
+        // ── Actualizar panel ÚLTIMA VELA con info completa ─────────────
         const panelVela = document.getElementById('ultima-vela');
-        if (panelVela) {
-            panelVela.innerHTML = `
-                <p><span>Apertura:</span>
-                    <strong>${this.formatearPrecio(ultimo.Open)}</strong>
-                </p>
-                <p><span>Máximo:</span>
-                    <strong style="${maxColor}">${this.formatearPrecio(ultimo.High)}</strong>${maxBadge}
-                </p>
-                <p><span>Mínimo:</span>
-                    <strong style="${minColor}">${this.formatearPrecio(ultimo.Low)}</strong>${minBadge}
-                </p>
-                <p><span>Cierre:</span>
-                    <strong style="${cierreColor};font-size:1.05em;">${this.formatearPrecio(ultimo.Close)}</strong>${cierreBadge}
-                </p>
-                <p><span>Rango:</span>
-                    <strong>${rangoStr}</strong>
-                    ${rangoAnt ? `<span style="font-size:0.75em;color:#94a3b8;margin-left:5px;">ant: ${(rangoAnt/prev.Close*100).toFixed(2)}%</span>` : ''}
-                </p>
-                <p><span>Volumen:</span>
-                    <strong style="${volColor}">${this.formatearVolumen(ultimo.Volume)}</strong>${volBadge}
-                </p>
-                <p><span>ATR (14):</span>
-                    <strong style="${atrColor}">${atrValor}</strong>${atrBadge}
-                </p>
-                <p><span>ATR %:</span>
-                    <strong>${atrPct}</strong>
-                </p>
-                <p style="font-size:0.72em;color:#94a3b8;margin-top:6px;border-top:1px solid #f1f5f9;padding-top:6px;">
-                    ▲▼ vs apertura ${ultimo.Date ? ultimo.Date.substring(0,10) : ''} · Vol vs sesión anterior
-                </p>
-            `;
+        if (panelVela && data.data.length > 0) {
+            const ultimo = data.data[data.data.length - 1];
+            const ticker = document.getElementById('ticker').value;
+            const tf = document.getElementById('tf').value;  // Corregido: 'tf' no 'timeframe'
+            const fechaUltima = ultimo.Date.substring(0, 10);  // YYYY-MM-DD
+            
+            console.log('🔄 Cargando última vela:', fechaUltima, 'ticker:', ticker, 'tf:', tf);
+            
+            // Obtener info completa de la última vela desde el backend
+            fetch(`/indicadores/vela-info/${ticker}?date=${fechaUltima}&tf=${tf}`)
+                .then(response => {
+                    console.log('📡 Response status:', response.status);
+                    return response.json();
+                })
+                .then(info => {
+                    console.log('📦 Info recibida de última vela:', info);
+                    // Guardar como última vela original (para restaurar al unhover)
+                    ultimaVelaOriginal = info;
+                    console.log('💾 ultimaVelaOriginal guardada:', ultimaVelaOriginal);
+                    // Actualizar panel
+                    actualizarPanelUltimaVela(info, true);
+                    console.log('✅ Última vela cargada y panel actualizado');
+                })
+                .catch(error => {
+                    console.error('❌ Error cargando última vela:', error);
+                });
+        } else {
+            console.warn('⚠️ No se pudo cargar última vela - panelVela:', panelVela, 'data.length:', data.data.length);
         }
 
         const panelSoportes = document.getElementById('soportes');
@@ -2175,21 +2337,67 @@ class GraficoIndicadores {
             };
             const badge = badgesMadurez[ctx.madurez] || badgesMadurez.sin_setup;
 
+            // Calcular confianza basada en score
+            const score = ctx.score || 0;
+            let confianza = '';
+            let confianzaColor = '';
+            if (score >= 8) {
+                confianza = 'Excelente';
+                confianzaColor = '#22c55e';
+            } else if (score >= 6) {
+                confianza = 'Alta';
+                confianzaColor = '#3b82f6';
+            } else if (score >= 4) {
+                confianza = 'Media';
+                confianzaColor = '#f59e0b';
+            } else {
+                confianza = 'Baja';
+                confianzaColor = '#94a3b8';
+            }
+
+            // Filtrar y formatear frases con emojis
+            const frasesFormateadas = (ctx.frases || []).slice(0, 4).map(f => {
+                if (f.startsWith('⚠️')) return f;
+                if (f.includes('estructura alcista') || f.includes('MM20 > MM50')) return '✅ ' + f;
+                if (f.includes('Retroceso') || f.includes('saludable')) return '✅ ' + f;
+                if (f.includes('Por encima') || f.includes('MM50')) return '✅ ' + f;
+                if (f.includes('Soporte')) return '✅ ' + f;
+                if (f.includes('Patrón') || f.includes('vela')) return '✅ ' + f;
+                if (f.includes('volumen') || f.includes('Falta')) return '⚠️ ' + f;
+                return '• ' + f;
+            });
+
             panelContexto.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                    <span style="font-size:1.3rem;">${icono}</span>
-                    <span style="font-size:1rem;font-weight:800;color:${ctx.color};">${ctx.titulo}</span>
-                    <span style="font-size:0.72rem;font-weight:700;padding:3px 9px;border-radius:10px;
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:1.2rem;">${icono}</span>
+                        <span style="font-size:0.95rem;font-weight:800;color:${ctx.color};">${ctx.titulo}</span>
+                    </div>
+                    <span style="font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:8px;
                         background:${badge.bg};color:${badge.col};">${badge.txt}</span>
                 </div>
-                ${ctx.frases && ctx.frases.length > 0 ? `
-                <ul style="margin:0;padding-left:16px;list-style:none;">
-                    ${ctx.frases.map(f => `
-                        <li style="font-size:0.82rem;font-weight:600;color:#1e293b;margin-bottom:5px;padding-left:4px;">
-                            ${f.startsWith('⚠️') ? f : '• ' + f}
-                        </li>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px;
+                            background:#f8fafc;border-radius:6px;">
+                    <div style="display:flex;align-items:baseline;gap:4px;">
+                        <span style="font-size:0.7rem;color:#64748b;font-weight:600;">Score:</span>
+                        <span style="font-size:1.1rem;font-weight:800;color:${ctx.color};">${score}</span>
+                        <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">/10</span>
+                    </div>
+                    <div style="width:1px;height:20px;background:#cbd5e1;"></div>
+                    <div style="display:flex;align-items:baseline;gap:4px;">
+                        <span style="font-size:0.7rem;color:#64748b;font-weight:600;">Confianza:</span>
+                        <span style="font-size:0.85rem;font-weight:700;color:${confianzaColor};">${confianza}</span>
+                    </div>
+                </div>
+                ${frasesFormateadas.length > 0 ? `
+                <div style="margin:0;display:flex;flex-direction:column;gap:4px;">
+                    ${frasesFormateadas.map(f => `
+                        <div style="font-size:0.75rem;font-weight:600;color:#1e293b;
+                                    padding:4px 0;line-height:1.4;">
+                            ${f}
+                        </div>
                     `).join('')}
-                </ul>` : '<p style="color:#334155;font-size:0.82rem;font-weight:600;">Indicadores insuficientes</p>'}
+                </div>` : '<p style="color:#334155;font-size:0.8rem;font-weight:600;">Indicadores insuficientes</p>'}
             `;
         }
     }
@@ -2239,6 +2447,183 @@ class GraficoIndicadores {
                 desglose_neutral: mm.desglose_neutral || mm.desgloseneutral || []
             } : undefined
         };
+    }
+
+    /**
+     * Activa el modo de selección de zona para análisis IA
+     */
+    activarModoSeleccionZona() {
+        const btn = document.getElementById('btn-analizar-zona');
+        btn.textContent = '📌 Arrastra en el gráfico...';
+        btn.style.background = '#f59e0b';
+        
+        console.log('🔍 Modo selección de zona activado');
+        
+        // Configurar Plotly para permitir selección por arrastre
+        const grafico = document.getElementById('grafico');
+        
+        // Listener para capturar la selección
+        const seleccionListener = (eventData) => {
+            if (eventData && eventData.range && eventData.range.x) {
+                let [idx_inicio, idx_fin] = eventData.range.x;
+                const [precio_min, precio_max] = eventData.range.y || [null, null];
+                
+                // Convertir a enteros (Plotly devuelve índices)
+                idx_inicio = Math.floor(idx_inicio);
+                idx_fin = Math.ceil(idx_fin);
+                
+                // Obtener fechas reales del gráfico
+                const datos = grafico.data[0];
+                if (!datos || !datos.x) {
+                    console.error('No hay datos en el gráfico');
+                    return;
+                }
+                
+                const fecha_inicio = datos.x[Math.max(0, idx_inicio)];
+                const fecha_fin = datos.x[Math.min(datos.x.length - 1, idx_fin)];
+                
+                console.log('✅ Zona seleccionada:', { 
+                    indices: [idx_inicio, idx_fin],
+                    fechas: [fecha_inicio, fecha_fin], 
+                    precios: [precio_min, precio_max] 
+                });
+                
+                // Restaurar botón
+                btn.textContent = '🔍 Analizar Zona';
+                btn.style.background = '#6366f1';
+                
+                // Llamar al backend para análisis
+                this.analizarZona(fecha_inicio, fecha_fin, precio_min, precio_max, idx_inicio, idx_fin);
+                
+                // Remover listener y restaurar dragmode
+                grafico.removeListener('plotly_selected', seleccionListener);
+                Plotly.relayout('grafico', { dragmode: 'zoom' });
+            }
+        };
+        
+        grafico.on('plotly_selected', seleccionListener);
+        
+        // Habilitar selección
+        Plotly.relayout('grafico', {
+            dragmode: 'select'
+        });
+    }
+
+    /**
+     * Analiza la zona seleccionada con IA directamente
+     */
+    async analizarZona(fecha_inicio, fecha_fin, precio_min, precio_max, idx_inicio, idx_fin) {
+        // Mostrar modal con spinner de IA
+        const modal = document.getElementById('modal-analisis-zona');
+        modal.style.display = 'block';
+        
+        const contenido = document.getElementById('analisis-zona-contenido');
+        contenido.innerHTML = `
+            <div style="text-align:center;padding:40px;">
+                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;width:60px;height:60px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;">
+                    🤖
+                </div>
+                <div class="spinner" style="border:3px solid #f3f4f6;border-top:3px solid #8b5cf6;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto;"></div>
+                <p style="margin-top:20px;color:#64748b;font-weight:500;">Analizando zona con Claude IA...</p>
+                <p style="margin-top:8px;color:#94a3b8;font-size:0.9rem;">Esto tomará 2-3 segundos</p>
+            </div>
+        `;
+        
+        const ticker = document.getElementById('ticker').value;
+        
+        // Guardar datos de zona
+        this._zonaActual = {
+            fecha_inicio,
+            fecha_fin,
+            precio_min,
+            precio_max,
+            idx_inicio,
+            idx_fin
+        };
+        
+        try {
+            // Capturar screenshot del gráfico
+            const graficoEl = document.getElementById('grafico');
+            const screenshot = await Plotly.toImage(graficoEl, {
+                format: 'png',
+                width: 1400,
+                height: 700
+            });
+            
+            // Enviar directamente a análisis IA
+            const response = await fetch('/api/analizar_zona_ia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ticker,
+                    zona: {
+                        fecha_inicio,
+                        fecha_fin,
+                        precio_min,
+                        precio_max
+                    },
+                    screenshot: screenshot
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Mostrar análisis IA
+            this.mostrarAnalisisIA(data);
+            
+        } catch (error) {
+            console.error('Error al analizar zona:', error);
+            contenido.innerHTML = `
+                <div style="text-align:center;padding:40px;">
+                    <p style="color:#ef4444;font-size:1.1rem;margin-bottom:10px;">❌ Error al analizar la zona</p>
+                    <p style="color:#64748b;font-size:0.9rem;margin-bottom:20px;">${error.message}</p>
+                    ${error.message.includes('ANTHROPIC_API_KEY') ? `
+                        <div style="background:#fef3c7;padding:15px;border-radius:8px;margin-bottom:20px;text-align:left;">
+                            <p style="color:#92400e;font-weight:600;margin-bottom:8px;">💡 Configuración necesaria:</p>
+                            <p style="color:#78350f;font-size:0.85rem;margin-bottom:8px;">1. Obtén tu API key en: <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#8b5cf6;">console.anthropic.com</a></p>
+                            <p style="color:#78350f;font-size:0.85rem;margin-bottom:8px;">2. Crea archivo .env en la raíz del proyecto</p>
+                            <p style="color:#78350f;font-size:0.85rem;">3. Agrega: ANTHROPIC_API_KEY=tu-key-aqui</p>
+                        </div>
+                    ` : ''}
+                    <button onclick="cerrarModalAnalisis()" class="btn" style="margin-top:10px;">Cerrar</button>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Muestra el análisis de Claude IA en el modal
+     */
+    mostrarAnalisisIA(data) {
+        const contenido = document.getElementById('analisis-zona-contenido');
+        // Guardar análisis en variable global para poder guardarlo después
+        window.ultimoAnalisisIA = data;
+        
+        const html = `
+            <div style="margin-bottom:20px;padding:15px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:12px;color:white;">
+                <h3 style="margin:0 0 10px 0;font-size:1.2rem;">🤖 Análisis IA con Claude Vision</h3>
+                <p style="margin:0;font-size:0.9rem;opacity:0.9;">Análisis profundo de la zona seleccionada</p>
+            </div>
+            
+            <div style="background:#f8fafc;padding:20px;border-radius:8px;margin-bottom:15px;line-height:1.7;white-space:pre-wrap;font-size:0.95rem;">
+${data.analisis}
+            </div>
+            
+            ${data.recomendaciones ? `
+                <div style="background:#fef3c7;padding:15px;border-radius:8px;border-left:4px solid #f59e0b;margin-bottom:15px;">
+                    <h4 style="margin:0 0 10px 0;color:#92400e;">💡 Recomendaciones</h4>
+                    <div style="color:#78350f;font-size:0.9rem;white-space:pre-wrap;">${data.recomendaciones}</div>
+                </div>
+            ` : ''}
+            
+            <button onclick="cerrarModalAnalisis()" class="btn" style="width:100%;">Cerrar</button>
+        `;
+        
+        contenido.innerHTML = html;
     }
 }
 // ============================================================================
@@ -2934,3 +3319,234 @@ document.addEventListener('DOMContentLoaded', () => {
         content.classList.remove('open');
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL ÚLTIMA VELA - Actualización dinámica al hacer hover
+// ═══════════════════════════════════════════════════════════════════════════
+
+let ultimaVelaOriginal = null;  // Guardamos la info de la última vela
+
+function configurarPanelUltimaVela() {
+    const graficoDiv = document.getElementById('grafico');
+    
+    if (!graficoDiv) {
+        console.error('❌ No se encontró elemento #grafico');
+        return;
+    }
+    
+    console.log('🎯 Configurando panel Última Vela dinámico...');
+    
+    graficoDiv.on('plotly_hover', async (eventData) => {
+        const point = eventData.points[0];
+        if (!point) return;
+        
+        // Ignorar hover en barras de volumen
+        if (point.data.type === 'bar') return;
+        
+        const dateStr = point.x;  // Formato dd.mm.yy
+        const ticker = document.getElementById('ticker').value;
+        const tf = document.getElementById('tf').value;  // Corregido: 'tf' no 'timeframe'
+        
+        // Convertir dd.mm.yy a YYYY-MM-DD para la API
+        const [dia, mes, año] = dateStr.split('.');
+        const dateForAPI = `20${año}-${mes}-${dia}`;
+        
+        console.log('📅 Hover en fecha:', dateStr, '→ API:', dateForAPI);
+        
+        try {
+            const response = await fetch(
+                `/indicadores/vela-info/${ticker}?date=${dateForAPI}&tf=${tf}`
+            );
+            
+            if (!response.ok) {
+                console.error('❌ Error HTTP:', response.status);
+                return;
+            }
+            
+            const info = await response.json();
+            console.log('✅ Info recibida:', info);
+            
+            actualizarPanelUltimaVela(info, false);  // false = no es la última vela
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo info de vela:', error);
+        }
+    });
+    
+    graficoDiv.on('plotly_unhover', () => {
+        console.log('👋 Unhover - restaurando última vela');
+        console.log('📦 ultimaVelaOriginal:', ultimaVelaOriginal);
+        
+        if (ultimaVelaOriginal) {
+            actualizarPanelUltimaVela(ultimaVelaOriginal, true);  // true = es la última vela
+            console.log('✅ Última vela restaurada');
+        } else {
+            console.warn('⚠️ No hay ultimaVelaOriginal para restaurar');
+        }
+    });
+    
+    console.log('✅ Panel Última Vela configurado correctamente');
+}
+
+function actualizarPanelUltimaVela(info, esUltima) {
+    const diasSemana = {
+        'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
+        'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+    };
+    
+    // Actualizar título
+    const titulo = document.getElementById('ultima-vela-titulo');
+    if (titulo) {
+        titulo.textContent = esUltima ? '📊 Última Vela' : '📊 Vela Seleccionada';
+    }
+    
+    // Actualizar fecha y día
+    const elemFecha = document.getElementById('ultima-vela-fecha');
+    const elemDia = document.getElementById('ultima-vela-dia');
+    if (elemFecha) elemFecha.textContent = info.fecha;
+    if (elemDia) elemDia.textContent = diasSemana[info.dia_semana] || info.dia_semana;
+    
+    // Actualizar OHLC
+    const elemApertura = document.getElementById('ultima-vela-apertura');
+    const elemMaximo = document.getElementById('ultima-vela-maximo');
+    const elemMinimo = document.getElementById('ultima-vela-minimo');
+    const elemCierre = document.getElementById('ultima-vela-cierre');
+    
+    if (elemApertura) elemApertura.textContent = info.open.toFixed(2) + ' €';
+    if (elemMaximo) elemMaximo.textContent = info.high.toFixed(2) + ' €';
+    if (elemMinimo) elemMinimo.textContent = info.low.toFixed(2) + ' €';
+    if (elemCierre) elemCierre.textContent = info.close.toFixed(2) + ' €';
+    
+    // Actualizar variación con color
+    const elemVariacion = document.getElementById('ultima-vela-variacion');
+    if (elemVariacion) {
+        const varSign = info.variacion_pct >= 0 ? '+' : '';
+        elemVariacion.textContent = `${varSign}${info.variacion_pct.toFixed(2)}% (${varSign}${info.variacion_abs.toFixed(2)} €)`;
+        elemVariacion.style.color = info.variacion_pct >= 0 ? '#22c55e' : '#ef4444';
+        elemVariacion.style.fontWeight = '700';
+    }
+    
+    // Actualizar volumen
+    const elemVolumen = document.getElementById('ultima-vela-volumen');
+    if (elemVolumen) {
+        const vol = info.volume;
+        const volTexto = vol >= 1e6 ? (vol / 1e6).toFixed(2) + 'M' : 
+                        vol >= 1e3 ? (vol / 1e3).toFixed(0) + 'K' : vol.toString();
+        elemVolumen.textContent = volTexto;
+    }
+    
+    // Actualizar dinámica de volumen (% vs media 20d) con color
+    const elemVolDinamica = document.getElementById('ultima-vela-vol-dinamica');
+    if (elemVolDinamica) {
+        if (info.vol_vs_media_pct !== null && info.vol_vs_media_pct !== undefined) {
+            const pct = info.vol_vs_media_pct;
+            const rvol = info.rvol || 0;
+            const signo = pct >= 0 ? '+' : '';
+            
+            // Determinar color según el %
+            let color = '#334155';  // Negro por defecto
+            let etiqueta = '';
+            
+            if (pct < -30) {
+                color = '#ef4444';  // Rojo: volumen muy bajo
+                etiqueta = 'muy bajo';
+            } else if (pct < -10) {
+                color = '#f97316';  // Naranja: volumen bajo
+                etiqueta = 'bajo';
+            } else if (pct > 100) {
+                color = '#eab308';  // Amarillo: volumen extremo
+                etiqueta = 'extremo';
+            } else if (pct > 30) {
+                color = '#22c55e';  // Verde: volumen alto
+                etiqueta = 'alto';
+            } else {
+                color = '#64748b';  // Gris: normal
+                etiqueta = 'normal';
+            }
+            
+            elemVolDinamica.textContent = `${signo}${pct.toFixed(1)}% vs media · RVOL ${rvol.toFixed(2)}x · ${etiqueta}`;
+            elemVolDinamica.style.color = color;
+            elemVolDinamica.style.fontWeight = '700';
+        } else {
+            elemVolDinamica.textContent = 'Datos insuficientes';
+            elemVolDinamica.style.color = '#94a3b8';
+        }
+    }
+    
+    // Actualizar ATR
+    const elemATR = document.getElementById('ultima-vela-atr');
+    if (elemATR) {
+        elemATR.textContent = info.atr ? info.atr.toFixed(2) + ' €' : 'N/A';
+    }
+    
+    // Actualizar RSI
+    const elemRSI = document.getElementById('ultima-vela-rsi');
+    if (elemRSI) {
+        elemRSI.textContent = info.rsi ? info.rsi.toFixed(1) : 'N/A';
+    }
+    
+    console.log('✅ Panel actualizado:', esUltima ? 'ÚLTIMA VELA' : 'VELA SELECCIONADA');
+}
+// ============================================================================
+// FUNCIÓN PARA GUARDAR ANÁLISIS DE IA EN SERVIDOR
+// ============================================================================
+
+function guardarAnalisisIA() {
+    if (!window.ultimoAnalisisIA) {
+        alert('No hay ningún análisis para guardar');
+        return;
+    }
+    
+    const ticker = document.getElementById('ticker').value;
+    
+    // Mostrar feedback inmediato
+    const btn = document.getElementById('btn-guardar-analisis');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '⏳ Guardando...';
+    btn.disabled = true;
+    
+    // Enviar al backend
+    fetch('/guardar_analisis/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ticker: ticker,
+            analisis: window.ultimoAnalisisIA.analisis,
+            recomendaciones: window.ultimoAnalisisIA.recomendaciones || ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            btn.innerHTML = '✅ Guardado';
+            btn.style.background = '#059669';
+            
+            // Mostrar mensaje con ubicación
+            const mensaje = document.createElement('div');
+            mensaje.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:15px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:10001;font-size:0.9rem;';
+            mensaje.innerHTML = `✅ Guardado en: <strong>${data.mensaje}</strong>`;
+            document.body.appendChild(mensaje);
+            
+            setTimeout(() => {
+                mensaje.remove();
+            }, 4000);
+            
+            setTimeout(() => {
+                btn.innerHTML = textoOriginal;
+                btn.style.background = '#10b981';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            throw new Error(data.error || 'Error al guardar');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el análisis: ' + error.message);
+        btn.innerHTML = textoOriginal;
+        btn.style.background = '#10b981';
+        btn.disabled = false;
+    });
+}

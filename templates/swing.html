@@ -2119,7 +2119,8 @@
             const scoreCell = row.insertCell();
             scoreCell.style.textAlign = 'right';
 
-            const score = Number(rSafe.setup_score ?? rSafe.score ?? 0);
+            // Usar score_original (0-10) en lugar de score_ranking
+            const score = Number(rSafe.score_original ?? rSafe.setup_score ?? rSafe.score ?? 0);
             scoreCell.innerHTML = `<strong style="color: ${
                 score >= 8 ? '#16a34a' :
                 score >= 6 ? '#2563eb' :

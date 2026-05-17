@@ -197,6 +197,10 @@ def _construir_resultado(ticker, señal):
     if score_global is not None:
         resultado["score_global"] = score_global
     
+    # Añadir desglose de scoring V2 si existe
+    if "desglose_scoring" in señal:
+        resultado["desglose_scoring"] = señal["desglose_scoring"]
+    
     return resultado
 
 

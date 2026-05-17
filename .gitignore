@@ -1,35 +1,84 @@
-# Python
+# === Python ===
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
 
-# Entorno virtual
+# === Entornos virtuales ===
 venv/
-.env/
+env/
+.venv/
 
-# Variables sensibles
-.env
-
-# Bases de datos
+# === Bases de datos (NUNCA subir a git) ===
 *.db
+*.sqlite
 *.sqlite3
+cartera/cartera.db
+alertas/alertas.db
+analytics/trades.db
 
-# Cache
-data_cache/
+# === Cache y datos ===
+data/*.csv
+data/*.parquet
+data/*.json
+data/cache_*
 .cache/
 
-# Logs
-*.log
+# === Pantallazos y archivos generados ===
+pantallazos/*.png
+pantallazos/*.txt
+pantallazos/*.jpg
 
-# Sistema
-.DS_Store
-Thumbs.db
+# === Backups y archivos temporales ===
+backup_*/
+*.bak
+*.bak[0-9]*
+*.tmp
+Borrar
+SOLUCION_*.txt
+diagnostico_*.py
+verificar_*.py
+inicializar_*.py
+migrar_*.py
+notepad_test_*.py
 
-# IDE
+# === Tests temporales del debug de hoy ===
+test_debug.py
+test_import.py
+test_len.py
+test_mel.py
+test_trace.py
+
+# === Carpetas legacy ===
+MODIFICACIONES/
+
+# === Archivos de configuración local ===
+.env
+.env.local
+*.local
+
+# === IDEs ===
 .vscode/
 .idea/
+*.swp
+*~
 
-# Otros
-*.bak
-*.tmp
+# === Sistema ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === ZIPs de versiones (no subir) ===
+*.zip
+MiWebCompleto*.zip
+
+# === Logs ===
+*.log
+logs/
+
+# === Archivos que se duplicaron en raíz ===
+alertas_db.py
+alertas_ia.py
+python

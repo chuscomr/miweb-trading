@@ -722,6 +722,11 @@
                         <span class="indicador-name">ATR - Average True Range</span>
                     </div>
                     
+                    <div class="indicador-option" data-value="ATR_BARRAS">
+                        <div class="indicador-checkbox"></div>
+                        <span class="indicador-name">ATR Barras 📊 (Histograma)</span>
+                    </div>
+                    
                     <div class="indicador-option" data-value="KELTNER">
                         <div class="indicador-checkbox"></div>
                         <span class="indicador-name">Keltner Channels ✨</span>
@@ -800,6 +805,10 @@
         <!-- Fila de botones: todos en la misma línea -->
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;width:100%;">
             <button class="btn" id="btn-actualizar">Actualizar</button>
+            <button class="btn" id="btn-analizar-zona" title="Seleccionar zona del gráfico para análisis IA" 
+                    style="background:#6366f1;color:white;font-weight:600;">
+                🔍 Analizar Zona
+            </button>
             <button class="btn" id="btn-escala-log" title="Alternar escala logarítmica / lineal"
                     style="font-size:0.8em; font-weight:600; min-width:48px;">Lin</button>
             <button class="btn btn-fullscreen" id="btn-fullscreen" title="Pantalla completa">
@@ -952,13 +961,26 @@
         <div class="sidebar">
             <!-- ÚLTIMA VELA -->
             <div class="info-card">
-                <h3>📊 Última Vela</h3>
+                <h3 id="ultima-vela-titulo">📊 Última Vela</h3>
                 <div class="info-content" id="ultima-vela">
-                    <p><span>Apertura:</span> <strong>--</strong></p>
-                    <p><span>Máximo:</span> <strong>--</strong></p>
-                    <p><span>Mínimo:</span> <strong>--</strong></p>
-                    <p><span>Cierre:</span> <strong>--</strong></p>
-                    <p><span>Volumen:</span> <strong>--</strong></p>
+                    <p style="color: #64748b; font-size: 0.75rem; font-weight: 600; margin-bottom: 8px;">
+                        <span id="ultima-vela-fecha">--</span> · <span id="ultima-vela-dia">--</span>
+                    </p>
+                    <p><span>🟢 Apertura:</span> <strong id="ultima-vela-apertura">--</strong></p>
+                    <p><span>🔴 Máximo:</span> <strong id="ultima-vela-maximo">--</strong></p>
+                    <p><span>🟢 Mínimo:</span> <strong id="ultima-vela-minimo">--</strong></p>
+                    <p><span>⚫ Cierre:</span> <strong id="ultima-vela-cierre">--</strong></p>
+                    <p style="border-top: 1px solid #e5e7eb; margin-top: 6px; padding-top: 6px;">
+                        <span>📊 Variación:</span> <strong id="ultima-vela-variacion">--</strong>
+                    </p>
+                    <p><span>📈 Volumen:</span> <strong id="ultima-vela-volumen">--</strong></p>
+                    <p style="font-size: 0.75rem; margin-top: 2px; margin-left: 20px;">
+                        <span id="ultima-vela-vol-dinamica" style="font-weight: 600;">--</span>
+                    </p>
+                    <p style="border-top: 1px solid #e5e7eb; margin-top: 6px; padding-top: 6px;">
+                        <span>💹 ATR (14):</span> <strong id="ultima-vela-atr">--</strong>
+                    </p>
+                    <p><span>📉 RSI (14):</span> <strong id="ultima-vela-rsi">--</strong></p>
                 </div>
             </div>
 
@@ -967,22 +989,6 @@
                 <h3 style="color:#1e3a5f; font-weight:800;">🧭 Contexto de Trading</h3>
                 <div class="info-content" id="contexto-trading">
                     <p style="color: #94a3b8; font-size: 0.85em;">Cargando análisis...</p>
-                </div>
-            </div>
-
-            <!-- SOPORTES -->
-            <div class="info-card">
-                <h3>🟢 Soportes</h3>
-                <div class="info-content" id="soportes">
-                    <p style="color: #94a3b8;">Cargando...</p>
-                </div>
-            </div>
-
-            <!-- RESISTENCIAS -->
-            <div class="info-card">
-                <h3>🔴 Resistencias</h3>
-                <div class="info-content" id="resistencias">
-                    <p style="color: #94a3b8;">Cargando...</p>
                 </div>
             </div>
 
@@ -999,14 +1005,6 @@
                 <h3>🕯️ Patrones de Velas</h3>
                 <div class="info-content" id="patrones">
                     <p style="color: #94a3b8;">No implementado aún</p>
-                </div>
-            </div>
-
-            <!-- FIBONACCI -->
-            <div class="info-card">
-                <h3>📐 Fibonacci</h3>
-                <div class="info-content" id="fibonacci">
-                    <p style="color: #94a3b8; font-size: 0.85em;">Activa el checkbox Fibonacci</p>
                 </div>
             </div>
 
@@ -1610,6 +1608,76 @@
 .ind-uso strong { color: #1d4ed8; }
 .sin-resultados { text-align: center; color: #94a3b8; padding: 40px 20px; font-size: 14px; }
 
+/* ESTILOS ESPECIALES PARA PATRONES DE VELAS */
+.patrones-velas-card { }
+
+.patron-seccion {
+    margin: 16px 0;
+    padding: 12px;
+    background: #f8fafc;
+    border-left: 3px solid #3b82f6;
+    border-radius: 6px;
+}
+
+.patron-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 10px;
+}
+
+.patron-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.patron-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: #1e293b;
+    line-height: 1.5;
+}
+
+.patron-icono {
+    font-size: 16px;
+    min-width: 24px;
+}
+
+.patron-item strong {
+    color: #0f172a;
+}
+
+.patron-estrategia {
+    margin: 16px 0;
+    padding: 12px;
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    border-radius: 6px;
+}
+
+.estrategia-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 6px;
+}
+
+.estrategia-desc {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.estrategia-desc em {
+    display: block;
+    margin-top: 4px;
+    font-style: italic;
+    color: #64748b;
+}
+
 </style>
 
     <script>
@@ -1900,6 +1968,10 @@ const GLOSARIO = [
     { cat: "🕯️ Patrones", badge: "DIV", nombre: "Divergencias",
       def: "Ocurre cuando el precio marca un nuevo máximo/mínimo pero el indicador (RSI, MACD) no lo confirma. Señal de debilidad del movimiento actual.",
       uso: "Divergencia bajista: precio sube a nuevo máximo pero RSI baja = agotamiento alcista. Divergencia alcista: precio baja a nuevo mínimo pero RSI sube = posible suelo." },
+
+    { cat: "🕯️ Patrones", badge: "VELAS", nombre: "Patrones de Velas Japonesas",
+      def: "Formaciones de 1-3 velas que indican reversión o continuación. El gráfico los marca automáticamente.\n\n📈 REVERSIÓN ALCISTA (fin de pullback): 🔨 Martillo (sombra inferior >2× cuerpo, en soporte), 🟢 Envolvente Alcista (vela verde envuelve totalmente la roja), 🌅 Estrella de la Mañana (3 velas: roja grande + pequeña/doji + verde grande).\n\n📉 REVERSIÓN BAJISTA (fin de rally): ⭐ Estrella Fugaz (sombra superior >2× cuerpo, en resistencia), 🔴 Envolvente Bajista (vela roja envuelve totalmente la verde), 🌆 Estrella de la Tarde (3 velas: verde grande + pequeña/doji + roja grande).\n\n🚀 CONTINUACIÓN ALCISTA: ⬆⬆⬆ Tres Soldados Blancos (3 velas verdes consecutivas ascendentes), ⬆ Vela Momentum (vela verde muy grande >1.5× anterior).\n\n📊 CONTINUACIÓN BAJISTA: ⬇⬇⬇ Tres Cuervos Negros (3 velas rojas consecutivas descendentes), ⬇ Vela Momentum (vela roja muy grande).\n\n⚖️ INDECISIÓN: ✖ Doji (cuerpo <10% del rango total, mercado indeciso antes de movimiento).",
+      uso: "ESTRATEGIA PULLBACK (compra en retroceso): Buscar 🔨 Martillo O 🌅 Estrella Mañana O 🟢 Envolvente Alcista formándose en soporte/VWAP + divergencia alcista RSI + volumen normal/bajo. Entrar en cierre de vela confirmatoria.\n\nESTRATEGIA BREAKOUT (compra en ruptura): Buscar ⬆⬆⬆ Tres Soldados O 🟢 Envolvente Alcista rompiendo resistencia + ⬆ Vela Momentum + volumen ALTO (>1.5× media) + sin divergencia bajista. Los patrones son más fiables con confluencia de múltiples factores técnicos." },
 ];
 
 function abrirDefiniciones() {
@@ -2220,18 +2292,124 @@ function renderizarGlosario(lista) {
     categorias.forEach(cat => {
         html += `<div class="cat-separador"><h3>${cat}</h3></div>`;
         lista.filter(i => i.cat === cat).forEach(ind => {
-            html += `
-            <div class="indicador-card">
-                <div class="ind-cabecera">
-                    <span class="ind-badge">${ind.badge}</span>
-                    <span class="ind-nombre">${ind.nombre}</span>
-                </div>
-                <p class="ind-definicion">${ind.def}</p>
-                <div class="ind-uso"><strong>💡 Cómo usarlo:</strong> ${ind.uso}</div>
-            </div>`;
+            // Renderizado especial para patrones de velas
+            if (ind.badge === 'VELAS') {
+                html += renderizarPatronesVelas(ind);
+            } else {
+                html += `
+                <div class="indicador-card">
+                    <div class="ind-cabecera">
+                        <span class="ind-badge">${ind.badge}</span>
+                        <span class="ind-nombre">${ind.nombre}</span>
+                    </div>
+                    <p class="ind-definicion">${ind.def}</p>
+                    <div class="ind-uso"><strong>💡 Cómo usarlo:</strong> ${ind.uso}</div>
+                </div>`;
+            }
         });
     });
     contenedor.innerHTML = html;
+}
+
+function renderizarPatronesVelas(ind) {
+    return `
+    <div class="indicador-card patrones-velas-card">
+        <div class="ind-cabecera">
+            <span class="ind-badge">${ind.badge}</span>
+            <span class="ind-nombre">${ind.nombre}</span>
+        </div>
+        <p class="ind-definicion">Formaciones de 1-3 velas que indican reversión o continuación. El gráfico los marca automáticamente cuando aparecen.</p>
+        
+        <div class="patron-seccion">
+            <div class="patron-titulo">📈 REVERSIÓN ALCISTA (Fin de pullback)</div>
+            <div class="patron-lista">
+                <div class="patron-item">
+                    <span class="patron-icono">🔨</span>
+                    <strong>Martillo</strong> — Sombra inferior larga (>2× cuerpo), cuerpo pequeño arriba
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">🟢</span>
+                    <strong>Envolvente Alcista</strong> — Vela verde envuelve completamente la roja anterior
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">🌅</span>
+                    <strong>Estrella de la Mañana</strong> — 3 velas: roja grande + pequeña (doji) + verde (patrón muy fiable)
+                </div>
+            </div>
+        </div>
+        
+        <div class="patron-seccion">
+            <div class="patron-titulo">📉 REVERSIÓN BAJISTA (Fin de rally)</div>
+            <div class="patron-lista">
+                <div class="patron-item">
+                    <span class="patron-icono">⭐</span>
+                    <strong>Estrella Fugaz</strong> — Sombra superior larga (>2× cuerpo), cuerpo pequeño abajo
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">🔴</span>
+                    <strong>Envolvente Bajista</strong> — Vela roja envuelve completamente la verde anterior
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">🌆</span>
+                    <strong>Estrella de la Tarde</strong> — 3 velas: verde grande + pequeña + roja (patrón muy fiable)
+                </div>
+            </div>
+        </div>
+        
+        <div class="patron-seccion">
+            <div class="patron-titulo">🚀 CONTINUACIÓN ALCISTA (Breakout confirmado)</div>
+            <div class="patron-lista">
+                <div class="patron-item">
+                    <span class="patron-icono">⬆⬆⬆</span>
+                    <strong>Tres Soldados Blancos</strong> — 3 velas verdes consecutivas ascendentes
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">⬆</span>
+                    <strong>Vela Momentum</strong> — Vela verde muy grande (>1.5× anterior)
+                </div>
+            </div>
+        </div>
+        
+        <div class="patron-seccion">
+            <div class="patron-titulo">📊 CONTINUACIÓN BAJISTA (Breakdown confirmado)</div>
+            <div class="patron-lista">
+                <div class="patron-item">
+                    <span class="patron-icono">⬇⬇⬇</span>
+                    <strong>Tres Cuervos Negros</strong> — 3 velas rojas consecutivas descendentes
+                </div>
+                <div class="patron-item">
+                    <span class="patron-icono">⬇</span>
+                    <strong>Vela Momentum</strong> — Vela roja muy grande (>1.5× anterior)
+                </div>
+            </div>
+        </div>
+        
+        <div class="patron-seccion">
+            <div class="patron-titulo">⚖️ INDECISIÓN</div>
+            <div class="patron-lista">
+                <div class="patron-item">
+                    <span class="patron-icono">✖</span>
+                    <strong>Doji</strong> — Cuerpo muy pequeño (<10% del rango), mercado indeciso
+                </div>
+            </div>
+        </div>
+        
+        <div class="patron-estrategia">
+            <div class="estrategia-titulo">📈 ESTRATEGIA PULLBACK (compra en retroceso):</div>
+            <div class="estrategia-desc">
+                Busca: 🔨 Martillo + 🌅 Estrella Mañana + 🟢 Envolvente<br>
+                <em>+ Confluencia con: Soporte, VWAP, Divergencia alcista RSI</em>
+            </div>
+        </div>
+        
+        <div class="patron-estrategia">
+            <div class="estrategia-titulo">📊 ESTRATEGIA BREAKOUT (compra en ruptura):</div>
+            <div class="estrategia-desc">
+                Busca: ⬆⬆⬆ Tres Soldados + 🟢 Envolvente en resistencia + ⬆ Momentum<br>
+                <em>+ Confirma con: Ruptura resistencia, Volumen alto, Sin divergencia bajista</em>
+            </div>
+        </div>
+    </div>`;
 }
 
 document.addEventListener('keydown', e => {
@@ -2595,11 +2773,164 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('toggle-ia-alertas')?.addEventListener('change', () => {
       if (window._tickerAlertasActual) cargarAlertasIA(window._tickerAlertasActual);
     });
+    
+    // Abrir modal de definiciones si viene el parámetro en la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('glosario') === '1') {
+      setTimeout(() => abrirDefiniciones(), 100);
+    }
   });
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarAlertasModal(); });
 })();
 </script>
+
+    <!-- TOOLTIP PERSONALIZADO (Hover Info) -->
+    <div id="custom-tooltip" class="custom-tooltip" style="display: none; position: fixed; z-index: 10000; background: white; border: 2px solid #2563eb; border-radius: 12px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); min-width: 280px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div class="tooltip-header" style="border-bottom: 2px solid #e5e7eb; margin-bottom: 12px; padding-bottom: 8px;">
+            <span id="tooltip-date" style="font-size: 1rem; font-weight: 700; color: #1e293b;"></span>
+            <span id="tooltip-weekday" style="margin-left: 8px; font-size: 0.85rem; font-weight: 600; color: #64748b;"></span>
+        </div>
+        <div class="tooltip-body" style="display: flex; flex-direction: column; gap: 6px;">
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">🟢 Apertura:</span>
+                <span id="tooltip-open" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">🔴 Máximo:</span>
+                <span id="tooltip-high" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">🟢 Mínimo:</span>
+                <span id="tooltip-low" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">⚫ Cierre:</span>
+                <span id="tooltip-close" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">📊 Variación:</span>
+                <span id="tooltip-var" style="font-weight: 700;"></span>
+            </div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">📈 Volumen:</span>
+                <span id="tooltip-vol" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">💹 ATR (14):</span>
+                <span id="tooltip-atr" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+            <div class="tooltip-row" style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="font-weight: 600; color: #475569;">📉 RSI (14):</span>
+                <span id="tooltip-rsi" style="font-weight: 700; color: #1e293b;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Análisis de Zona -->
+    <div id="modal-analisis-zona" style="display:none;position:fixed;top:80px;right:20px;z-index:10000;">
+        <div id="modal-analisis-zona-container" style="background:#ffffff;border-radius:12px;width:700px;max-width:calc(100vw - 40px);max-height:calc(100vh - 100px);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid #cbd5e1;position:relative;">
+            <div id="modal-analisis-zona-header" style="padding:20px;border-bottom:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;cursor:move;background:#f8fafc;">
+                <h2 style="margin:0;font-size:1.3rem;color:#0f172a;font-weight:700;">🎯 Análisis de Zona con IA</h2>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button id="btn-guardar-analisis" onclick="guardarAnalisisIA()" 
+                            style="background:#10b981;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:background 0.2s;" 
+                            onmouseover="this.style.background='#059669'" 
+                            onmouseout="this.style.background='#10b981'">
+                        💾 Guardar
+                    </button>
+                    <button onclick="cerrarModalAnalisis()" 
+                            style="background:none;border:none;font-size:1.8rem;cursor:pointer;color:#64748b;line-height:1;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:background 0.2s;" 
+                            onmouseover="this.style.background='#e2e8f0'" 
+                            onmouseout="this.style.background='transparent'">
+                        &times;
+                    </button>
+                </div>
+            </div>
+            <div id="analisis-zona-contenido" style="padding:20px;overflow-y:auto;max-height:calc(100vh - 180px);background:#ffffff;">
+                <div style="text-align:center;padding:40px;">
+                    <div class="spinner" style="border:3px solid #f3f4f6;border-top:3px solid #6366f1;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto;"></div>
+                    <p style="margin-top:20px;color:#64748b;">Analizando zona seleccionada...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Script para resetear checkboxes de indicadores al cargar -->
+    <script>
+        // Resetear todos los checkboxes de indicadores cada vez que se carga la página
+        window.addEventListener('load', () => {
+            // Desmarcar todos los checkboxes de indicadores
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            console.log('✅ Indicadores reseteados');
+        });
+
+        function cerrarModalAnalisis() {
+            document.getElementById('modal-analisis-zona').style.display = 'none';
+            // Resetear posición
+            const container = document.getElementById('modal-analisis-zona-container');
+            container.style.transform = 'translate(0px, 0px)';
+        }
+
+        // Hacer el modal arrastrable
+        (function() {
+            const modal = document.getElementById('modal-analisis-zona-container');
+            const header = document.getElementById('modal-analisis-zona-header');
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                
+                if (e.target === header || header.contains(e.target)) {
+                    isDragging = true;
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    setTranslate(currentX, currentY, modal);
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            }
+        })();
+    </script>
 
 </body>
 </html>

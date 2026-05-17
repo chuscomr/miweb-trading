@@ -603,6 +603,83 @@ def clasificar_setup_medio(score_0_10, valido_criticos=True):
     }
 
 
+def clasificar_fundamental(score_fundamental):
+    """
+    Clasifica el score fundamental con emoji y etiqueta.
+    
+    Args:
+        score_fundamental: Score 0-10 del análisis fundamental
+    
+    Returns:
+        dict con emoji, etiqueta, color
+    """
+    if score_fundamental >= 8.0:
+        return {
+            "emoji": "🟢",
+            "etiqueta": "SÓLIDO",
+            "color": "#10b981",  # Verde
+            "score": score_fundamental
+        }
+    elif score_fundamental >= 6.0:
+        return {
+            "emoji": "🟡",
+            "etiqueta": "ACEPTABLE",
+            "color": "#f59e0b",  # Amarillo
+            "score": score_fundamental
+        }
+    elif score_fundamental >= 4.0:
+        return {
+            "emoji": "🟠",
+            "etiqueta": "DÉBIL",
+            "color": "#f97316",  # Naranja
+            "score": score_fundamental
+        }
+    else:
+        return {
+            "emoji": "🔴",
+            "etiqueta": "RIESGO",
+            "color": "#ef4444",  # Rojo
+            "score": score_fundamental
+        }
+
+
+def calcular_setup_global(score_tecnico, score_fundamental):
+    """
+    Calcula el setup global combinando técnico y fundamental.
+    
+    Ponderación: 70% técnico / 30% fundamental (somos traders)
+    
+    Args:
+        score_tecnico: Score 0-10 técnico
+        score_fundamental: Score 0-10 fundamental
+    
+    Returns:
+        dict con score_global y clasificacion_global
+    """
+    PESO_TECNICO = 0.70
+    PESO_FUNDAMENTAL = 0.30
+    
+    score_global = (score_tecnico * PESO_TECNICO) + (score_fundamental * PESO_FUNDAMENTAL)
+    score_global = round(score_global, 1)
+    
+    # Clasificación del setup global
+    if score_global >= 8.5:
+        clasificacion = "EXCELENTE"
+    elif score_global >= 7.5:
+        clasificacion = "MUY BUENO"
+    elif score_global >= 6.5:
+        clasificacion = "BUENO"
+    elif score_global >= 5.5:
+        clasificacion = "ACEPTABLE"
+    else:
+        clasificacion = "DÉBIL"
+    
+    return {
+        "score_global": score_global,
+        "clasificacion_global": clasificacion
+    }
+
+
 class MedioPlazo:
     """
     Wrapper OOP sobre las funciones de logica_medio.py.

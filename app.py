@@ -51,6 +51,9 @@ from web.routes.cartera_routes     import cartera_bp
 from web.routes.analisis_routes    import analisis_bp
 from web.routes.alertas_routes     import alertas_bp
 from web.routes.indicadores_routes import indicadores_bp
+from web.routes.grafico_pro_routes import grafico_pro_bp
+from web.routes.analizar_zona_routes import analizar_zona_bp
+from web.routes.guardar_analisis_routes import guardar_analisis_bp
 from contexto_bp                   import contexto_bp
 
 # ════════════════════════════════════════════════════════════════
@@ -81,7 +84,10 @@ application.register_blueprint(cartera_bp)      # /cartera/
 application.register_blueprint(analisis_bp)     # /analisis/
 application.register_blueprint(alertas_bp)      # /alertas/
 application.register_blueprint(indicadores_bp)  # /indicadores/
+application.register_blueprint(grafico_pro_bp)  # /grafico-pro/
 application.register_blueprint(contexto_bp)     # /contexto/
+application.register_blueprint(analizar_zona_bp)
+application.register_blueprint(guardar_analisis_bp)  # /api/analizar_zona
 
 print(">>> APP.PY CARGADO <<<")
 

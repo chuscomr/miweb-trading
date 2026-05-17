@@ -60,6 +60,10 @@ def _limpiar_df(df: pd.DataFrame) -> pd.DataFrame:
     variacion = df["Close"].pct_change().abs()
     df = df[variacion.isna() | (variacion < 0.50)]  # solo elimina errores claros (>50%)
 
+    # ✅ FIX: Convertir Volume a int64 (Yahoo a veces devuelve decimales)
+    if "Volume" in df.columns:
+        df["Volume"] = df["Volume"].fillna(0).round().astype('int64')
+
     if df.index.tz is not None:
         df.index = df.index.tz_localize(None)
 
@@ -335,6 +339,9 @@ def get_df(
         cache_key = f"df_{ticker}_{periodo}"
         df = cache.get(cache_key)
         if df is not None and len(df) >= min_velas:
+            # ✅ FIX: Normalizar Volume del cache (puede tener decimales)
+            if "Volume" in df.columns:
+                df["Volume"] = df["Volume"].fillna(0).round().astype('int64')
             # Aunque el cache tenga datos, completar con la vela de hoy si falta
             df = _completar_con_hoy(df, ticker)
             return df
@@ -376,7 +383,11 @@ def get_df_semanal(
         cache_key = f"df_semanal_{ticker}_{periodo_años}"
         cached = cache.get(cache_key)
         if cached is not None:
-            return cached
+            # ✅ FIX: Normalizar Volume del cache
+            df_cached, validacion = cached
+            if df_cached is not None and "Volume" in df_cached.columns:
+                df_cached["Volume"] = df_cached["Volume"].fillna(0).round().astype('int64')
+            return df_cached, validacion
 
     df_diario = _descargar_diario(ticker, periodo_años=periodo_años)
 
@@ -389,7 +400,7 @@ def get_df_semanal(
             "High":   df_diario["High"].resample("W-FRI").max(),
             "Low":    df_diario["Low"].resample("W-FRI").min(),
             "Close":  df_diario["Close"].resample("W-FRI").last(),
-            "Volume": df_diario["Volume"].resample("W-FRI").sum(),
+            "Volume": df_diario["Volume"].resample("W-FRI").sum().round().astype('int64'),
         }).dropna()
         # ✅ FIX: eliminar semanas con Close <= 0 (velas corruptas)
         df_semanal = df_semanal[df_semanal["Close"] > 0]

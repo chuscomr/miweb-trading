@@ -63,6 +63,7 @@ def _stats_y_grafico(ticker, cache, evaluacion=None):
     """Calcula max/min/mm20 recientes y genera gráfico Plotly."""
     try:
         from core.data_provider import get_df
+        from core.indicadores import calcular_rsi
         import pandas as pd
         import numpy as np
         import plotly.graph_objects as go

@@ -160,8 +160,16 @@ def editar_guardar(pid):
                 if f.get("sistema"):
                     con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
                                (f.get("sistema", "SWING").upper(), pid))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error actualizando campos extras: {e}")
+            # Si falla, intentar solo el sistema (campo más importante)
+            try:
+                with _db._conexion() as con:
+                    con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
+                               (f.get("sistema", "SWING").upper(), pid))
+            except Exception as e2:
+                logger.error(f"❌ Error actualizando sistema: {e2}")
+                logger.error(f"💡 Ejecuta: python migrar_cartera_sistema.py")
     return redirect(url_for("cartera.ver_cartera"))
 
 
