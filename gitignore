@@ -1,7 +1,0 @@
-
-# Archivos de backup
-*.bak
-*.tmp
-*.pyc
-__pycache__/
-data/insiders.db
