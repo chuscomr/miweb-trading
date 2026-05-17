@@ -6,9 +6,6 @@ def calcular_sentimiento_empresa(ticker, cache=None):
     Calcula el sentimiento técnico de mercado para un ticker.
     Score: -100 (muy bajista) a +100 (muy alcista)
     """
-    import sys
-    sys.path.insert(0, '/home/claude/MiWeb71/MiWeb')
-    
     from core.data_provider import get_df
     from core.indicadores import calcular_rsi, calcular_macd, calcular_medias
     import numpy as np
