@@ -1,321 +1,370 @@
 # ══════════════════════════════════════════════════════════════════════
-# PERFILES DE TRADING SEGÚN CONTEXTO DE MERCADO
+# PERFILES DE TRADING V2 - ARQUITECTURA PROFESIONAL
 # ══════════════════════════════════════════════════════════════════════
 """
-Define parámetros de trading adaptativos según el contexto del mercado.
+CAMBIO FUNDAMENTAL:
+- ANTES: score_ponderado = score * peso → if >= umbral → ACEPTA/RECHAZA
+- AHORA: Separar VALIDEZ TÉCNICA de AJUSTE POR CONTEXTO
 
 FILOSOFÍA PRO:
-- NO bloquear estrategias → PONDERAR
-- En ALCISTA: Ambas estrategias con peso completo
-- En LATERAL: Breakouts penalizados, pullbacks favorecidos
-- En BAJISTA: Ambas penalizadas (menos oportunidades en general)
+1. VALIDEZ TÉCNICA (absoluta):
+   - score >= 6.0 → Setup VÁLIDO (siempre)
+   - No penalizar por contexto aquí
+   
+2. CONTEXTO (modula ejecución):
+   - Tamaño de posición
+   - Prioridad de estrategia
+   - Gestión de riesgo
+   - Confirmaciones extra
 
-VERSIÓN: v82.7 CORREGIDA
-FECHA: 2026-04-25
-IMPACTO ESPERADO: +40-100% en expectancy
+RESULTADO:
+- Sin zonas muertas
+- Todas las señales válidas se capturan
+- El contexto ajusta CÓMO operar, no SI operar
+
+VERSIÓN: v82.13 PRO
+FECHA: 2026-05-05
+IMPACTO: Elimina zonas muertas del sistema
 """
 
 # ══════════════════════════════════════════════════════════════════════
-# PERFILES DE TRADING (PONDERACIÓN PROFESIONAL)
+# CONFIRMACIONES ESPECÍFICAS POR ESTRATEGIA
 # ══════════════════════════════════════════════════════════════════════
 
-PERFILES = {
+CONFIRMACIONES = {
+    "breakout": [
+        "Cierre por encima de resistencia (no solo mecha)",
+        "Volumen > 1.5x media últimos 20 días",
+        "Mecha superior < 40% del rango de la vela",
+        "Confirmación en vela siguiente (no reversión inmediata)"
+    ],
+    "pullback": [
+        "Rebote en soporte clave (MM20/MM50/soporte previo)",
+        "Vela de rechazo (mecha inferior larga)",
+        "RSI girando al alza desde sobreventa (<40)",
+        "Volumen decreciente en corrección, creciente en rebote"
+    ]
+}
+
+
+def obtener_confirmaciones_requeridas(tipo_estrategia):
+    """
+    Obtiene la lista de confirmaciones concretas para una estrategia.
+    
+    Args:
+        tipo_estrategia: "breakout" o "pullback"
+    
+    Returns:
+        list - Lista de confirmaciones específicas a verificar
+    """
+    return CONFIRMACIONES.get(tipo_estrategia, [])
+
+
+# ══════════════════════════════════════════════════════════════════════
+# UMBRALES DE VALIDEZ TÉCNICA (DINÁMICOS POR CONTEXTO)
+# ══════════════════════════════════════════════════════════════════════
+
+UMBRALES_CONTEXTO = {
+    "ALCISTA": 6.5,   # Más exigente (hay muchas opciones)
+    "LATERAL": 6.0,   # Estándar (equilibrio)
+    "BAJISTA": 6.2,   # Ligeramente más exigente (mercado difícil)
+    "TRANSICION": 6.3 # Más conservador en incertidumbre
+}
+
+SCORE_MINIMO_ABSOLUTO = 6.0  # Mínimo absoluto (fallback)
+
+CLASIFICACION_CALIDAD = {
+    "excelente": 8.0,   # score >= 8.0
+    "bueno":     6.5,   # score >= 6.5
+    "mediocre":  6.0,   # score >= 6.0
+}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PERFILES DE CONTEXTO (AJUSTAN EJECUCIÓN, NO VALIDEZ)
+# ══════════════════════════════════════════════════════════════════════
+
+PERFILES_V2 = {
     "ALCISTA": {
-        # Ponderación de estrategias (NO bloquear, PONDERAR)
-        "peso_breakout": 1.0,
-        "peso_pullback": 1.0,
+        # Preferencias de estrategia (para ranking)
+        "prioridad_breakout": 1.2,   # Breakouts favorecidos
+        "prioridad_pullback": 1.0,   # Pullbacks normales
         
-        # Filtro mínimo (más permisivo en alcista)
-        "score_base_minimo": 6.0,  # Acepta buenos y excelentes
-        
-        # Bonus/penalización para ranking
-        "bonus_breakout": 0.3,   # Breakouts favorecidos (+0.3 al score)
-        "bonus_pullback": 0.0,   # Pullbacks sin bonus
-        "penalizacion_general": 0.0,
+        # Gestión de tamaño
+        "factor_tamaño_breakout": 1.0,  # Tamaño normal
+        "factor_tamaño_pullback": 1.0,  # Tamaño normal
         
         # Gestión de riesgo
         "riesgo_por_trade_pct": 2.0,
         "max_posiciones_abiertas": 5,
         "max_exposicion_total_pct": 10.0,
         
-        # Gestión de posición
+        # Confirmaciones extra
+        "requiere_confirmacion_breakout": False,
+        "requiere_confirmacion_pullback": False,
+        
+        # Trailing y objetivos
         "trailing_desde_r": 2.0,
         "objetivo_parcial_r": 3.0,
         "venta_parcial_pct": 50,
         
-        "descripcion": "Alcista: Favorece breakouts, score mínimo 6.0"
+        "descripcion": "Alcista: Favorece breakouts, tamaño completo",
+        "contexto": "ALCISTA"
     },
     
     "LATERAL": {
-        # Ponderación de estrategias
-        "peso_breakout": 0.6,
-        "peso_pullback": 1.0,
+        # Preferencias de estrategia (para ranking)
+        "prioridad_breakout": 0.8,   # Breakouts menos priorizados
+        "prioridad_pullback": 1.3,   # Pullbacks MÁS priorizados
         
-        # Filtro mínimo (más exigente)
-        "score_base_minimo": 6.5,  # Solo buenos y excelentes
-        
-        # Bonus/penalización para ranking
-        "bonus_breakout": 0.0,
-        "bonus_pullback": 0.3,   # Pullbacks favorecidos (+0.3 al score)
-        "penalizacion_general": 0.0,
+        # Gestión de tamaño
+        "factor_tamaño_breakout": 0.6,  # Breakouts con 60% tamaño
+        "factor_tamaño_pullback": 1.0,  # Pullbacks tamaño completo
         
         # Gestión de riesgo
         "riesgo_por_trade_pct": 1.5,
         "max_posiciones_abiertas": 3,
         "max_exposicion_total_pct": 6.0,
         
-        # Gestión de posición
+        # Confirmaciones extra
+        "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
+        "requiere_confirmacion_pullback": False,  # Pullbacks sin confirmación extra
+        
+        # Trailing y objetivos
         "trailing_desde_r": 1.5,
         "objetivo_parcial_r": 2.0,
         "venta_parcial_pct": 50,
         
-        "descripcion": "Lateral: Favorece pullbacks, score mínimo 6.5"
+        "descripcion": "Lateral: Pullbacks priorizados, breakouts con menor tamaño",
+        "contexto": "LATERAL"
     },
     
     "BAJISTA": {
-        # Ponderación de estrategias
-        "peso_breakout": 0.3,
-        "peso_pullback": 0.5,
+        # Preferencias de estrategia (para ranking)
+        "prioridad_breakout": 0.5,   # Breakouts muy poco priorizados
+        "prioridad_pullback": 0.9,   # Pullbacks algo priorizados
         
-        # Filtro mínimo (muy exigente)
-        "score_base_minimo": 7.0,  # Solo excelentes
-        
-        # Bonus/penalización para ranking
-        "bonus_breakout": 0.0,
-        "bonus_pullback": 0.0,
-        "penalizacion_general": 0.5,  # Todo penalizado en bajista
+        # Gestión de tamaño
+        "factor_tamaño_breakout": 0.4,  # Breakouts con 40% tamaño (muy conservador)
+        "factor_tamaño_pullback": 0.7,  # Pullbacks con 70% tamaño
         
         # Gestión de riesgo
         "riesgo_por_trade_pct": 1.0,
         "max_posiciones_abiertas": 2,
         "max_exposicion_total_pct": 3.0,
         
-        # Gestión de posición
+        # Confirmaciones extra
+        "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
+        "requiere_confirmacion_pullback": True,   # Pullbacks también
+        
+        # Trailing y objetivos
         "trailing_desde_r": 1.0,
         "objetivo_parcial_r": 1.5,
         "venta_parcial_pct": 75,
         
-        "descripcion": "Bajista: Muy conservador, solo excelentes, score mínimo 7.0"
+        "descripcion": "Bajista: Muy conservador, ambos con tamaño reducido",
+        "contexto": "BAJISTA"
+    },
+    
+    "TRANSICION": {
+        # Preferencias de estrategia (para ranking)
+        "prioridad_breakout": 0.7,   # Breakouts poco priorizados
+        "prioridad_pullback": 1.1,   # Pullbacks ligeramente favorecidos
+        
+        # Gestión de tamaño (CONSERVADOR)
+        "factor_tamaño_breakout": 0.5,  # Breakouts con 50% tamaño
+        "factor_tamaño_pullback": 0.8,  # Pullbacks con 80% tamaño
+        
+        # Gestión de riesgo (MUY CONSERVADOR)
+        "riesgo_por_trade_pct": 1.2,
+        "max_posiciones_abiertas": 2,   # Máximo 2 posiciones
+        "max_exposicion_total_pct": 4.0,
+        
+        # Confirmaciones extra
+        "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
+        "requiere_confirmacion_pullback": True,   # Pullbacks también (mercado confuso)
+        
+        # Trailing y objetivos
+        "trailing_desde_r": 1.2,
+        "objetivo_parcial_r": 1.8,
+        "venta_parcial_pct": 60,
+        
+        "descripcion": "Transición: Muy conservador, ambos requieren confirmación",
+        "contexto": "TRANSICION"
     }
 }
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNCIÓN PRINCIPAL: CALCULAR SCORE PONDERADO
+# FUNCIONES V2
 # ══════════════════════════════════════════════════════════════════════
 
-def calcular_score_ponderado(score_base, tipo_estrategia, contexto_mercado):
+def setup_es_valido(score_base, contexto_mercado="LATERAL"):
     """
-    Aplica ponderación al score según contexto y tipo de estrategia.
+    Determina si un setup es técnicamente válido según contexto.
+    
+    MEJORA V2.1: Umbral dinámico según contexto de mercado.
+    - ALCISTA: 6.5 (más exigente, hay opciones)
+    - LATERAL: 6.0 (estándar)
+    - BAJISTA: 6.2 (ligeramente más exigente)
+    - TRANSICION: 6.3 (conservador en incertidumbre)
     
     Args:
-        score_base: Score original de la señal (5.0 - 10.0)
-        tipo_estrategia: "breakout" o "pullback"
-        contexto_mercado: "ALCISTA", "LATERAL" o "BAJISTA"
+        score_base: Score técnico del setup (5.0 - 10.0)
+        contexto_mercado: "ALCISTA", "LATERAL", "BAJISTA", "TRANSICION"
     
     Returns:
-        float - Score ponderado
-    
-    Ejemplo:
-        Score breakout = 6.0 en LATERAL
-        → score_ponderado = 6.0 * 0.6 = 3.6
-        → Si score_base_minimo = 6.5, este setup se RECHAZA
-        
-        Score pullback = 6.0 en LATERAL
-        → score_ponderado = 6.0 * 1.0 = 6.0
-        → Pasa el filtro ✅
+        bool - True si es válido técnicamente
     """
-    perfil = obtener_perfil_trading(contexto_mercado)
+    contexto = contexto_mercado.upper()
+    umbral = UMBRALES_CONTEXTO.get(contexto, SCORE_MINIMO_ABSOLUTO)
+    return score_base >= umbral
+
+
+def clasificar_calidad_setup(score):
+    """
+    Clasifica un setup según su calidad técnica.
     
-    # Obtener peso según estrategia
-    if tipo_estrategia == "breakout":
-        peso = perfil["peso_breakout"]
-    else:  # pullback
-        peso = perfil["peso_pullback"]
-    
-    # Aplicar ponderación
-    score_ponderado = score_base * peso
-    
-    return score_ponderado
+    Returns:
+        str: "excelente", "bueno", "mediocre"
+    """
+    if score >= CLASIFICACION_CALIDAD["excelente"]:
+        return "excelente"
+    elif score >= CLASIFICACION_CALIDAD["bueno"]:
+        return "bueno"
+    elif score >= CLASIFICACION_CALIDAD["mediocre"]:
+        return "mediocre"
+    else:
+        return "invalido"
 
 
 def calcular_score_ranking(score_base, tipo_estrategia, contexto_mercado):
     """
     Calcula el score para RANKING (ordenación).
-    Aplica bonus/penalizaciones según contexto para priorizar ciertos tipos.
     
-    Este score NO se usa para filtrar (eso lo hace score_ponderado),
-    sino para ORDENAR los setups que ya pasaron el filtro.
+    CAMBIO: Ya no penaliza el score, solo ajusta prioridad para ordenar.
     
     Args:
-        score_base: Score original (5.0-10.0)
+        score_base: Score original (sin modificar)
         tipo_estrategia: "breakout" o "pullback"
-        contexto_mercado: "ALCISTA", "LATERAL", "BAJISTA"
+        contexto_mercado: "ALCISTA", "LATERAL" o "BAJISTA"
     
     Returns:
-        float - Score de ranking (para ordenar)
-    
-    Ejemplo en ALCISTA:
-        Breakout score 6.5 → 6.5 + 0.3 = 6.8 (favorecido)
-        Pullback score 6.5 → 6.5 + 0.0 = 6.5 (neutral)
-        → El breakout aparece ANTES en el ranking
-    
-    Ejemplo en LATERAL:
-        Breakout score 7.0 → 7.0 + 0.0 = 7.0 (neutral)
-        Pullback score 7.0 → 7.0 + 0.3 = 7.3 (favorecido)
-        → El pullback aparece ANTES en el ranking
+        float - Score de ranking (para ordenar, NO filtrar)
     """
     perfil = obtener_perfil_trading(contexto_mercado)
     
-    # Empezar con score base
-    score_ranking = score_base
-    
-    # Aplicar bonus según tipo de estrategia
+    # Aplicar prioridad según estrategia
     if tipo_estrategia == "breakout":
-        score_ranking += perfil["bonus_breakout"]
+        prioridad = perfil["prioridad_breakout"]
     else:  # pullback
-        score_ranking += perfil["bonus_pullback"]
+        prioridad = perfil["prioridad_pullback"]
     
-    # Aplicar penalización general (en bajista penaliza todo)
-    score_ranking -= perfil["penalizacion_general"]
+    # Score de ranking = score base * prioridad
+    score_ranking = score_base * prioridad
     
     return score_ranking
 
 
-def clasificar_calidad_setup(score):
+def obtener_factor_tamaño(tipo_estrategia, contexto_mercado):
     """
-    Clasifica un setup según su calidad.
+    Obtiene el factor de tamaño de posición según contexto.
+    
+    NUEVO: El contexto ajusta tamaño, no validez.
+    
+    Args:
+        tipo_estrategia: "breakout" o "pullback"
+        contexto_mercado: "ALCISTA", "LATERAL" o "BAJISTA"
     
     Returns:
-        str: "excelente", "bueno", "mediocre"
+        float - Factor multiplicador de tamaño (0.4 - 1.0)
+    
+    Ejemplo:
+        Tamaño base = 1000€
+        Factor = 0.6 (breakout en lateral)
+        Tamaño real = 1000 * 0.6 = 600€
     """
-    if score >= 8.0:
-        return "excelente"
-    elif score >= 6.5:
-        return "bueno"
-    else:
-        return "mediocre"
+    perfil = obtener_perfil_v2(contexto_mercado)
+    
+    if tipo_estrategia == "breakout":
+        return perfil["factor_tamaño_breakout"]
+    else:  # pullback
+        return perfil["factor_tamaño_pullback"]
 
 
-def setup_pasa_filtro(score_base, tipo_estrategia, contexto_mercado):
+def requiere_confirmacion_extra(tipo_estrategia, contexto_mercado):
     """
-    Determina si un setup pasa el filtro de calidad según contexto.
+    Determina si el setup requiere confirmación adicional.
+    
+    Args:
+        tipo_estrategia: "breakout" o "pullback"
+        contexto_mercado: "ALCISTA", "LATERAL" o "BAJISTA"
     
     Returns:
-        tuple: (pasa: bool, score_ponderado: float, score_minimo: float)
-    """
-    perfil = obtener_perfil_trading(contexto_mercado)
-    score_ponderado = calcular_score_ponderado(score_base, tipo_estrategia, contexto_mercado)
-    score_minimo = perfil["score_base_minimo"]
+        bool - True si requiere confirmación extra
     
-    pasa = score_ponderado >= score_minimo
-    
-    return pasa, score_ponderado, score_minimo
-
-
-# ══════════════════════════════════════════════════════════════════════
-# FUNCIÓN AUXILIAR
-# ══════════════════════════════════════════════════════════════════════
-
-def obtener_perfil_trading(contexto_mercado):
+    Ejemplo:
+        Breakout en LATERAL → requiere confirmación de volumen
+        Pullback en ALCISTA → sin confirmación extra
     """
-    Obtiene el perfil de trading según el contexto actual del mercado.
+    perfil = obtener_perfil_v2(contexto_mercado)
+    
+    if tipo_estrategia == "breakout":
+        return perfil["requiere_confirmacion_breakout"]
+    else:  # pullback
+        return perfil["requiere_confirmacion_pullback"]
+
+
+def obtener_perfil_v2(contexto_mercado):
+    """
+    Obtiene el perfil V2 según contexto.
     
     Args:
         contexto_mercado: str - "ALCISTA", "LATERAL" o "BAJISTA"
     
     Returns:
-        dict - Perfil de trading con todos los parámetros
+        dict - Perfil de trading con parámetros de ejecución
     """
     contexto = contexto_mercado.upper()
     
-    if contexto not in PERFILES:
-        # Default a LATERAL si contexto desconocido (más conservador)
-        print(f"⚠️ Contexto '{contexto}' desconocido, usando perfil LATERAL por defecto")
+    if contexto not in PERFILES_V2:
+        # Fallback a LATERAL si contexto desconocido
         contexto = "LATERAL"
     
-    perfil = PERFILES[contexto].copy()
-    perfil["contexto"] = contexto
-    
-    return perfil
-
-
-def mostrar_perfil(contexto_mercado):
-    """
-    Muestra el perfil activo de forma legible.
-    """
-    perfil = obtener_perfil_trading(contexto_mercado)
-    
-    print(f"\n{'='*70}")
-    print(f"📊 PERFIL DE TRADING ACTIVO: {perfil['contexto']}")
-    print(f"{'='*70}")
-    print(f"📝 {perfil['descripcion']}")
-    
-    print(f"\n⚖️ PONDERACIÓN DE ESTRATEGIAS:")
-    print(f"   • Peso Breakout:  {perfil['peso_breakout']:.1f}x")
-    print(f"   • Peso Pullback:  {perfil['peso_pullback']:.1f}x")
-    
-    print(f"\n🎯 FILTROS DE ENTRADA:")
-    print(f"   • Score base mínimo:  {perfil['score_base_minimo']}")
-    
-    print(f"\n💰 GESTIÓN DE RIESGO:")
-    print(f"   • Riesgo por trade:        {perfil['riesgo_por_trade_pct']}%")
-    print(f"   • Máx posiciones abiertas: {perfil['max_posiciones_abiertas']}")
-    print(f"   • Máx exposición total:    {perfil['max_exposicion_total_pct']}%")
-    
-    print(f"\n📈 GESTIÓN DE POSICIÓN:")
-    print(f"   • Trailing desde:          +{perfil['trailing_desde_r']}R")
-    print(f"   • Objetivo parcial:        +{perfil['objetivo_parcial_r']}R")
-    print(f"   • Venta parcial:           {perfil['venta_parcial_pct']}%")
-    
-    print(f"{'='*70}\n")
-    
-    return perfil
-
-
-def mostrar_ejemplos_ponderacion():
-    """
-    Muestra ejemplos de cómo funciona la ponderación en cada contexto.
-    """
-    print("\n" + "="*70)
-    print("📚 EJEMPLOS DE PONDERACIÓN")
-    print("="*70)
-    
-    # Ejemplo 1: Breakout score 6.0 en diferentes contextos
-    print("\n🔵 Setup BREAKOUT con score base = 6.0")
-    print("─"*70)
-    for contexto in ["ALCISTA", "LATERAL", "BAJISTA"]:
-        pasa, score_pond, score_min = setup_pasa_filtro(6.0, "breakout", contexto)
-        resultado = "✅ PASA" if pasa else "❌ RECHAZADO"
-        print(f"  {contexto:10} → Score ponderado: {score_pond:.1f} (mín: {score_min}) → {resultado}")
-    
-    # Ejemplo 2: Pullback score 6.0 en diferentes contextos
-    print("\n🟢 Setup PULLBACK con score base = 6.0")
-    print("─"*70)
-    for contexto in ["ALCISTA", "LATERAL", "BAJISTA"]:
-        pasa, score_pond, score_min = setup_pasa_filtro(6.0, "pullback", contexto)
-        resultado = "✅ PASA" if pasa else "❌ RECHAZADO"
-        print(f"  {contexto:10} → Score ponderado: {score_pond:.1f} (mín: {score_min}) → {resultado}")
-    
-    # Ejemplo 3: Setup excelente score 8.0
-    print("\n⭐ Setup EXCELENTE con score base = 8.0")
-    print("─"*70)
-    for contexto in ["ALCISTA", "LATERAL", "BAJISTA"]:
-        pasa_b, score_b, _ = setup_pasa_filtro(8.0, "breakout", contexto)
-        pasa_p, score_p, _ = setup_pasa_filtro(8.0, "pullback", contexto)
-        print(f"  {contexto:10} → Breakout: {score_b:.1f} {'✅' if pasa_b else '❌'} | Pullback: {score_p:.1f} {'✅' if pasa_p else '❌'}")
-    
-    print("\n" + "="*70 + "\n")
+    return PERFILES_V2[contexto]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# EJEMPLO DE USO
+# COMPATIBILIDAD CON CÓDIGO EXISTENTE
 # ══════════════════════════════════════════════════════════════════════
 
-if __name__ == "__main__":
-    # Mostrar los 3 perfiles
-    for contexto in ["ALCISTA", "LATERAL", "BAJISTA"]:
-        mostrar_perfil(contexto)
+# Mantener exports antiguos para compatibilidad
+def obtener_perfil_trading(contexto_mercado):
+    """DEPRECADO: Usar obtener_perfil_v2()"""
+    return obtener_perfil_v2(contexto_mercado)
+
+
+def setup_pasa_filtro(score_base, tipo_estrategia, contexto_mercado):
+    """
+    VERSIÓN V2.1: Umbral dinámico por contexto.
     
-    # Mostrar ejemplos de ponderación
-    mostrar_ejemplos_ponderacion()
+    Returns:
+        tuple: (pasa: bool, score_ranking: float, score_minimo: float)
+    """
+    pasa = setup_es_valido(score_base, contexto_mercado)
+    score_ranking = calcular_score_ranking(score_base, tipo_estrategia, contexto_mercado)
+    
+    # Obtener umbral usado para este contexto
+    contexto = contexto_mercado.upper()
+    umbral_usado = UMBRALES_CONTEXTO.get(contexto, SCORE_MINIMO_ABSOLUTO)
+    
+    return pasa, score_ranking, umbral_usado
+
+
+def calcular_score_ponderado(score_base, tipo_estrategia, contexto_mercado):
+    """
+    DEPRECADO en V2: El score ya no se pondera para filtrar.
+    Mantenido solo por compatibilidad.
+    """
+    # En V2, devolvemos el score original (sin ponderar)
+    return score_base

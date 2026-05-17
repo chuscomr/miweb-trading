@@ -122,17 +122,66 @@ class PullbackSwing(EstrategiaBase):
             })
 
         # ══════════════════════════════════════════════════
-        # 2️⃣  RETROCESO DESDE MÁXIMO  (5% – 15%)
+        # 2️⃣  RETROCESO DESDE MÁXIMO — SISTEMA DUAL
+        #
+        # PROFUNDO (5-15%): Válido siempre (setup clásico)
+        # SUPERFICIAL (3-5%): Válido SOLO con estructura fuerte
+        #
+        # Razón: Pullbacks poco profundos necesitan confirmación
+        # extra de fuerza. Sin estructura son micro-caídas sin edge.
         # ══════════════════════════════════════════════════
         # CORRECCIÓN LOOKAHEAD: Excluye el precio actual (no usamos información futura)
         maximo_60    = f(df["Close"].iloc[:-1].tail(60).max())
         retroceso_pct = ((maximo_60 - precio_actual) / maximo_60) * 100
-        retroceso_ok  = 5.0 <= retroceso_pct <= 15.0
-
-        motivos.append({
-            "ok":    retroceso_ok,
-            "texto": f"Retroceso {retroceso_pct:.2f}% desde máximo 60 días"
-        })
+        
+        # Evaluar tipo de pullback
+        es_pullback_profundo = 5.0 <= retroceso_pct <= 15.0
+        es_pullback_superficial = 3.0 <= retroceso_pct < 5.0
+        
+        # Pre-evaluar estructura para pullbacks superficiales
+        # (necesitamos saber si es válido antes del scoring)
+        estructura_base_ok = precio_actual > mm50_val
+        mm20_serie = df["MM20"].dropna()
+        mm20_pendiente = (float(mm20_serie.iloc[-1]) >= float(mm20_serie.iloc[-4])
+                         if len(mm20_serie) >= 4 else True)
+        estructura_fuerte = estructura_base_ok and mm20_pendiente
+        
+        # Determinar validez según tipo
+        if es_pullback_profundo:
+            retroceso_ok = True
+            tipo_pullback = "profundo"
+            motivos.append({
+                "ok": True,
+                "texto": f"Pullback profundo {retroceso_pct:.2f}% (5-15%) — válido siempre"
+            })
+        elif es_pullback_superficial:
+            # Superficial necesita estructura fuerte
+            retroceso_ok = estructura_fuerte
+            tipo_pullback = "superficial"
+            if estructura_fuerte:
+                motivos.append({
+                    "ok": True,
+                    "texto": f"Pullback superficial {retroceso_pct:.2f}% (3-5%) — válido con estructura fuerte ✓"
+                })
+            else:
+                motivos.append({
+                    "ok": False,
+                    "texto": f"Pullback superficial {retroceso_pct:.2f}% (3-5%) — requiere estructura fuerte (precio>MM50 + MM20↗)"
+                })
+        else:
+            # Fuera de rango
+            retroceso_ok = False
+            tipo_pullback = "invalido"
+            if retroceso_pct < 3.0:
+                motivos.append({
+                    "ok": False,
+                    "texto": f"Retroceso {retroceso_pct:.2f}% insuficiente (mínimo 3%)"
+                })
+            else:
+                motivos.append({
+                    "ok": False,
+                    "texto": f"Retroceso {retroceso_pct:.2f}% demasiado profundo (máximo 15%)"
+                })
 
         # ══════════════════════════════════════════════════
         # 3️⃣  RSI PULLBACK SANO  (38–57)
@@ -245,31 +294,47 @@ class PullbackSwing(EstrategiaBase):
         #
         # OBLIGATORIOS: si falla uno → descartado inmediatamente
         #   · Tendencia macro (MM200)   (sin tendencia no hay pullback)
-        #   · Retroceso 5–15%           (define el setup)
+        #   · Retroceso 3–15% (dual)    (define el setup)
         #
-        # OPCIONALES: suman puntos al score (máx 10)
+        # OPCIONALES: suman puntos al score (máx 10.5)
         #   Criterio          Peso
-        #   RSI pullback sano 1.5  (+1 bonus si rebotando)
-        #   Soporte cercano   3.5   ← zona de entrada concreta
-        #   Estructura>MM50   5.0   ← criterio clave, peso alto
+        #   Tendencia fuerte  2.0   ← MM50>MM200 + pendiente fuerte
+        #   RSI pullback sano 1.5   (+0.5 bonus si rebotando)
+        #   Soporte cercano   2.5   ← zona de entrada concreta
+        #   Estructura>MM50   3.5   ← reducido para menos dependencia
+        #   Vela giro         1.0-1.5 ← confirmación
         #   ──────────────── ─────
-        #   TOTAL MÁX        10.0
-        #   UMBRAL OPERAR     6.0
+        #   TOTAL MÁX        10.5-11.0
+        #   UMBRAL OPERAR     6.0 (LATERAL), 6.5 (ALCISTA)
         #
-        # Con esta estructura, sin soporte Y sin estructura
-        # el setup no pasa aunque RSI sea perfecto.
+        # MEJORA V2.2: Menos dependencia de estructura única
+        # Ahora puedes llegar a 6.0 con múltiples caminos:
+        # - Tendencia (2.0) + Soporte (2.5) + RSI (2.0) = 6.5 ✓
+        # - Estructura (3.5) + Soporte (2.5) = 6.0 ✓
+        # - Estructura (3.5) + RSI (2.0) + Vela (1.5) = 7.0 ✓
         # ══════════════════════════════════════════════════
+
+        # Evaluar tendencia fuerte (bonus adicional)
+        tendencia_fuerte = False
+        if mm50_val > mm200_val:
+            pendiente_mm50 = (float(mm50_val) - float(df["MM50"].iloc[-10])) / float(df["MM50"].iloc[-10]) if len(df) >= 10 else 0
+            tendencia_fuerte = pendiente_mm50 > 0.02  # >2% pendiente en 10 días
 
         # — Score parcial (para contexto en NO OPERAR aunque fallen obligatorios)
         bonus_rsi    = 0.5 if any(m.get("rsi_rebotando") for m in motivos) else 0.0
         vela_peso_real = next((m.get("vela_peso", 0.0) for m in motivos if "vela_peso" in m), 0.0)
         PESOS_OPC = [
+            ("tendencia_fuerte", tendencia_fuerte, 2.0),
             ("rsi",        rsi_ok,        1.5),
-            ("soporte",    soporte_ok,    2.0),
+            ("soporte",    soporte_ok,    2.5),
             ("vela",       vela_ok,       vela_peso_real),
-            ("estructura", estructura_ok, 5.0),
+            ("estructura", estructura_ok, 3.5),
         ]
-        score_parcial = sum(peso for _, ok, peso in PESOS_OPC if ok) + bonus_rsi
+        score_parcial_raw = sum(peso for _, ok, peso in PESOS_OPC if ok) + bonus_rsi
+        
+        # Normalizar a escala 0-10 (máximo posible ~11.5)
+        SCORE_MAX = 11.5
+        score_parcial = min(10.0, (score_parcial_raw / SCORE_MAX) * 10.0)
 
         # — Obligatorios
         if not tendencia_ok:
@@ -278,8 +343,12 @@ class PullbackSwing(EstrategiaBase):
                 motivos, variacion_1d, precio_actual, score_parcial
             )
         if not retroceso_ok:
+            if tipo_pullback == "superficial":
+                motivo = f"Pullback superficial {retroceso_pct:.1f}% sin estructura fuerte — requiere precio>MM50 + MM20↗"
+            else:
+                motivo = f"Retroceso fuera de rango ({retroceso_pct:.1f}%) — esperado 3–15%"
             return respuesta_invalida(
-                ticker, TIPO, f"Retroceso fuera de rango ({retroceso_pct:.1f}%) — esperado 5–15%",
+                ticker, TIPO, motivo,
                 motivos, variacion_1d, precio_actual, score_parcial
             )
 

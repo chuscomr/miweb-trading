@@ -12,7 +12,6 @@ from estrategias.swing.breakout import BreakoutSwing
 from estrategias.swing.pullback import PullbackSwing
 from estrategias.swing.perfiles_contexto import (
     obtener_perfil_trading,
-    calcular_score_ponderado,
     calcular_score_ranking,
     setup_pasa_filtro,
     clasificar_calidad_setup
@@ -75,19 +74,35 @@ def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
             perfil = obtener_perfil_trading(contexto_actual)
             
             print(f"\n{'='*70}")
-            print(f"🎯 SISTEMA DE RANKING PROFESIONAL: {perfil['contexto']}")
+            print(f"🎯 SISTEMA V2.1 PROFESIONAL: {perfil['contexto']}")
             print(f"{'='*70}")
-            print(f"   🚪 FILTRO (elimina basura):")
-            print(f"      • Score ponderado mínimo: {perfil['score_base_minimo']}")
-            print(f"      • Peso Breakout: {perfil['peso_breakout']:.1f}x")
-            print(f"      • Peso Pullback: {perfil['peso_pullback']:.1f}x")
-            print(f"\n   📊 RANKING (prioriza calidad):")
-            print(f"      • Bonus Breakout: +{perfil['bonus_breakout']}")
-            print(f"      • Bonus Pullback: +{perfil['bonus_pullback']}")
-            print(f"      • Penalización: -{perfil['penalizacion_general']}")
-            print(f"\n   💰 Gestión:")
+            print(f"   ✅ VALIDEZ TÉCNICA (dinámica por contexto):")
+            from estrategias.swing.perfiles_contexto import UMBRALES_CONTEXTO
+            umbral_ctx = UMBRALES_CONTEXTO.get(contexto_actual, 6.0)
+            print(f"      • Score mínimo: {umbral_ctx}")
+            print(f"\n   📊 RANKING (prioriza según contexto):")
+            print(f"      • Prioridad Breakout: {perfil['prioridad_breakout']:.1f}x")
+            print(f"      • Prioridad Pullback: {perfil['prioridad_pullback']:.1f}x")
+            print(f"\n   💰 Gestión (ajustada por contexto):")
+            print(f"      • Tamaño Breakout: {perfil['factor_tamaño_breakout']*100:.0f}%")
+            print(f"      • Tamaño Pullback: {perfil['factor_tamaño_pullback']*100:.0f}%")
             print(f"      • Máx posiciones: {perfil['max_posiciones_abiertas']}")
             print(f"      • Riesgo/trade: {perfil['riesgo_por_trade_pct']}%")
+            print(f"\n   🔍 Confirmaciones extra requeridas:")
+            print(f"      • Breakout: {'SÍ' if perfil['requiere_confirmacion_breakout'] else 'NO'}")
+            print(f"      • Pullback: {'SÍ' if perfil['requiere_confirmacion_pullback'] else 'NO'}")
+            if perfil['requiere_confirmacion_breakout'] or perfil['requiere_confirmacion_pullback']:
+                from estrategias.swing.perfiles_contexto import obtener_confirmaciones_requeridas
+                if perfil['requiere_confirmacion_breakout']:
+                    conf_b = obtener_confirmaciones_requeridas("breakout")
+                    print(f"\n      Breakout debe cumplir:")
+                    for c in conf_b:
+                        print(f"        • {c}")
+                if perfil['requiere_confirmacion_pullback']:
+                    conf_p = obtener_confirmaciones_requeridas("pullback")
+                    print(f"\n      Pullback debe cumplir:")
+                    for c in conf_p:
+                        print(f"        • {c}")
             print(f"{'='*70}\n")
         except Exception as e:
             print(f"⚠️ Error obteniendo contexto: {e}, usando perfil estándar")
@@ -136,17 +151,30 @@ def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
                     # PASO 3: CLASIFICAR CALIDAD
                     calidad = clasificar_calidad_setup(score_base)
                     
+                    # PASO 4: OBTENER FACTOR DE TAMAÑO
+                    from estrategias.swing.perfiles_contexto import (
+                        obtener_factor_tamaño, 
+                        requiere_confirmacion_extra,
+                        obtener_confirmaciones_requeridas
+                    )
+                    factor_tamaño = obtener_factor_tamaño(tipo_scan, contexto_actual)
+                    necesita_conf = requiere_confirmacion_extra(tipo_scan, contexto_actual)
+                    
                     # Agregar información al resultado
                     r["score_original"] = score_base
-                    r["score_ponderado"] = score_ponderado
                     r["score_ranking"] = score_ranking  # ← USADO PARA ORDENAR
                     r["calidad"] = calidad
                     r["perfil_usado"] = perfil['contexto']
-                    r["peso_aplicado"] = perfil[f'peso_{tipo_scan}']
+                    r["factor_tamaño"] = factor_tamaño  # ✅ NUEVO en V2
+                    r["prioridad"] = perfil[f'prioridad_{tipo_scan}']  # ✅ NUEVO en V2
+                    r["requiere_confirmacion"] = necesita_conf  # ✅ NUEVO en V2.1
+                    if necesita_conf:
+                        r["confirmaciones"] = obtener_confirmaciones_requeridas(tipo_scan)  # ✅ NUEVO en V2.1
                 else:
                     # Sin perfil adaptativo
                     r["score_ranking"] = score_base
                     r["calidad"] = clasificar_calidad_setup(score_base)
+                    r["factor_tamaño"] = 1.0
                 
                 vistos.add(r["ticker_completo"])
                 resultados.append(r)
