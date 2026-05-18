@@ -3,9 +3,11 @@ analisis/fundamental/noticias.py
 Recoge noticias financieras españolas desde RSS públicos.
 """
 
-import feedparser
 import time
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
+
+import feedparser
+
 
 FUENTES_RSS = [
     ("Expansión",        "https://www.expansion.com/rss/mercados/bolsa.xml"),

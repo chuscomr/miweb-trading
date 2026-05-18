@@ -17,14 +17,15 @@ Arquitectura:
   - Uso como REFUERZO, nunca como score duro
 """
 
-import os
+import logging
 import re
 import sqlite3
-import logging
 import time
-import requests
 from datetime import datetime, timedelta
 from pathlib import Path
+
+import requests
+
 
 logger = logging.getLogger(__name__)
 
@@ -722,6 +723,6 @@ def _parsear_numero(texto: str) -> float:
 def _fmt_eur(valor: float) -> str:
     if valor >= 1_000_000:
         return f"{valor/1_000_000:.1f}M€"
-    elif valor >= 1_000:
+    if valor >= 1_000:
         return f"{valor/1_000:.0f}k€"
     return f"{valor:.0f}€"

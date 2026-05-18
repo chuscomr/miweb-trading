@@ -30,25 +30,24 @@ def evaluar_volumen_breakout(volumen_actual, volumen_historico, dias_lookback=20
     """
     if len(volumen_historico) < dias_lookback:
         return 0.0, "Histórico insuficiente"
-    
+
     volumen_medio = np.mean(volumen_historico[-dias_lookback:])
-    
+
     if volumen_medio == 0:
         return 0.0, "Sin volumen"
-    
+
     ratio = volumen_actual / volumen_medio
-    
+
     # Scoring gradual
     if ratio >= 2.0:
         return 2.5, f"Volumen excepcional ({ratio:.1f}x)"
-    elif ratio >= 1.5:
+    if ratio >= 1.5:
         return 2.0, f"Volumen alto ({ratio:.1f}x)"
-    elif ratio >= 1.2:
+    if ratio >= 1.2:
         return 1.0, f"Volumen moderado ({ratio:.1f}x)"
-    elif ratio >= 1.0:
+    if ratio >= 1.0:
         return 0.5, f"Volumen normal ({ratio:.1f}x)"
-    else:
-        return 0.0, f"Volumen bajo ({ratio:.1f}x)"
+    return 0.0, f"Volumen bajo ({ratio:.1f}x)"
 
 
 def evaluar_volatilidad_breakout(atr_actual, atr_historico, dias_lookback=50):
@@ -60,23 +59,22 @@ def evaluar_volatilidad_breakout(atr_actual, atr_historico, dias_lookback=50):
     """
     if len(atr_historico) < dias_lookback:
         return 0.0, "Histórico insuficiente"
-    
+
     atr_medio = np.mean(atr_historico[-dias_lookback:])
-    
+
     if atr_medio == 0:
         return 0.0, "ATR cero"
-    
+
     ratio = atr_actual / atr_medio
-    
+
     # Volatilidad activa es buena para breakouts
     if ratio >= 1.5:
         return 2.0, f"Volatilidad muy activa ({ratio:.1f}x)"
-    elif ratio >= 1.2:
+    if ratio >= 1.2:
         return 1.5, f"Volatilidad activa ({ratio:.1f}x)"
-    elif ratio >= 1.0:
+    if ratio >= 1.0:
         return 1.0, f"Volatilidad normal ({ratio:.1f}x)"
-    else:
-        return 0.5, f"Volatilidad baja ({ratio:.1f}x)"
+    return 0.5, f"Volatilidad baja ({ratio:.1f}x)"
 
 
 def evaluar_calidad_breakout(precio_actual, nivel_resistencia, rango_precio):
@@ -90,20 +88,19 @@ def evaluar_calidad_breakout(precio_actual, nivel_resistencia, rango_precio):
     """
     if rango_precio == 0:
         return 0.0, "Precio sin rango"
-    
+
     distancia_pct = ((precio_actual - nivel_resistencia) / nivel_resistencia) * 100
-    
+
     # Breakout debe estar ENCIMA de resistencia
     if distancia_pct >= 3.0:
         return 2.5, f"Breakout muy limpio (+{distancia_pct:.1f}%)"
-    elif distancia_pct >= 2.0:
+    if distancia_pct >= 2.0:
         return 2.0, f"Breakout limpio (+{distancia_pct:.1f}%)"
-    elif distancia_pct >= 1.0:
+    if distancia_pct >= 1.0:
         return 1.5, f"Breakout moderado (+{distancia_pct:.1f}%)"
-    elif distancia_pct >= 0.5:
+    if distancia_pct >= 0.5:
         return 0.5, f"Breakout débil (+{distancia_pct:.1f}%)"
-    else:
-        return 0.0, f"No hay breakout real ({distancia_pct:.1f}%)"
+    return 0.0, f"No hay breakout real ({distancia_pct:.1f}%)"
 
 
 def evaluar_impulso_breakout(rsi, roc=None):
@@ -117,7 +114,7 @@ def evaluar_impulso_breakout(rsi, roc=None):
     """
     puntos = 0.0
     descripciones = []
-    
+
     # RSI
     if 65 <= rsi <= 75:
         puntos += 2.0
@@ -134,7 +131,7 @@ def evaluar_impulso_breakout(rsi, roc=None):
     else:
         puntos += 0.0
         descripciones.append(f"RSI débil ({rsi:.0f})")
-    
+
     return puntos, ", ".join(descripciones)
 
 
@@ -163,7 +160,7 @@ def calcular_score_breakout_especializado(datos):
     """
     score_base = 0.0
     componentes = {}
-    
+
     # 1. VOLUMEN (peso alto: 2.5 puntos max)
     pts_vol, desc_vol = evaluar_volumen_breakout(
         datos.get('volumen_actual', 0),
@@ -171,7 +168,7 @@ def calcular_score_breakout_especializado(datos):
     )
     score_base += pts_vol
     componentes['volumen'] = {'puntos': pts_vol, 'descripcion': desc_vol}
-    
+
     # 2. VOLATILIDAD (peso medio: 2.0 puntos max)
     pts_atr, desc_atr = evaluar_volatilidad_breakout(
         datos.get('atr_actual', 0),
@@ -179,7 +176,7 @@ def calcular_score_breakout_especializado(datos):
     )
     score_base += pts_atr
     componentes['volatilidad'] = {'puntos': pts_atr, 'descripcion': desc_atr}
-    
+
     # 3. CALIDAD BREAKOUT (peso alto: 2.5 puntos max)
     pts_break, desc_break = evaluar_calidad_breakout(
         datos.get('precio_actual', 0),
@@ -188,17 +185,17 @@ def calcular_score_breakout_especializado(datos):
     )
     score_base += pts_break
     componentes['breakout'] = {'puntos': pts_break, 'descripcion': desc_break}
-    
+
     # 4. IMPULSO (peso medio: 2.0 puntos max)
     pts_impulso, desc_impulso = evaluar_impulso_breakout(
         datos.get('rsi', 50)
     )
     score_base += pts_impulso
     componentes['impulso'] = {'puntos': pts_impulso, 'descripcion': desc_impulso}
-    
+
     # Score total: 0 a 9.0 (componentes específicos)
     # Se suma al score base general (5.0) → Total final: 5.0 a 14.0
-    
+
     return {
         'score_especializado': score_base,
         'componentes': componentes,
@@ -223,14 +220,14 @@ if __name__ == "__main__":
         'rango_precio': 2.0,
         'rsi': 68,
     }
-    
+
     resultado = calcular_score_breakout_especializado(datos_ejemplo)
-    
+
     print("="*70)
     print("EVALUACIÓN BREAKOUT ESPECIALIZADA")
     print("="*70)
     print(f"\n{resultado['descripcion']}")
-    print(f"\nComponentes:")
+    print("\nComponentes:")
     for nombre, comp in resultado['componentes'].items():
         print(f"  • {nombre.capitalize():12} +{comp['puntos']:.1f} - {comp['descripcion']}")
     print(f"\nScore especializado: {resultado['score_especializado']:.1f}/{resultado['max_posible']}")

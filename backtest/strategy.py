@@ -5,8 +5,8 @@
 # para no depender del módulo antiguo)
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 # ─────────────────────────────────────────────────────────────
@@ -59,21 +59,17 @@ def _evaluar_volumen_profesional(volumenes):
     if ratio >= 1.5:
         return {"permitir_normal": True,  "permitir_impulso": True,
                 "bonus_score": +1, "penalizacion_score": 0}
-    elif ratio >= 1.05:
+    if ratio >= 1.05:
         return {"permitir_normal": True,  "permitir_impulso": True,
                 "bonus_score": 0,  "penalizacion_score": 0}
-    elif ratio >= 0.85 and tendencia >= 1.1:
+    if ratio >= 0.85 and tendencia >= 1.1 or tendencia >= 1.0:
         return {"permitir_normal": True,  "permitir_impulso": False,
                 "bonus_score": 0,  "penalizacion_score": 0}
-    elif tendencia >= 1.0:
-        return {"permitir_normal": True,  "permitir_impulso": False,
-                "bonus_score": 0,  "penalizacion_score": 0}
-    elif ratio >= 0.75:
+    if ratio >= 0.75:
         return {"permitir_normal": True,  "permitir_impulso": False,
                 "bonus_score": 0,  "penalizacion_score": -1}
-    else:
-        return {"permitir_normal": False, "permitir_impulso": False,
-                "bonus_score": 0,  "penalizacion_score": -2}
+    return {"permitir_normal": False, "permitir_impulso": False,
+            "bonus_score": 0,  "penalizacion_score": -2}
 
 
 def _sistema_trading(precios, volumenes, contexto_mercado=None,

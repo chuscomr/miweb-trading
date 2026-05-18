@@ -4,19 +4,25 @@
 # Solo lógica HTTP.
 # ══════════════════════════════════════════════════════════════
 
-from flask import Blueprint, request, render_template, current_app, jsonify
-from core.universos import normalizar_ticker, get_nombre
-from core.data_provider import get_df
-from core.indicadores import calcular_rsi, calcular_atr, calcular_macd
-from analisis.tecnico import (
-    detectar_soportes_resistencias, calcular_confirmaciones,
-    detectar_patrones_velas, analizar_confluencia_velas_sr,
-    crear_grafico_analisis_tecnico, obtener_sr_mas_cercanos,
-)
+from flask import Blueprint, current_app, jsonify, render_template, request
+
 from analisis.fundamental import (
-    obtener_datos_fundamentales, calcular_score_fundamental,
+    calcular_score_fundamental,
+    obtener_datos_fundamentales,
     obtener_noticias_del_dia,
 )
+from analisis.tecnico import (
+    analizar_confluencia_velas_sr,
+    calcular_confirmaciones,
+    crear_grafico_analisis_tecnico,
+    detectar_patrones_velas,
+    detectar_soportes_resistencias,
+    obtener_sr_mas_cercanos,
+)
+from core.data_provider import get_df
+from core.indicadores import calcular_atr, calcular_macd, calcular_rsi
+from core.universos import get_nombre, normalizar_ticker
+
 
 analisis_bp = Blueprint("analisis", __name__, url_prefix="/analisis")
 
@@ -27,7 +33,6 @@ def _get_cache():
 
 def _enriquecer_df(df):
     """Añade indicadores al df para que confirmaciones los encuentre."""
-    import pandas as pd
     df = df.copy()
     df["MM20"]       = df["Close"].rolling(20).mean()
     df["MM50"]       = df["Close"].rolling(50).mean()
@@ -120,17 +125,17 @@ def tecnico_analizar():
 
 @analisis_bp.route("/fundamental", methods=["GET"])
 def fundamental_panel():
-    from core.universos import IBEX35, CONTINUO
+    from core.universos import CONTINUO, IBEX35
     todos_tickers = sorted(list(set(IBEX35 + CONTINUO)))
-    return render_template("analisis_fundamental.html", 
+    return render_template("analisis_fundamental.html",
                          todos_tickers=todos_tickers)
 
 
 @analisis_bp.route("/fundamental", methods=["POST"])
 def fundamental_analizar():
-    from core.universos import IBEX35, CONTINUO
+    from core.universos import CONTINUO, IBEX35
     todos_tickers = sorted(list(set(IBEX35 + CONTINUO)))
-    
+
     ticker = normalizar_ticker(request.form.get("ticker", ""))
     if not ticker:
         return render_template("analisis_fundamental.html",
@@ -391,7 +396,7 @@ def api_insiders_get(ticker):
     NO hace scraping — devuelve lo que hay en DB.
     Rápido y no bloquea la UI.
     """
-    from analisis.fundamental.insiders import get_insiders, scrape_insiders
+    from analisis.fundamental.insiders import get_insiders
     try:
         ticker = ticker.upper()
         if not ticker.endswith(".MC"):
@@ -436,8 +441,9 @@ def api_insiders_scrape_batch():
     Para ejecutar periódicamente (ej: una vez al día).
     Devuelve resumen sin bloquear demasiado tiempo.
     """
-    from analisis.fundamental.insiders import scrape_insiders, get_tickers_con_datos
     import time
+
+    from analisis.fundamental.insiders import get_tickers_con_datos, scrape_insiders
     try:
         tickers = get_tickers_con_datos()
         resultados = {"ok": 0, "error": 0, "vacio": 0}

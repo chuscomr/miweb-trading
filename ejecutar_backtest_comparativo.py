@@ -17,9 +17,10 @@ FECHA: 2026-04-25
 VERSIÓN: v82.7
 """
 
-import sys
 import os
+import sys
 from datetime import datetime
+
 
 # Agregar path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +80,7 @@ resultados_base = {
 }
 
 print("✅ Backtest BASE completado")
-print(f"\n📈 RESULTADOS SISTEMA BASE:")
+print("\n📈 RESULTADOS SISTEMA BASE:")
 print(f"  • Total trades:    {resultados_base['total_trades']}")
 print(f"  • Win Rate:        {resultados_base['win_rate']}%")
 print(f"  • Expectancy:      {resultados_base['expectancy']:.2f}R")
@@ -88,7 +89,7 @@ print(f"  • Profit Factor:   {resultados_base['profit_factor']:.2f}")
 print(f"  • Sharpe Ratio:    {resultados_base['sharpe']:.2f}")
 print(f"  • Trades/año:      {resultados_base['trades_por_año']}")
 
-print(f"\n📊 Distribución de calidad:")
+print("\n📊 Distribución de calidad:")
 dist = resultados_base['distribucion']
 total = sum(dist.values())
 print(f"  ⭐ Excelentes:  {dist['excelentes']:3d} ({dist['excelentes']/total*100:.0f}%)")
@@ -149,7 +150,7 @@ resultados_mejorado = {
 }
 
 print("✅ Backtest MEJORADO completado")
-print(f"\n📈 RESULTADOS SISTEMA MEJORADO:")
+print("\n📈 RESULTADOS SISTEMA MEJORADO:")
 print(f"  • Total trades:    {resultados_mejorado['total_trades']}")
 print(f"  • Win Rate:        {resultados_mejorado['win_rate']}%")
 print(f"  • Expectancy:      {resultados_mejorado['expectancy']:.2f}R")
@@ -158,14 +159,14 @@ print(f"  • Profit Factor:   {resultados_mejorado['profit_factor']:.2f}")
 print(f"  • Sharpe Ratio:    {resultados_mejorado['sharpe']:.2f}")
 print(f"  • Trades/año:      {resultados_mejorado['trades_por_año']}")
 
-print(f"\n📊 Distribución de calidad:")
+print("\n📊 Distribución de calidad:")
 dist = resultados_mejorado['distribucion']
 total = sum(dist.values())
 print(f"  ⭐ Excelentes:  {dist['excelentes']:3d} ({dist['excelentes']/total*100:.0f}%)")
 print(f"  🔵 Buenos:      {dist['buenos']:3d} ({dist['buenos']/total*100:.0f}%)")
 print(f"  🟢 Mediocres:   {dist['mediocres']:3d} ({dist['mediocres']/total*100:.0f}%)")
 
-print(f"\n📊 Resultados por contexto:")
+print("\n📊 Resultados por contexto:")
 for ctx, data in resultados_mejorado['por_contexto'].items():
     print(f"  {ctx.upper():8} → {data['trades']:3d} trades | WR: {data['win_rate']}% | Exp: {data['expectancy']:.2f}R")
 
@@ -199,7 +200,7 @@ metricas = [
 
 for metrica, base, mejorado, es_menor_mejor in metricas:
     mejora = calcular_mejora(base, mejorado)
-    
+
     if es_menor_mejor:
         mejora = -mejora  # Invertir para drawdown y trades
         simbolo = "↓" if mejora < 0 else "↑"
@@ -207,7 +208,7 @@ for metrica, base, mejorado, es_menor_mejor in metricas:
     else:
         simbolo = "↑" if mejora > 0 else "↓"
         color = "✅" if mejora > 0 else "❌"
-    
+
     print(f"{metrica:<20} {base:>12.2f} {mejorado:>12.2f} {color} {simbolo}{abs(mejora):>8.1f}%")
 
 print("─"*80 + "\n")

@@ -145,7 +145,7 @@ def _calcular_benchmark_ibex(df_semanal):
             "fecha_fin":      str(fecha_fin.date()),
             "años":           round(años, 1),
         }
-    except Exception as e:
+    except Exception:
         return None
 
 

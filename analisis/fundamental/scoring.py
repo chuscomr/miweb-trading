@@ -12,7 +12,7 @@
 # ══════════════════════════════════════════════════════════════
 
 import logging
-from typing import Optional
+
 
 logger = logging.getLogger(__name__)
 
@@ -319,9 +319,9 @@ def _cat(puntos: int, max_pts: int, detalles: list, nombre: str) -> dict:
 
 def _nivel_desde_score(score: float) -> tuple:
     if   score >= 75: return "EXCELENTE", "success", "✅ Fundamentos sólidos"
-    elif score >= 60: return "BUENO",     "success", "✅ Fundamentos correctos"
-    elif score >= 45: return "ACEPTABLE", "warning", "🟡 Fundamentos mixtos"
-    elif score >= 30: return "DÉBIL",     "warning", "🟠 Fundamentos débiles"
+    if score >= 60: return "BUENO",     "success", "✅ Fundamentos correctos"
+    if score >= 45: return "ACEPTABLE", "warning", "🟡 Fundamentos mixtos"
+    if score >= 30: return "DÉBIL",     "warning", "🟠 Fundamentos débiles"
     return "MALO", "danger", "🔴 Fundamentos preocupantes"
 
 

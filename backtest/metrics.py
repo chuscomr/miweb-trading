@@ -3,12 +3,13 @@
 # MÉTRICAS — Cálculo de estadísticas del backtest
 # ══════════════════════════════════════════════════════════════
 
+
 import numpy as np
-from typing import List
+
 from .trade import Trade
 
 
-def calcular_metricas(trades: List[Trade], equity: List[float], capital_inicial: float) -> dict:
+def calcular_metricas(trades: list[Trade], equity: list[float], capital_inicial: float) -> dict:
     """
     Calcula métricas completas de rendimiento a partir del historial de trades.
 
@@ -94,7 +95,7 @@ def calcular_metricas(trades: List[Trade], equity: List[float], capital_inicial:
 # HELPERS
 # ─────────────────────────────────────────────────────────────
 
-def _calcular_max_drawdown(equity: List[float]) -> float:
+def _calcular_max_drawdown(equity: list[float]) -> float:
     """Drawdown máximo en % sobre la curva de equity."""
     if len(equity) < 2:
         return 0.0
@@ -107,7 +108,7 @@ def _calcular_max_drawdown(equity: List[float]) -> float:
     return max_dd * 100
 
 
-def _calcular_rachas(trades: List[Trade]) -> tuple:
+def _calcular_rachas(trades: list[Trade]) -> tuple:
     """Devuelve (racha_ganadora_max, racha_perdedora_max)."""
     racha_g = racha_p = 0
     max_g   = max_p   = 0
@@ -123,7 +124,7 @@ def _calcular_rachas(trades: List[Trade]) -> tuple:
     return max_g, max_p
 
 
-def _calcular_sharpe(equity: List[float], rf: float = 0.0) -> float:
+def _calcular_sharpe(equity: list[float], rf: float = 0.0) -> float:
     """Sharpe ratio simplificado sobre retornos diarios."""
     if len(equity) < 2:
         return 0.0

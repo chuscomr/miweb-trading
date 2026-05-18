@@ -4,7 +4,7 @@
 # ══════════════════════════════════════════════════════════════
 
 from datetime import datetime
-from typing import Optional
+
 from .trade import Trade
 
 
@@ -42,7 +42,7 @@ class Posicion:
     def riesgo_total(self) -> float:
         return self.riesgo_unitario * self.acciones
 
-    def actualizar(self, high: float, low: float, close: float = None) -> Optional[str]:
+    def actualizar(self, high: float, low: float, close: float = None) -> str | None:
         """
         Actualiza la posición con los datos de la barra actual.
 
@@ -115,7 +115,7 @@ class Portfolio:
         self.capital         = capital_inicial
         self.comision_pct    = comision_pct / 100   # convertir a decimal
 
-        self.posicion: Optional[Posicion] = None
+        self.posicion: Posicion | None = None
         self.trades:   list[Trade]        = []
         self.equity:   list[float]        = [capital_inicial]
 

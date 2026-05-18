@@ -4,8 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 logger  = logging.getLogger(__name__)
-# Ruta relativa: cartera/cartera.db (funciona en D:\ y C:\)
-DB_PATH = os.path.join(os.path.dirname(__file__), "cartera.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "cartera.db")
 
 
 class CarteraDB:
@@ -76,6 +75,7 @@ class CarteraDB:
                 ("fecha_mitad",   "TEXT"),
                 ("r_final",       "REAL"),
                 ("creado_en",     "TEXT"),
+                ("analytics_id",  "INTEGER"),  # Referencia a analytics.trades_log
             ]:
                 if col not in cols:
                     con.execute(f"ALTER TABLE posiciones ADD COLUMN {col} {tipo}")
@@ -139,7 +139,7 @@ class CarteraDB:
     def agregar_posicion(self, ticker, nombre, sistema, fecha_entrada,
                          precio_entrada, stop_inicial, objetivo, acciones,
                          score_nivel=None, contexto_ibex=None,
-                         es_excepcion=False, notas=None) -> int:
+                         es_excepcion=False, notas=None, analytics_id=None) -> int:
         # stop puede ser None para posiciones sin stop (acciones antiguas)
         stop_ini = float(stop_inicial) if stop_inicial else None
         with self._conexion() as con:
@@ -147,14 +147,14 @@ class CarteraDB:
                 INSERT INTO posiciones
                     (ticker,nombre,sistema,fecha_entrada,precio_entrada,
                      stop_inicial,stop_actual,objetivo,acciones,fase,
-                     score_nivel,contexto_ibex,es_excepcion,notas,creado_en)
-                VALUES (?,?,?,?,?,?,?,?,?,'INICIAL',?,?,?,?,datetime('now'))
+                     score_nivel,contexto_ibex,es_excepcion,notas,analytics_id,creado_en)
+                VALUES (?,?,?,?,?,?,?,?,?,'INICIAL',?,?,?,?,?,datetime('now'))
             """, (ticker, nombre or ticker, sistema.upper(), fecha_entrada,
                   precio_entrada, stop_ini, stop_ini, objetivo,
                   acciones, score_nivel, contexto_ibex,
-                  1 if es_excepcion else 0, notas))
+                  1 if es_excepcion else 0, notas, analytics_id))
             pid = cur.lastrowid
-        logger.info(f"Posicion creada: {ticker} {sistema} ID:{pid}")
+        logger.info(f"✅ Posicion creada: {ticker} {sistema} ID:{pid} Analytics:{analytics_id or 'NULL'}")
         return pid
 
     def actualizar_stop_fase(self, pid: int, stop_actual: float, fase: str) -> bool:

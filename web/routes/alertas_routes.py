@@ -5,18 +5,21 @@
 # sistema de persistencia en BD.
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
-import numpy as np
 import logging
 
-from flask import Blueprint, request, redirect, url_for, render_template, jsonify, current_app
-from core.universos import normalizar_ticker, get_nombre, IBEX35, CONTINUO
-from alertas.detector import (
-    detectar_alertas_ticker, detectar_alertas,
-    priorizar_alertas, alertas_por_ticker,
-)
-from alertas.alertas_ia import interpretar_alertas, interpretar_cartera
+import numpy as np
+import pandas as pd
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
+
 from alertas.alertas_db import AlertasDB
+from alertas.alertas_ia import interpretar_alertas, interpretar_cartera
+from alertas.detector import (
+    alertas_por_ticker,
+    detectar_alertas_ticker,
+    priorizar_alertas,
+)
+from core.universos import CONTINUO, IBEX35, get_nombre, normalizar_ticker
+
 
 logger = logging.getLogger(__name__)
 
@@ -263,11 +266,12 @@ def _validar_alerta(ticker, tipo, nivel, umbral) -> list:
 def verificar_alertas_manual():
     """Verifica todas las alertas activas y dispara las que correspondan"""
     import yfinance as yf
+
     from alertas.notificaciones import enviar_email_alerta
-    
+
     alertas_activas = _db.obtener_activas()
     disparadas = []
-    
+
     for alerta in alertas_activas:
         try:
             # Obtener precio actual
@@ -276,16 +280,12 @@ def verificar_alertas_manual():
             if len(hist) == 0:
                 continue
             precio_actual = float(hist['Close'].iloc[-1])
-            
+
             # Verificar condición
             debe_disparar = False
-            if alerta['tipo'] == 'OBJETIVO' and precio_actual >= alerta['nivel']:
+            if alerta['tipo'] == 'OBJETIVO' and precio_actual >= alerta['nivel'] or alerta['tipo'] == 'STOP-LOSS' and precio_actual <= alerta['nivel'] or alerta['tipo'] == 'STOP_LOSS' and precio_actual <= alerta['nivel']:
                 debe_disparar = True
-            elif alerta['tipo'] == 'STOP-LOSS' and precio_actual <= alerta['nivel']:
-                debe_disparar = True
-            elif alerta['tipo'] == 'STOP_LOSS' and precio_actual <= alerta['nivel']:
-                debe_disparar = True
-            
+
             if debe_disparar:
                 _db.marcar_disparada(alerta['id'], precio_actual)
                 disparadas.append({
@@ -296,7 +296,7 @@ def verificar_alertas_manual():
                     'precio_actual': precio_actual
                 })
                 logger.info(f"🔔 ALERTA DISPARADA: {alerta['ticker']} {alerta['tipo']} @ {precio_actual:.2f}€")
-                
+
                 # Enviar email individual
                 try:
                     enviar_email_alerta(
@@ -308,10 +308,10 @@ def verificar_alertas_manual():
                     )
                 except Exception as email_err:
                     logger.error(f"Error enviando email para {alerta['ticker']}: {email_err}")
-        
+
         except Exception as e:
             logger.error(f"Error verificando {alerta.get('ticker', 'UNKNOWN')}: {e}")
-    
+
     return jsonify({
         'ok': True,
         'verificadas': len(alertas_activas),

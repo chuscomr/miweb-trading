@@ -6,11 +6,12 @@
 # filtrar señales y ajustar el sizing de riesgo.
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
-import numpy as np
 import logging
-from typing import Optional
+
+import pandas as pd
+
 from .data_provider import get_df_ibex
+
 
 logger = logging.getLogger(__name__)
 

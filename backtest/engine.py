@@ -11,15 +11,16 @@
 #   3. Al final                → cerrar posición abierta si queda
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
 import logging
 from datetime import datetime
 
-from core.indicadores import atr_actual
+import pandas as pd
+
+from .config_backtest import ConfigBacktest
+from .metrics import calcular_metricas
 from .portfolio import Portfolio, Posicion
 from .risk import RiskManager
-from .metrics import calcular_metricas
-from .config_backtest import ConfigBacktest
+
 
 logger = logging.getLogger(__name__)
 
@@ -202,10 +203,9 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=False):
     Returns:
         dict con: resultados_por_ticker, resumen, errores, total
     """
-    from estrategias.posicional.datos_posicional import obtener_datos_semanales
+    from core.universos import CONTINUO, IBEX35
     from estrategias.posicional.backtest_posicional import ejecutar_backtest_posicional
-    from core.universos import IBEX35, CONTINUO
-    from datetime import datetime
+    from estrategias.posicional.datos_posicional import obtener_datos_semanales
 
     if universo is None:
         universo = IBEX35 + CONTINUO
@@ -271,7 +271,7 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=False):
     }
 
     if verbose:
-        print(f"\n📊 RESUMEN SISTEMA:")
+        print("\n📊 RESUMEN SISTEMA:")
         print(f"  Tickers analizados: {n}")
         print(f"  Equity media:       {resumen['equity_media']:+.2f}R")
         print(f"  Expectancy media:   {resumen['expectancy_media']:+.2f}R")

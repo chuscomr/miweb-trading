@@ -9,10 +9,11 @@
 # siempre el mismo dict estándar independientemente de la fuente.
 # ══════════════════════════════════════════════════════════════
 
-import yfinance as yf
 import logging
 import os
-from typing import Optional
+
+import yfinance as yf
+
 
 logger = logging.getLogger(__name__)
 
@@ -153,8 +154,8 @@ def _enriquecer_con_financials(ticker: str, datos: dict) -> dict:
     y deuda neta a partir de los estados financieros de yfinance.
     """
     try:
-        import yfinance as yf
         import numpy as np
+        import yfinance as yf
         t = yf.Ticker(ticker)
 
         # ── Deuda Neta ─────────────────────────────────────────
@@ -231,7 +232,7 @@ def _enriquecer_con_financials(ticker: str, datos: dict) -> dict:
                             datos["cagr_beneficios_3y"] = round(cagr_ben, 1)
                         except (ValueError, ZeroDivisionError):
                             pass
-                        
+
                         if len(net) >= 2 and net[1] and net[1] != 0:
                             crec_1 = (net[0] - net[1]) / abs(net[1]) * 100
                             datos["aceleracion_beneficios"] = round(crec_1, 1)
@@ -263,7 +264,7 @@ def _enriquecer_con_financials(ticker: str, datos: dict) -> dict:
             pos = int(partes[0]) if partes else 0
             tot = int(partes[1].split()[0]) if len(partes) > 1 else 1
             if pos >= tot * 0.75: mom_score += 1; mom_detalles.append(f"FCF consistente {fcf}")
-            else:                 mom_detalles.append(f"FCF débil")
+            else:                 mom_detalles.append("FCF débil")
 
         nivel_mom = "FUERTE" if mom_score >= 3 else ("MODERADO" if mom_score >= 2 else "DÉBIL")
         datos["momentum_score"]     = mom_score
@@ -321,7 +322,7 @@ def _complementar_con_fmp(ticker: str, datos: dict) -> dict:
 # HELPERS
 # ─────────────────────────────────────────────────────────────
 
-def _safe(val) -> Optional[float]:
+def _safe(val) -> float | None:
     """Convierte a float o devuelve None."""
     try:
         return round(float(val), 2) if val is not None else None
@@ -329,7 +330,7 @@ def _safe(val) -> Optional[float]:
         return None
 
 
-def _safe_pct(val) -> Optional[float]:
+def _safe_pct(val) -> float | None:
     """Convierte ratio decimal a porcentaje (0.15 → 15.0).
     Si el valor ya parece estar en % (>1.5 para yields), lo devuelve tal cual."""
     try:

@@ -9,13 +9,15 @@
 #   - Sin cambios en la lógica de detección (7 detectores intactos)
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
-import numpy as np
-from datetime import datetime
 import logging
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 
 from core.data_provider import get_df
-from core.indicadores import calcular_rsi, calcular_atr
+from core.indicadores import calcular_atr, calcular_rsi
+
 
 logger = logging.getLogger(__name__)
 

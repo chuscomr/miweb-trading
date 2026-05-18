@@ -82,7 +82,6 @@ def nueva_guardar():
         if not ticker or precio_entrada <= 0 or acciones <= 0:
             raise ValueError("Datos incompletos")
 
-        cfg      = _db.get_config()
         cache    = _get_cache()
         contexto = evaluar_contexto_ibex(cache)
         estado   = contexto.get("estado", "TRANSICION") if contexto else "TRANSICION"
@@ -102,7 +101,7 @@ def nueva_guardar():
             notas         = notas,
         )
         return redirect(url_for("cartera.ver_cartera"))
-    except Exception as e:
+    except Exception:
         return redirect(url_for("cartera.nueva_form"))
 
 
@@ -160,16 +159,8 @@ def editar_guardar(pid):
                 if f.get("sistema"):
                     con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
                                (f.get("sistema", "SWING").upper(), pid))
-        except Exception as e:
-            logger.warning(f"Error actualizando campos extras: {e}")
-            # Si falla, intentar solo el sistema (campo más importante)
-            try:
-                with _db._conexion() as con:
-                    con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
-                               (f.get("sistema", "SWING").upper(), pid))
-            except Exception as e2:
-                logger.error(f"❌ Error actualizando sistema: {e2}")
-                logger.error(f"💡 Ejecuta: python migrar_cartera_sistema.py")
+        except Exception:
+            pass
     return redirect(url_for("cartera.ver_cartera"))
 
 
@@ -234,74 +225,6 @@ def historial():
         },
         config    = cfg,
     )
-
-
-# ── EDITAR TRADE CERRADO ───────────────────────────────────────
-
-@cartera_bp.route("/editar_cerrado/<int:pid>", methods=["GET"])
-def editar_cerrado_form(pid):
-    """Formulario para editar un trade cerrado"""
-    posicion = _db.obtener_posicion_por_id(pid)
-    if not posicion:
-        return redirect(url_for("cartera.historial"))
-    
-    return render_template("cartera_editar_cerrado.html",
-        posicion = posicion,
-        tickers  = TODOS_TICKERS,
-    )
-
-
-@cartera_bp.route("/editar_cerrado/<int:pid>", methods=["POST"])
-def editar_cerrado_guardar(pid):
-    """Guardar cambios en un trade cerrado"""
-    f = request.form
-    
-    # Validar que la posición existe
-    pos = _db.obtener_posicion_por_id(pid)
-    if not pos:
-        return redirect(url_for("cartera.historial"))
-    
-    # Parsear fechas
-    try:
-        fecha_entrada = datetime.strptime(f.get("fecha_entrada"), "%Y-%m-%d").date()
-    except:
-        fecha_entrada = pos.get("fecha_entrada")
-    
-    try:
-        fecha_cierre = datetime.strptime(f.get("fecha_salida"), "%Y-%m-%d").date() if f.get("fecha_salida") else None
-    except:
-        fecha_cierre = pos.get("fecha_cierre")
-    
-    # Construir datos actualizados (mapear nombres del form a nombres BD)
-    datos_actualizados = {
-        "ticker": f.get("ticker", pos.get("ticker")),
-        "sistema": f.get("sistema", pos.get("sistema")),
-        "fecha_entrada": fecha_entrada,
-        "precio_entrada": float(f.get("precio_entrada", 0)),
-        "acciones": int(f.get("acciones", 0)),
-        "stop_inicial": float(f.get("stop_inicial", 0)) if f.get("stop_inicial") else None,
-        "objetivo": float(f.get("objetivo", 0)) if f.get("objetivo") else None,
-        "fecha_cierre": fecha_cierre,  # BD usa fecha_cierre
-        "precio_cierre": float(f.get("salida", 0)) if f.get("salida") else None,  # BD usa precio_cierre
-        "motivo_cierre": f.get("motivo", pos.get("motivo_cierre")),  # BD usa motivo_cierre
-        "notas": f.get("notas", pos.get("notas")),
-    }
-    
-    # Calcular R final si hay salida
-    if datos_actualizados["precio_cierre"] and datos_actualizados["stop_inicial"]:
-        entrada = datos_actualizados["precio_entrada"]
-        salida = datos_actualizados["precio_cierre"]
-        stop = datos_actualizados["stop_inicial"]
-        riesgo = entrada - stop
-        if riesgo > 0:
-            beneficio = salida - entrada
-            r_final = round(beneficio / riesgo, 2)
-            datos_actualizados["r_final"] = r_final
-    
-    # Actualizar en BD usando el nuevo método
-    _db.actualizar_trade_cerrado(pid, datos_actualizados)
-    
-    return redirect(url_for("cartera.historial"))
 
 
 # ── REVISIÓN DOMINGO ───────────────────────────────────────────

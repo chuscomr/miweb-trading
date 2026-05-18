@@ -10,9 +10,11 @@
 #   - __main__ eliminado
 # ══════════════════════════════════════════════════════════════
 
+import logging
+
 import numpy as np
 import pandas as pd
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -135,9 +137,7 @@ def _extremos_locales(serie: np.ndarray, orden: int, tipo: str,
         ventana = serie[i - orden: i + orden + 1]
 
         es_extremo = False
-        if tipo == "max" and serie[i] == ventana.max():
-            es_extremo = True
-        elif tipo == "min" and serie[i] == ventana.min():
+        if tipo == "max" and serie[i] == ventana.max() or tipo == "min" and serie[i] == ventana.min():
             es_extremo = True
 
         if not es_extremo:
@@ -231,7 +231,7 @@ def _agrupar_niveles(niveles: np.ndarray, tolerancia_pct: float, min_toques: int
 def _calcular_fuerza(toques: int) -> str:
     if toques >= 5:
         return "FUERTE"
-    elif toques >= 3:
+    if toques >= 3:
         return "MEDIO"
     return "DÉBIL"
 
@@ -247,14 +247,13 @@ def _calcular_fuerza_avanzada(toques: int, separacion_media: float) -> str:
     """
     if toques >= 5 and separacion_media >= 10:
         return "MUY FUERTE"
-    elif toques >= 3 and separacion_media >= 20:
+    if toques >= 3 and separacion_media >= 20:
         return "FUERTE"
-    elif toques >= 3 and separacion_media >= 8:
+    if toques >= 3 and separacion_media >= 8:
         return "MEDIO"
-    elif toques >= 2 and separacion_media >= 5:
+    if toques >= 2 and separacion_media >= 5:
         return "DÉBIL"
-    else:
-        return "MUY DÉBIL"  # toques muy juntos = mismo impulso, no soporte real
+    return "MUY DÉBIL"  # toques muy juntos = mismo impulso, no soporte real
 
 
 def _analizar_posicion_precio(

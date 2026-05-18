@@ -6,6 +6,7 @@
 import numpy as np
 import pandas as pd
 
+
 try:
     from .config_posicional import *
 except ImportError:
@@ -106,7 +107,7 @@ def detectar_consolidacion(precios, lookback_max=26):
             "en_consolidacion": False,
             "motivo": "Histórico insuficiente"
         }
-    
+
     maximo = max(periodo_consolidacion)
     minimo = min(periodo_consolidacion)
     rango_pct = ((maximo - minimo) / minimo) * 100

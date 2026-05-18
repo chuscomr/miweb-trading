@@ -7,10 +7,10 @@
 # Solo se llama cuando hay alertas activas (economiza tokens).
 # ══════════════════════════════════════════════════════════════
 
-import os
 import json
 import logging
-from typing import Optional
+import os
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def interpretar_alertas(
     ticker:         str,
     sistema:        str  = "swing",
     filtro_mercado: bool = True,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Interpreta un conjunto de alertas ya detectadas para un ticker.
     Solo llamar cuando len(alertas) > 0.
@@ -101,7 +101,7 @@ Analiza si estas alertas son coherentes entre sí. Responde SOLO con este JSON (
 def interpretar_cartera(
     posiciones:         list,
     alertas_por_ticker: dict,
-) -> Optional[str]:
+) -> str | None:
     """
     Análisis global de la cartera con alertas activas.
 

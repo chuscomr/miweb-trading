@@ -18,7 +18,6 @@ CRITERIOS CLAVE PULLBACKS:
 VERSIÓN: v82.7
 """
 
-import numpy as np
 
 
 def evaluar_soporte_pullback(precio_actual, nivel_soporte, rebotes_historicos):
@@ -32,14 +31,14 @@ def evaluar_soporte_pullback(precio_actual, nivel_soporte, rebotes_historicos):
     """
     if nivel_soporte == 0:
         return 0.0, "Sin nivel de soporte"
-    
+
     distancia_pct = abs((precio_actual - nivel_soporte) / nivel_soporte) * 100
-    
+
     # Número de veces que rebotó en este nivel
     n_rebotes = rebotes_historicos
-    
+
     puntos = 0.0
-    
+
     # Proximidad al soporte
     if distancia_pct <= 1.0:
         puntos += 2.0
@@ -53,7 +52,7 @@ def evaluar_soporte_pullback(precio_actual, nivel_soporte, rebotes_historicos):
     else:
         puntos += 0.0
         desc_dist = f"Lejos soporte ({distancia_pct:.1f}%)"
-    
+
     # Fuerza histórica del soporte
     if n_rebotes >= 3:
         puntos += 1.5
@@ -66,7 +65,7 @@ def evaluar_soporte_pullback(precio_actual, nivel_soporte, rebotes_historicos):
         desc_fuerza = f"{n_rebotes} rebote previo"
     else:
         desc_fuerza = "Sin historial"
-    
+
     return puntos, f"{desc_dist}, {desc_fuerza}"
 
 
@@ -81,7 +80,7 @@ def evaluar_tendencia_pullback(mm20, mm50, mm200, pendiente_mm50):
     """
     puntos = 0.0
     descripciones = []
-    
+
     # Alineación de medias
     if mm20 > mm50 > mm200:
         puntos += 2.5
@@ -92,7 +91,7 @@ def evaluar_tendencia_pullback(mm20, mm50, mm200, pendiente_mm50):
     else:
         puntos += 0.0
         descripciones.append("MMs no alineadas")
-    
+
     # Pendiente de MM50 (indica fuerza de tendencia)
     if pendiente_mm50 > 2.0:
         puntos += 1.0
@@ -102,7 +101,7 @@ def evaluar_tendencia_pullback(mm20, mm50, mm200, pendiente_mm50):
         descripciones.append("Tendencia moderada")
     else:
         descripciones.append("Tendencia débil")
-    
+
     return puntos, ", ".join(descripciones)
 
 
@@ -117,18 +116,17 @@ def evaluar_volumen_pullback(volumen_pullback, volumen_tendencia):
     """
     if volumen_tendencia == 0:
         return 0.0, "Sin referencia de volumen"
-    
+
     ratio = volumen_pullback / volumen_tendencia
-    
+
     # Volumen BAJO es bueno en pullbacks
     if ratio <= 0.5:
         return 2.0, f"Volumen muy bajo ({ratio:.1f}x) - Pullback ordenado"
-    elif ratio <= 0.7:
+    if ratio <= 0.7:
         return 1.5, f"Volumen bajo ({ratio:.1f}x) - Corrección sana"
-    elif ratio <= 0.9:
+    if ratio <= 0.9:
         return 1.0, f"Volumen moderado ({ratio:.1f}x)"
-    else:
-        return 0.0, f"Volumen alto ({ratio:.1f}x) - Posible distribución"
+    return 0.0, f"Volumen alto ({ratio:.1f}x) - Posible distribución"
 
 
 def evaluar_nivel_rsi_pullback(rsi):
@@ -142,14 +140,14 @@ def evaluar_nivel_rsi_pullback(rsi):
     """
     if 40 <= rsi <= 50:
         return 1.5, f"RSI ideal para pullback ({rsi:.0f})"
-    elif 35 <= rsi < 40:
+    if 35 <= rsi < 40:
         return 1.0, f"RSI en zona de pullback ({rsi:.0f})"
-    elif 30 <= rsi < 35:
+    if 30 <= rsi < 35:
         return 0.5, f"RSI sobrevendido leve ({rsi:.0f})"
-    elif rsi < 30:
+    if rsi < 30:
         return 0.0, f"RSI en pánico ({rsi:.0f}) - Evitar"
-    else:  # RSI > 50
-        return 0.0, f"RSI alto ({rsi:.0f}) - No es pullback"
+    # RSI > 50
+    return 0.0, f"RSI alto ({rsi:.0f}) - No es pullback"
 
 
 def calcular_score_pullback_especializado(datos):
@@ -179,7 +177,7 @@ def calcular_score_pullback_especializado(datos):
     """
     score_base = 0.0
     componentes = {}
-    
+
     # 1. SOPORTE FUERTE (peso alto: 3.5 puntos max)
     pts_sop, desc_sop = evaluar_soporte_pullback(
         datos.get('precio_actual', 0),
@@ -188,7 +186,7 @@ def calcular_score_pullback_especializado(datos):
     )
     score_base += pts_sop
     componentes['soporte'] = {'puntos': pts_sop, 'descripcion': desc_sop}
-    
+
     # 2. TENDENCIA CLARA (peso alto: 3.5 puntos max)
     pts_tend, desc_tend = evaluar_tendencia_pullback(
         datos.get('mm20', 0),
@@ -198,7 +196,7 @@ def calcular_score_pullback_especializado(datos):
     )
     score_base += pts_tend
     componentes['tendencia'] = {'puntos': pts_tend, 'descripcion': desc_tend}
-    
+
     # 3. VOLUMEN DECRECIENTE (peso medio: 2.0 puntos max)
     pts_vol, desc_vol = evaluar_volumen_pullback(
         datos.get('volumen_pullback', 0),
@@ -206,17 +204,17 @@ def calcular_score_pullback_especializado(datos):
     )
     score_base += pts_vol
     componentes['volumen'] = {'puntos': pts_vol, 'descripcion': desc_vol}
-    
+
     # 4. RSI ADECUADO (peso bajo: 1.5 puntos max)
     pts_rsi, desc_rsi = evaluar_nivel_rsi_pullback(
         datos.get('rsi', 50)
     )
     score_base += pts_rsi
     componentes['rsi'] = {'puntos': pts_rsi, 'descripcion': desc_rsi}
-    
+
     # Score total: 0 a 10.5 (componentes específicos)
     # Se suma al score base general (5.0) → Total final: 5.0 a 15.5
-    
+
     return {
         'score_especializado': score_base,
         'componentes': componentes,
@@ -243,14 +241,14 @@ if __name__ == "__main__":
         'volumen_tendencia': 600000,  # Volumen 0.5x durante pullback
         'rsi': 42,
     }
-    
+
     resultado = calcular_score_pullback_especializado(datos_ejemplo)
-    
+
     print("="*70)
     print("EVALUACIÓN PULLBACK ESPECIALIZADA")
     print("="*70)
     print(f"\n{resultado['descripcion']}")
-    print(f"\nComponentes:")
+    print("\nComponentes:")
     for nombre, comp in resultado['componentes'].items():
         print(f"  • {nombre.capitalize():12} +{comp['puntos']:.1f} - {comp['descripcion']}")
     print(f"\nScore especializado: {resultado['score_especializado']:.1f}/{resultado['max_posible']}")

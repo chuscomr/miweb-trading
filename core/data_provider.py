@@ -14,14 +14,14 @@
 #   Columnas: Open, High, Low, Close, Volume
 # ══════════════════════════════════════════════════════════════
 
-import os
 import logging
+import os
+from datetime import date, datetime, timedelta
+
 import pandas as pd
-import numpy as np
-import yfinance as yf
 import requests
-from datetime import datetime, timedelta, date
-from typing import Optional
+import yfinance as yf
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def _limpiar_df(df: pd.DataFrame) -> pd.DataFrame:
 # FUENTES INDIVIDUALES
 # ─────────────────────────────────────────────────────────────
 
-def _desde_eodhd(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
+def _desde_eodhd(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> pd.DataFrame | None:
     """Histórico diario desde EODHD. Devuelve DataFrame o None."""
     token = os.getenv("EODHD_API_TOKEN")
     if not token or ticker.startswith("^"):
@@ -112,7 +112,7 @@ def _desde_eodhd(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Op
         return None
 
 
-def _vela_hoy_fmp(ticker: str, ultima: date) -> Optional[pd.DataFrame]:
+def _vela_hoy_fmp(ticker: str, ultima: date) -> pd.DataFrame | None:
     """Vela de hoy desde FMP. Devuelve DataFrame 1 fila o None."""
     fmp_key = os.getenv("FMP_API_KEY")
     if not fmp_key:
@@ -149,7 +149,7 @@ def _vela_hoy_fmp(ticker: str, ultima: date) -> Optional[pd.DataFrame]:
         return None
 
 
-def _vela_hoy_yf(ticker: str, ultima: date) -> Optional[pd.DataFrame]:
+def _vela_hoy_yf(ticker: str, ultima: date) -> pd.DataFrame | None:
     """Vela de hoy desde yfinance. Devuelve DataFrame 1 fila o None."""
     try:
         # Usar 5d para asegurar que capturamos hoy aunque sea lunes
@@ -211,7 +211,7 @@ def _completar_con_hoy(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
     return df
 
 
-def _desde_fmp(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
+def _desde_fmp(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> pd.DataFrame | None:
     """Descarga histórico completo desde FMP."""
     fmp_key = os.getenv("FMP_API_KEY")
     if not fmp_key:
@@ -250,7 +250,7 @@ def _desde_fmp(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Opti
         return None
 
 
-def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> Optional[pd.DataFrame]:
+def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) -> pd.DataFrame | None:
     import time
     fecha_fin_yf = fecha_fin + timedelta(days=1)
     # Hasta 2 reintentos con delay para evitar rate limiting
@@ -282,7 +282,7 @@ def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) ->
 # DESCARGA DIARIA — PIPELINE COMPLETO
 # ─────────────────────────────────────────────────────────────
 
-def _descargar_diario(ticker: str, periodo_años: float = 1.0) -> Optional[pd.DataFrame]:
+def _descargar_diario(ticker: str, periodo_años: float = 1.0) -> pd.DataFrame | None:
     """
     Descarga datos diarios aplicando el pipeline según ENTORNO:
       local:      yfinance directo
@@ -323,7 +323,7 @@ def get_df(
     periodo: str = PERIODO_DEFAULT,
     cache=None,
     min_velas: int = MIN_VELAS,
-) -> Optional[pd.DataFrame]:
+) -> pd.DataFrame | None:
     """
     DataFrame OHLCV diario limpio para el ticker.
 
@@ -435,7 +435,7 @@ def get_df_semanal(
 # API PÚBLICA — PRECIO EN TIEMPO REAL
 # ─────────────────────────────────────────────────────────────
 
-def get_precio_rt(ticker: str) -> Optional[dict]:
+def get_precio_rt(ticker: str) -> dict | None:
     """
     Precio actual. Pipeline: EODHD RT → yfinance.
     Devuelve dict con precio, variacion_pct, fecha, fuente — o None.
@@ -491,7 +491,7 @@ def get_precio_rt(ticker: str) -> Optional[dict]:
 # ATAJOS DE COMPATIBILIDAD
 # ─────────────────────────────────────────────────────────────
 
-def get_df_ibex(cache=None, periodo: str = "1y") -> Optional[pd.DataFrame]:
+def get_df_ibex(cache=None, periodo: str = "1y") -> pd.DataFrame | None:
     """Obtiene datos del IBEX35. Intenta ^IBEX y fallback a ^IBEX.MC"""    # Intentar primero ^IBEX (ticker estándar Yahoo)
     df = get_df("^IBEX", periodo=periodo, cache=cache, min_velas=210)
     if df is not None and not df.empty:
@@ -540,7 +540,7 @@ def guardar_parquet(ticker: str, df: pd.DataFrame) -> bool:
         return False
 
 
-def cargar_parquet(ticker: str) -> Optional[pd.DataFrame]:
+def cargar_parquet(ticker: str) -> pd.DataFrame | None:
     try:
         path = os.path.join(PARQUET_DIR, f"{ticker.replace('.', '_')}.parquet")
         if not os.path.exists(path):
@@ -551,7 +551,7 @@ def cargar_parquet(ticker: str) -> Optional[pd.DataFrame]:
         return None
 
 
-def get_df_con_fallback(ticker: str, periodo: str = PERIODO_DEFAULT, cache=None) -> Optional[pd.DataFrame]:
+def get_df_con_fallback(ticker: str, periodo: str = PERIODO_DEFAULT, cache=None) -> pd.DataFrame | None:
     """Cache Flask → Parquet local → Descarga fresca."""
     if cache is not None:
         df = get_df(ticker, periodo, cache)

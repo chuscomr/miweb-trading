@@ -152,8 +152,6 @@ def api_ejecutar_sistema():
         from backtest.engine_legacy   import BacktestEngineLegacy, calcular_atr
         from backtest.metrics         import calcular_metricas
 
-        cache = _get_cache()
-
         # ── Filtro de mercado: cargar IBEX una vez ────────────
         from backtest.backtest_f1 import _cargar_ibex_mm200, _estado_mercado
         filtro_ibex = _cargar_ibex_mm200(periodo=PERIODO)

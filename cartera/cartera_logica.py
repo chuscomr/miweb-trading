@@ -1,5 +1,5 @@
 # cartera/cartera_logica.py
-from datetime import datetime, date
+from datetime import date, datetime
 
 
 class CarteraLogica:

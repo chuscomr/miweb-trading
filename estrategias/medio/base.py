@@ -11,16 +11,15 @@
 # puedan tratar cualquier estrategia de forma genérica.
 # ══════════════════════════════════════════════════════════════
 
-import logging
 from abc import ABC, abstractmethod
-
+from typing import Optional
+import logging
 import pandas as pd
 
-from core.contexto_mercado import mercado_operable
 from core.data_provider import get_df
-from core.universos import TODOS, get_nombre
+from core.contexto_mercado import evaluar_contexto_ibex, mercado_operable
+from core.universos import IBEX35, CONTINUO, TODOS, get_nombre
 from core.utilidades import respuesta_invalida
-
 
 logger = logging.getLogger(__name__)
 

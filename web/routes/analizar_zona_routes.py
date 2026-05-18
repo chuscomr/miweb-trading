@@ -1,9 +1,11 @@
 """
 Ruta para analizar zona seleccionada del gráfico con Claude IA
 """
-from flask import Blueprint, request, jsonify
-import anthropic
 import os
+
+import anthropic
+from flask import Blueprint, jsonify, request
+
 
 analizar_zona_bp = Blueprint('analizar_zona', __name__)
 
@@ -17,20 +19,20 @@ def analizar_zona_ia():
         ticker = data.get('ticker')
         zona = data.get('zona')
         screenshot = data.get('screenshot')  # base64 string
-        
+
         # Extraer datos de la imagen base64
         if screenshot.startswith('data:image'):
             screenshot = screenshot.split(',')[1]
-        
+
         # Inicializar cliente de Anthropic
         api_key = os.environ.get('ANTHROPIC_API_KEY')
         if not api_key:
             return jsonify({
                 'error': 'ANTHROPIC_API_KEY no configurada. Por favor, configura la API key en las variables de entorno.'
             }), 500
-        
+
         client = anthropic.Anthropic(api_key=api_key)
-        
+
         # Crear prompt mejorado para Claude
         prompt = f"""Eres un analista técnico profesional senior con 15 años de experiencia en mercados bursátiles españoles.
 
@@ -171,7 +173,7 @@ Lista los 3-5 niveles MÁS importantes a vigilar con sus implicaciones
 
         # Llamar a Claude Vision API
         print(f"🤖 Llamando a Claude Vision API para analizar {ticker}...")
-        
+
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=4096,  # Aumentado para análisis más detallado
@@ -195,12 +197,12 @@ Lista los 3-5 niveles MÁS importantes a vigilar con sus implicaciones
                 }
             ]
         )
-        
+
         # Extraer respuesta
         analisis_completo = message.content[0].text
-        
+
         print(f"✅ Análisis completado ({len(analisis_completo)} caracteres)")
-        
+
         # Separar análisis y recomendaciones si es posible
         partes = analisis_completo.split('**Recomendaciones', 1)
         if len(partes) == 2:
@@ -209,14 +211,14 @@ Lista los 3-5 niveles MÁS importantes a vigilar con sus implicaciones
         else:
             analisis = analisis_completo
             recomendaciones = None
-        
+
         return jsonify({
             'analisis': analisis,
             'recomendaciones': recomendaciones,
             'ticker': ticker,
             'zona': zona
         })
-        
+
     except Exception as e:
         print(f"❌ Error en analizar_zona_ia: {e}")
         import traceback

@@ -11,9 +11,10 @@
 # Pullback:  10 factores específicos de rebotes en soporte
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
-import numpy as np
 import logging
+
+import pandas as pd
+
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,8 @@ def _confirmaciones_breakout(df: pd.DataFrame, señal: dict) -> dict:
         d = ((precio_actual - res) / res) * 100
         if   d >= 2.0:  pts, det, col = 15, f"✅ Rota con claridad (+{d:.1f}%)",  "positivo"
         elif d >= 0.5:  pts, det, col = 12, f"✅ Rota (+{d:.1f}%)",               "positivo"
-        elif d >= -0.5: pts, det, col =  8, f"En resistencia",                    "neutro"
-        else:           pts, det, col =  3, f"⚠️ Bajo resistencia",               "neutro"
+        elif d >= -0.5: pts, det, col =  8, "En resistencia",                    "neutro"
+        else:           pts, det, col =  3, "⚠️ Bajo resistencia",               "neutro"
     else:
         pts, det, col = 0, "Sin resistencia identificada", "neutro"
     desglose["resistencia"] = {"nombre": "Fuerza Resistencia", "puntos": pts, "detalle": det, "color": col}
@@ -107,7 +108,7 @@ def _confirmaciones_breakout(df: pd.DataFrame, señal: dict) -> dict:
     if   cons >= 20: pts, det, col = 10, f"✅ Consolidación larga ({cons}d)",   "positivo"
     elif cons >= 12: pts, det, col =  7, f"✅ Consolidación buena ({cons}d)",   "positivo"
     elif cons >= 8:  pts, det, col =  3, f"Consolidación mínima ({cons}d)",     "neutro"
-    else:            pts, det, col =  0, f"Sin consolidación clara",            "neutro"
+    else:            pts, det, col =  0, "Sin consolidación clara",            "neutro"
     desglose["consolidacion"] = {"nombre": "Consolidación Previa", "puntos": pts, "detalle": det, "color": col}
     total += pts
 
@@ -220,8 +221,8 @@ def _factor_atr_expansion(df: pd.DataFrame) -> tuple:
     atr_med  = float(df["ATR"].rolling(20).mean().iloc[-1])
     ratio    = atr_hoy / atr_med if atr_med > 0 else 1.0
     if   ratio >= 1.25: return 10, f"✅ Expansión fuerte ({ratio:.2f}x)",   "positivo"
-    elif ratio >= 1.15: return  7, f"✅ Expansión moderada ({ratio:.2f}x)", "positivo"
-    elif ratio >= 1.05: return  3, f"Ligera expansión ({ratio:.2f}x)",      "neutro"
+    if ratio >= 1.15: return  7, f"✅ Expansión moderada ({ratio:.2f}x)", "positivo"
+    if ratio >= 1.05: return  3, f"Ligera expansión ({ratio:.2f}x)",      "neutro"
     return 0, f"Sin expansión ({ratio:.2f}x)", "neutro"
 
 
@@ -232,7 +233,7 @@ def _factor_atr_normal(df: pd.DataFrame) -> tuple:
     atr_med = float(df["ATR"].rolling(20).mean().iloc[-1])
     ratio   = atr_hoy / atr_med if atr_med > 0 else 1.0
     if   ratio <= 1.1:  return 5, f"✅ Volatilidad normal ({ratio:.2f}x)",     "positivo"
-    elif ratio <= 1.25: return 2, f"Volatilidad elevada ({ratio:.2f}x)",        "neutro"
+    if ratio <= 1.25: return 2, f"Volatilidad elevada ({ratio:.2f}x)",        "neutro"
     return 0, f"⚠️ Volatilidad alta ({ratio:.2f}x)", "negativo"
 
 
@@ -245,9 +246,9 @@ def _factor_macd(df: pd.DataFrame) -> tuple:
     señal_hoy = float(df["MACD_SEÑAL"].iloc[-1]) if "MACD_SEÑAL" in df.columns else 0
     if macd_hoy > señal_hoy and hist_hoy > hist_prev and hist_hoy > 0:
         return 10, "✅ MACD alcista acelerando", "positivo"
-    elif macd_hoy > señal_hoy:
+    if macd_hoy > señal_hoy:
         return  6, "MACD alcista",              "positivo"
-    elif hist_hoy > hist_prev:
+    if hist_hoy > hist_prev:
         return  3, "MACD mejorando",            "neutro"
     return 0, "MACD bajista", "negativo"
 
@@ -260,8 +261,8 @@ def _factor_mm20_pendiente(df: pd.DataFrame, max_pts: int = 10) -> tuple:
     pend      = ((mm20_hoy - mm20_prev) / mm20_prev) * 100 if mm20_prev > 0 else 0
     escala    = max_pts / 10
     if   pend >= 1.5:  return int(10 * escala), f"✅ Fuerte alcista ({pend:+.1f}%)",   "positivo"
-    elif pend >= 0.5:  return int(7  * escala), f"✅ Alcista ({pend:+.1f}%)",           "positivo"
-    elif pend >= 0.0:  return int(3  * escala), f"Plana ({pend:+.1f}%)",               "neutro"
+    if pend >= 0.5:  return int(7  * escala), f"✅ Alcista ({pend:+.1f}%)",           "positivo"
+    if pend >= 0.0:  return int(3  * escala), f"Plana ({pend:+.1f}%)",               "neutro"
     return 0, f"❌ Bajista ({pend:+.1f}%)", "negativo"
 
 
@@ -277,8 +278,8 @@ def _factor_velas_alcistas(df: pd.DataFrame) -> tuple:
         else:
             break
     if   verdes >= 4: return 10, f"✅ {verdes} velas alcistas seguidas", "positivo"
-    elif verdes >= 3: return  7, f"✅ {verdes} velas alcistas",          "positivo"
-    elif verdes >= 2: return  3, f"{verdes} velas alcistas",             "neutro"
+    if verdes >= 3: return  7, f"✅ {verdes} velas alcistas",          "positivo"
+    if verdes >= 2: return  3, f"{verdes} velas alcistas",             "neutro"
     return 0, "Pocas velas alcistas", "neutro"
 
 
@@ -294,7 +295,7 @@ def _factor_velas_agotamiento(df: pd.DataFrame) -> tuple:
     cuerpo_pct = cuerpo / rango
     if cuerpo_pct <= 0.25:
         return 5, "✅ Doji / agotamiento detectado", "positivo"
-    elif cuerpo_pct <= 0.4:
+    if cuerpo_pct <= 0.4:
         return 3, "Vela pequeña (posible giro)", "neutro"
     return 0, "Sin señal de agotamiento", "neutro"
 
@@ -312,7 +313,7 @@ def _factor_resistencia_proxima(df: pd.DataFrame, precio_actual: float) -> tuple
         return 10, "✅ Sin resistencias próximas", "positivo"
     distancia = ((min(resistencias) - precio_actual) / precio_actual) * 100
     if   distancia >= 10: return  7, f"Resistencia lejana (+{distancia:.1f}%)", "positivo"
-    elif distancia >= 5:  return  3, f"Resistencia a +{distancia:.1f}%",        "neutro"
+    if distancia >= 5:  return  3, f"Resistencia a +{distancia:.1f}%",        "neutro"
     return 0, f"⚠️ Resistencia cerca (+{distancia:.1f}%)", "negativo"
 
 
@@ -324,8 +325,8 @@ def _factor_tendencia_mm200(df: pd.DataFrame, precio_actual: float) -> tuple:
         return 5, "MM200 no disponible", "neutro"
     dist = ((precio_actual - mm200) / mm200) * 100
     if   dist >= 5:   return 15, f"✅ Muy sobre MM200 (+{dist:.1f}%)",  "positivo"
-    elif dist >= 0:   return 10, f"✅ Sobre MM200 (+{dist:.1f}%)",      "positivo"
-    elif dist >= -5:  return  5, f"Cerca MM200 ({dist:.1f}%)",          "neutro"
+    if dist >= 0:   return 10, f"✅ Sobre MM200 (+{dist:.1f}%)",      "positivo"
+    if dist >= -5:  return  5, f"Cerca MM200 ({dist:.1f}%)",          "neutro"
     return 0, f"⚠️ Bajo MM200 ({dist:.1f}%)", "negativo"
 
 
@@ -337,7 +338,7 @@ def _factor_precio_mm50(df: pd.DataFrame, precio_actual: float) -> tuple:
         return 2, "MM50 no disponible", "neutro"
     dist = ((precio_actual - mm50) / mm50) * 100
     if   dist >= 0:  return 5, f"✅ Sobre MM50 (+{dist:.1f}%)",  "positivo"
-    elif dist >= -5: return 2, f"Cerca MM50 ({dist:.1f}%)",      "neutro"
+    if dist >= -5: return 2, f"Cerca MM50 ({dist:.1f}%)",      "neutro"
     return 0, f"Bajo MM50 ({dist:.1f}%)", "negativo"
 
 
@@ -350,8 +351,8 @@ def _factor_volumen_decreciente(df: pd.DataFrame) -> tuple:
         return 3, "Sin referencia", "neutro"
     ratio = vol_reciente / vol_anterior
     if   ratio <= 0.7:  return 10, f"✅ Volumen muy decreciente ({ratio:.2f}x)", "positivo"
-    elif ratio <= 0.85: return  7, f"✅ Volumen decreciente ({ratio:.2f}x)",     "positivo"
-    elif ratio <= 1.0:  return  4, f"Volumen estable ({ratio:.2f}x)",            "neutro"
+    if ratio <= 0.85: return  7, f"✅ Volumen decreciente ({ratio:.2f}x)",     "positivo"
+    if ratio <= 1.0:  return  4, f"Volumen estable ({ratio:.2f}x)",            "neutro"
     return 0, f"⚠️ Volumen creciente en caída ({ratio:.2f}x)", "negativo"
 
 

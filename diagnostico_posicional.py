@@ -12,34 +12,34 @@ Muestra para cada valor del IBEX35:
 =============================================================================
 """
 
-import sys
 import os
+import sys
 import time
 import warnings
+
+
 warnings.filterwarnings("ignore")
 
 # ── Path para imports ──────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import yfinance as yf
 import pandas as pd
-import numpy as np
+import yfinance as yf
 
+from estrategias.posicional.config_posicional import (
+    CONSOLIDACION_MAX_SEMANAS,
+    CONSOLIDACION_MIN_SEMANAS,
+    MIN_SEMANAS_HISTORICO,
+    MIN_VOLATILIDAD_PCT,
+)
 from estrategias.posicional.datos_posicional import obtener_datos_semanales
 from estrategias.posicional.logica_posicional import (
-    detectar_tendencia_largo_plazo,
-    detectar_consolidacion,
-    detectar_breakout,
     calcular_volatilidad,
+    detectar_breakout,
+    detectar_consolidacion,
+    detectar_tendencia_largo_plazo,
 )
-from estrategias.posicional.config_posicional import (
-    MIN_SEMANAS_HISTORICO,
-    CONSOLIDACION_MIN_SEMANAS,
-    CONSOLIDACION_MAX_SEMANAS,
-    MIN_VOLATILIDAD_PCT,
-    R_PARA_PROTEGER,
-    R_PARA_TRAILING,
-)
+
 
 # ── Universo ───────────────────────────────────────────────────────────────
 IBEX_35 = [
@@ -77,7 +77,7 @@ def diagnosticar_ticker(ticker, df_ibex):
         df, _ = obtener_datos_semanales(ticker, periodo_años=10, validar=False)
 
         if df is None or df.empty:
-            print(f"  ❌ Sin datos")
+            print("  ❌ Sin datos")
             CONTADORES["error"].append(ticker)
             return
 
@@ -103,11 +103,11 @@ def diagnosticar_ticker(ticker, df_ibex):
                 print(f"  {'🟢' if estado_ibex == 'ALCISTA' else '🔴'} IBEX: {estado_ibex}  "
                       f"(precio {precio_ibex:.0f} | MM200 {mm200:.0f})")
                 if estado_ibex == "BAJISTA":
-                    print(f"  ⛔ RECHAZADO — IBEX bajista")
+                    print("  ⛔ RECHAZADO — IBEX bajista")
                     CONTADORES["ibex_bajista"].append(ticker)
                     return
         else:
-            print(f"  ⚠️  IBEX no disponible — filtro omitido")
+            print("  ⚠️  IBEX no disponible — filtro omitido")
 
         # ── FILTRO 1: TENDENCIA ────────────────────────────────────────
         tend = detectar_tendencia_largo_plazo(precios, df)
@@ -155,7 +155,7 @@ def diagnosticar_ticker(ticker, df_ibex):
                 print(f"  ✅ CONSOLIDACIÓN: {sem_c} sem | rango {rango}%")
                 break
         if not consol_ok:
-            print(f"  ⚠️  Sin consolidación reciente (no bloquea pero resta puntos)")
+            print("  ⚠️  Sin consolidación reciente (no bloquea pero resta puntos)")
 
         # ── FILTRO 3: BREAKOUT ─────────────────────────────────────────
         bk = detectar_breakout(precios, volumenes, lookback=26)
@@ -168,7 +168,7 @@ def diagnosticar_ticker(ticker, df_ibex):
               f"(dist máximos {dist_bk}% | vol ratio {vol_rat}x)")
 
         if not hay_bk:
-            print(f"  ⛔ RECHAZADO — Sin breakout de máximos de 26 semanas")
+            print("  ⛔ RECHAZADO — Sin breakout de máximos de 26 semanas")
             CONTADORES["breakout_rechazado"].append((ticker, dist_bk, vol_rat))
             return
 
@@ -179,12 +179,12 @@ def diagnosticar_ticker(ticker, df_ibex):
         print(f"  {icon_v} VOLATILIDAD: {vol_r}%  (mínimo {MIN_VOLATILIDAD_PCT}%)")
 
         if vol and vol < MIN_VOLATILIDAD_PCT:
-            print(f"  ⛔ RECHAZADO — Volatilidad baja")
+            print("  ⛔ RECHAZADO — Volatilidad baja")
             CONTADORES["volatilidad_baja"].append((ticker, vol_r))
             return
 
         # ── APROBADO ───────────────────────────────────────────────────
-        print(f"  🎯 APROBADO — Señal de compra en la última vela")
+        print("  🎯 APROBADO — Señal de compra en la última vela")
         CONTADORES["aprobados"].append(ticker)
 
     except Exception as e:
@@ -197,7 +197,7 @@ def main():
     print("🔍 DIAGNÓSTICO SISTEMA POSICIONAL — Filtros por valor")
     separador("=")
     print(f"Universo: {len(IBEX_35)} valores del IBEX 35")
-    print(f"Fecha de análisis: última vela disponible\n")
+    print("Fecha de análisis: última vela disponible\n")
 
     # ── Descargar IBEX una sola vez ───────────────────────────────────
     df_ibex = None
@@ -287,9 +287,9 @@ def main():
         print(f"  {nombre:28s} {n:2d}/{total}  |{barra}|")
 
     separador("=")
-    print(f"\nEste diagnóstico analiza la ÚLTIMA VELA disponible.")
-    print(f"Para ver por qué fallaron en el backtest histórico,")
-    print(f"ejecuta el backtest completo.\n")
+    print("\nEste diagnóstico analiza la ÚLTIMA VELA disponible.")
+    print("Para ver por qué fallaron en el backtest histórico,")
+    print("ejecuta el backtest completo.\n")
 
 
 if __name__ == "__main__":

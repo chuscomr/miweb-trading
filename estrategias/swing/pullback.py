@@ -17,16 +17,17 @@ Criterios:
   5. Estructura alcista  (precio > MM50 + MM20 pendiente positiva)
 """
 
-import pandas as pd
-import numpy as np
 import logging
 from datetime import datetime
 
-from estrategias.base import EstrategiaBase
-from core.indicadores import calcular_rsi, calcular_atr
-from core.riesgo import calcular_rr, calcular_objetivo
-from core.utilidades import respuesta_invalida, respuesta_valida, f
+import pandas as pd
+
 from analisis.tecnico.patrones_velas import detectar_patrones_velas
+from core.indicadores import calcular_atr, calcular_rsi
+from core.riesgo import calcular_objetivo, calcular_rr
+from core.utilidades import f, respuesta_invalida, respuesta_valida
+from estrategias.base import EstrategiaBase
+
 
 logger = logging.getLogger(__name__)
 
@@ -133,11 +134,11 @@ class PullbackSwing(EstrategiaBase):
         # CORRECCIÓN LOOKAHEAD: Excluye el precio actual (no usamos información futura)
         maximo_60    = f(df["Close"].iloc[:-1].tail(60).max())
         retroceso_pct = ((maximo_60 - precio_actual) / maximo_60) * 100
-        
+
         # Evaluar tipo de pullback
         es_pullback_profundo = 5.0 <= retroceso_pct <= 15.0
         es_pullback_superficial = 3.0 <= retroceso_pct < 5.0
-        
+
         # Pre-evaluar estructura para pullbacks superficiales
         # (necesitamos saber si es válido antes del scoring)
         estructura_base_ok = precio_actual > mm50_val
@@ -145,7 +146,7 @@ class PullbackSwing(EstrategiaBase):
         mm20_pendiente = (float(mm20_serie.iloc[-1]) >= float(mm20_serie.iloc[-4])
                          if len(mm20_serie) >= 4 else True)
         estructura_fuerte = estructura_base_ok and mm20_pendiente
-        
+
         # Determinar validez según tipo
         if es_pullback_profundo:
             retroceso_ok = True
@@ -251,7 +252,7 @@ class PullbackSwing(EstrategiaBase):
                         vela_nombre = nombre
                         vela_peso   = 1.5
                         break
-                    elif nombre in PATRONES_MEDIA and not vela_ok:
+                    if nombre in PATRONES_MEDIA and not vela_ok:
                         vela_ok     = True
                         vela_nombre = nombre
                         vela_peso   = 1.0
@@ -331,7 +332,7 @@ class PullbackSwing(EstrategiaBase):
             ("estructura", estructura_ok, 3.5),
         ]
         score_parcial_raw = sum(peso for _, ok, peso in PESOS_OPC if ok) + bonus_rsi
-        
+
         # Normalizar a escala 0-10 (máximo posible ~11.5)
         SCORE_MAX = 11.5
         score_parcial = min(10.0, (score_parcial_raw / SCORE_MAX) * 10.0)

@@ -1,0 +1,56 @@
+# Configuración Ruff para MiWeb Trading Platform v85.19
+
+[tool.ruff]
+# Longitud máxima de línea
+line-length = 120
+
+# Excluir archivos/carpetas
+exclude = [
+    ".git",
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    "data/",
+    "pantallazos/",
+]
+
+[tool.ruff.lint]
+# Reglas activadas
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (imports no usados, variables undefined)
+    "I",   # isort (ordenar imports)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (sintaxis moderna)
+    "B",   # flake8-bugbear (bugs comunes)
+    "SIM", # flake8-simplify
+    "RET", # flake8-return
+    "ARG", # flake8-unused-arguments
+]
+
+# Reglas ignoradas (específicas para tu proyecto)
+ignore = [
+    "E501",   # line too long (tienes líneas largas en queries SQL)
+    "B008",   # function call in default argument (común en Flask)
+    "ARG001", # unused function argument (muchos en Flask routes)
+    "ARG002", # unused method argument
+    "N802",   # function name should be lowercase (tienes convención propia)
+    "N806",   # variable in function should be lowercase
+    "SIM108", # use ternary operator (a veces menos legible)
+    "RET504", # unnecessary variable assignment before return
+    "UP007",  # Union type annotation (Python 3.10+, Flask no siempre compatible)
+]
+
+[tool.ruff.lint.isort]
+# Configuración para ordenar imports
+force-single-line = false
+lines-after-imports = 2
+known-first-party = ["analisis", "alertas", "backtest", "cartera", "core", "estrategias", "web", "analytics"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignorar reglas específicas por archivo
+"__init__.py" = ["F401"]  # imports no usados en __init__.py son OK
+"**/test_*.py" = ["ARG", "N"]  # tests pueden tener argumentos sin usar
+"app.py" = ["E402"]  # imports después de código (necesario para config)
+"generar_datos.py" = ["ARG"]  # script de utilidad

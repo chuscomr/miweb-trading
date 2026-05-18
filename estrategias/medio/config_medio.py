@@ -72,7 +72,7 @@ ESTADO_TRAILING  = "TRAILING"
 
 # Universo (importado de core si está disponible)
 try:
-    from core.universos import IBEX35, CONTINUO
+    from core.universos import CONTINUO, IBEX35
     TICKER_EMPRESA = {
         "ACS.MC": "ACS", "AENA.MC": "AENA", "AMS.MC": "Amadeus", "ANA.MC": "Acciona",
         "BBVA.MC": "BBVA", "CABK.MC": "CaixaBank", "ELE.MC": "Endesa", "FER.MC": "Ferrovial",
@@ -110,7 +110,6 @@ def calcular_parametros_adaptativos(volatilidad_actual):
         volatilidad_actual = VOL_MIN_PCT
     if volatilidad_actual < 10:
         return {"stop_atr_mult": 1.5, "pullback_min": 2.5, "riesgo_max": 3.0}
-    elif volatilidad_actual > 20:
+    if volatilidad_actual > 20:
         return {"stop_atr_mult": 2.5, "pullback_min": 4.0, "riesgo_max": 5.0}
-    else:
-        return {"stop_atr_mult": STOP_ATR_MULTIPLICADOR, "pullback_min": PULLBACK_MIN_PCT, "riesgo_max": RIESGO_MAX_PCT}
+    return {"stop_atr_mult": STOP_ATR_MULTIPLICADOR, "pullback_min": PULLBACK_MIN_PCT, "riesgo_max": RIESGO_MAX_PCT}

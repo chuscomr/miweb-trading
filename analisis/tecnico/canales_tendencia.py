@@ -20,9 +20,11 @@ Algoritmo:
   3. Canal = línea base + paralela desplazada al pivot opuesto
 """
 
+import logging
+
 import numpy as np
 import pandas as pd
-import logging
+
 
 logger = logging.getLogger(__name__)
 

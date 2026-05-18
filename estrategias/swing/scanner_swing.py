@@ -8,15 +8,16 @@ VERSIÓN v82.7: Integración con perfiles adaptativos por contexto de mercado
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from estrategias.swing.breakout import BreakoutSwing
-from estrategias.swing.pullback import PullbackSwing
-from estrategias.swing.perfiles_contexto import (
-    obtener_perfil_trading,
-    calcular_score_ranking,
-    setup_pasa_filtro,
-    clasificar_calidad_setup
-)
 from core.contexto_mercado import evaluar_contexto_ibex
+from estrategias.swing.breakout import BreakoutSwing
+from estrategias.swing.perfiles_contexto import (
+    calcular_score_ranking,
+    clasificar_calidad_setup,
+    obtener_perfil_trading,
+    setup_pasa_filtro,
+)
+from estrategias.swing.pullback import PullbackSwing
+
 
 _breakout_inst = BreakoutSwing()
 _pullback_inst  = PullbackSwing()
@@ -66,48 +67,48 @@ def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
     # Obtener perfil según contexto de mercado
     perfil = None
     contexto_actual = "LATERAL"  # Default
-    
+
     if usar_perfil_adaptativo:
         try:
             contexto_info = evaluar_contexto_ibex(cache=cache)
             contexto_actual = contexto_info.get("tendencia", "LATERAL")
             perfil = obtener_perfil_trading(contexto_actual)
-            
+
             print(f"\n{'='*70}")
             print(f"🎯 SISTEMA V2.1 PROFESIONAL: {perfil['contexto']}")
             print(f"{'='*70}")
-            print(f"   ✅ VALIDEZ TÉCNICA (dinámica por contexto):")
+            print("   ✅ VALIDEZ TÉCNICA (dinámica por contexto):")
             from estrategias.swing.perfiles_contexto import UMBRALES_CONTEXTO
             umbral_ctx = UMBRALES_CONTEXTO.get(contexto_actual, 6.0)
             print(f"      • Score mínimo: {umbral_ctx}")
-            print(f"\n   📊 RANKING (prioriza según contexto):")
+            print("\n   📊 RANKING (prioriza según contexto):")
             print(f"      • Prioridad Breakout: {perfil['prioridad_breakout']:.1f}x")
             print(f"      • Prioridad Pullback: {perfil['prioridad_pullback']:.1f}x")
-            print(f"\n   💰 Gestión (ajustada por contexto):")
+            print("\n   💰 Gestión (ajustada por contexto):")
             print(f"      • Tamaño Breakout: {perfil['factor_tamaño_breakout']*100:.0f}%")
             print(f"      • Tamaño Pullback: {perfil['factor_tamaño_pullback']*100:.0f}%")
             print(f"      • Máx posiciones: {perfil['max_posiciones_abiertas']}")
             print(f"      • Riesgo/trade: {perfil['riesgo_por_trade_pct']}%")
-            print(f"\n   🔍 Confirmaciones extra requeridas:")
+            print("\n   🔍 Confirmaciones extra requeridas:")
             print(f"      • Breakout: {'SÍ' if perfil['requiere_confirmacion_breakout'] else 'NO'}")
             print(f"      • Pullback: {'SÍ' if perfil['requiere_confirmacion_pullback'] else 'NO'}")
             if perfil['requiere_confirmacion_breakout'] or perfil['requiere_confirmacion_pullback']:
                 from estrategias.swing.perfiles_contexto import obtener_confirmaciones_requeridas
                 if perfil['requiere_confirmacion_breakout']:
                     conf_b = obtener_confirmaciones_requeridas("breakout")
-                    print(f"\n      Breakout debe cumplir:")
+                    print("\n      Breakout debe cumplir:")
                     for c in conf_b:
                         print(f"        • {c}")
                 if perfil['requiere_confirmacion_pullback']:
                     conf_p = obtener_confirmaciones_requeridas("pullback")
-                    print(f"\n      Pullback debe cumplir:")
+                    print("\n      Pullback debe cumplir:")
                     for c in conf_p:
                         print(f"        • {c}")
             print(f"{'='*70}\n")
         except Exception as e:
             print(f"⚠️ Error obteniendo contexto: {e}, usando perfil estándar")
             perfil = None
-    
+
     if tipo_scan == "ambos":
         breakouts = escanear_mercado(tickers, "breakout", max_workers, cache, usar_perfil_adaptativo)
         pullbacks = escanear_mercado(tickers, "pullback", max_workers, cache, usar_perfil_adaptativo)
@@ -132,34 +133,34 @@ def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
             r = future.result()
             if isinstance(r, dict) and r.get("es_senal") and r["ticker_completo"] not in vistos:
                 score_base = r.get("score", 0)
-                
+
                 # PASO 1: FILTRO (elimina basura)
                 if perfil:
                     pasa, score_ponderado, score_minimo = setup_pasa_filtro(
                         score_base, tipo_scan, contexto_actual
                     )
-                    
+
                     if not pasa:
                         # Rechazado por filtro
                         continue
-                    
+
                     # PASO 2: CALCULAR SCORE DE RANKING (para ordenar)
                     score_ranking = calcular_score_ranking(
                         score_base, tipo_scan, contexto_actual
                     )
-                    
+
                     # PASO 3: CLASIFICAR CALIDAD
                     calidad = clasificar_calidad_setup(score_base)
-                    
+
                     # PASO 4: OBTENER FACTOR DE TAMAÑO
                     from estrategias.swing.perfiles_contexto import (
-                        obtener_factor_tamaño, 
+                        obtener_confirmaciones_requeridas,
+                        obtener_factor_tamaño,
                         requiere_confirmacion_extra,
-                        obtener_confirmaciones_requeridas
                     )
                     factor_tamaño = obtener_factor_tamaño(tipo_scan, contexto_actual)
                     necesita_conf = requiere_confirmacion_extra(tipo_scan, contexto_actual)
-                    
+
                     # Agregar información al resultado
                     r["score_original"] = score_base
                     r["score_ranking"] = score_ranking  # ← USADO PARA ORDENAR
@@ -175,26 +176,26 @@ def escanear_mercado(tickers: list, tipo_scan: str = "breakout",
                     r["score_ranking"] = score_base
                     r["calidad"] = clasificar_calidad_setup(score_base)
                     r["factor_tamaño"] = 1.0
-                
+
                 vistos.add(r["ticker_completo"])
                 resultados.append(r)
 
     # PASO 4: ORDENAR POR SCORE DE RANKING (NO por score original)
     resultados.sort(key=lambda x: x.get("score_ranking", 0), reverse=True)
-    
+
     # Mostrar resumen de calidad
     if perfil and resultados:
         excelentes = sum(1 for r in resultados if r.get("calidad") == "excelente")
         buenos = sum(1 for r in resultados if r.get("calidad") == "bueno")
         mediocres = sum(1 for r in resultados if r.get("calidad") == "mediocre")
-        
+
         print(f"\n{'─'*70}")
-        print(f"📊 DISTRIBUCIÓN DE CALIDAD (NO forzada, natural):")
+        print("📊 DISTRIBUCIÓN DE CALIDAD (NO forzada, natural):")
         print(f"   ⭐ Excelentes: {excelentes} ({excelentes/len(resultados)*100:.0f}%)")
         print(f"   🔵 Buenos:     {buenos} ({buenos/len(resultados)*100:.0f}%)")
         print(f"   🟢 Mediocres:  {mediocres} ({mediocres/len(resultados)*100:.0f}%)")
         print(f"{'─'*70}\n")
-    
+
     return resultados
 
 
@@ -217,10 +218,9 @@ def _nivel_calidad(score: float) -> dict:
     """
     if score >= 8.0:
         return {"nivel": "alta_probabilidad", "label": "Alta Probabilidad", "emoji": "⭐"}
-    elif score >= 6.5:
+    if score >= 6.5:
         return {"nivel": "confirmada",        "label": "Compra Confirmada", "emoji": "🔵"}
-    else:
-        return {"nivel": "compra",            "label": "Compra",            "emoji": "🟢"}
+    return {"nivel": "compra",            "label": "Compra",            "emoji": "🟢"}
 
 
 def _formatear(r: dict) -> dict:
@@ -282,7 +282,7 @@ class ScannerSwing:
         }
 
     def escanear_todo(self, tickers=None, cache=None, top_n: int = 20) -> dict:
-        from core.universos import IBEX35, CONTINUO
+        from core.universos import CONTINUO, IBEX35
         if tickers is None:
             tickers = IBEX35 + CONTINUO
         señales = escanear_mercado(tickers, tipo_scan="ambos",

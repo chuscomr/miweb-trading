@@ -9,9 +9,9 @@
 # ATR usa High/Low/Close previo — fórmula correcta (no solo diff).
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
+
 import numpy as np
-from typing import Optional
+import pandas as pd
 
 
 # ─────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ def calcular_rsi(close, periodo: int = 14) -> pd.Series:
     return pd.Series(rsi, index=s.index)
 
 
-def rsi_actual(close, periodo: int = 14) -> Optional[float]:
+def rsi_actual(close, periodo: int = 14) -> float | None:
     """Devuelve solo el último valor RSI como float. None si no hay datos."""
     try:
         serie = calcular_rsi(close, periodo)
@@ -100,7 +100,7 @@ def calcular_atr(df: pd.DataFrame, periodo: int = 14) -> pd.Series:
     return tr.rolling(window=periodo).mean()
 
 
-def atr_actual(df: pd.DataFrame, periodo: int = 14) -> Optional[float]:
+def atr_actual(df: pd.DataFrame, periodo: int = 14) -> float | None:
     """Devuelve solo el último valor ATR como float. None si no hay datos."""
     try:
         serie = calcular_atr(df, periodo)
@@ -134,7 +134,7 @@ def calcular_medias(df: pd.DataFrame, periodos: list = None) -> pd.DataFrame:
     return resultado
 
 
-def mm_actual(close, periodo: int) -> Optional[float]:
+def mm_actual(close, periodo: int) -> float | None:
     """Último valor de la media móvil simple. None si datos insuficientes."""
     s = _to_series(close)
     if len(s) < periodo:
@@ -281,7 +281,7 @@ def evaluar_volumen(volumenes: list) -> dict:
 # VOLATILIDAD
 # ─────────────────────────────────────────────────────────────
 
-def calcular_volatilidad(close, periodo: int = 20) -> Optional[float]:
+def calcular_volatilidad(close, periodo: int = 20) -> float | None:
     """Volatilidad relativa: rango(periodo) / media(periodo) * 100."""
     s = _to_series(close)
     if len(s) < periodo:
@@ -293,7 +293,7 @@ def calcular_volatilidad(close, periodo: int = 20) -> Optional[float]:
     return round(float((ventana.max() - ventana.min()) / media * 100), 2)
 
 
-def clasificar_volatilidad(vol: Optional[float]) -> str:
+def clasificar_volatilidad(vol: float | None) -> str:
     if vol is None:
         return "media"
     if vol < 2:
