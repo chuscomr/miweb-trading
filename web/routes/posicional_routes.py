@@ -3,29 +3,34 @@
 # Blueprint sistema posicional — adaptado a nueva arquitectura
 # ==========================================================
 
-from analisis.fundamental.proveedor import obtener_datos_fundamentales
-from analisis.fundamental.rating   import calcular_rating_fundamental
-from core.sizing                    import calcular_sizing_recomendado
-from flask import Blueprint, render_template, request, jsonify, current_app
-from datetime import datetime
 import json
-import os
 import logging
+import os
+from datetime import datetime
+
+from flask import Blueprint, current_app, jsonify, render_template, request
+
+from analisis.fundamental.proveedor import obtener_datos_fundamentales
+from analisis.fundamental.rating import calcular_rating_fundamental
+from core.sizing import calcular_sizing_recomendado
+
 
 logger = logging.getLogger(__name__)
 
-from core.universos import IBEX35, CONTINUO
 from core.contexto_mercado import evaluar_contexto_ibex
-from estrategias.posicional.datos_posicional import obtener_datos_semanales, filtrar_universo_posicional
-from estrategias.posicional.sistema_trading_posicional import evaluar_entrada_posicional, evaluar_con_scoring
-from estrategias.posicional.backtest_sistema_posicional import ejecutar_backtest_sistema_completo
+from core.universos import CONTINUO, IBEX35
 from estrategias.posicional.backtest_posicional import ejecutar_backtest_posicional
+from estrategias.posicional.backtest_sistema_posicional import ejecutar_backtest_sistema_completo
+from estrategias.posicional.datos_posicional import obtener_datos_semanales
+from estrategias.posicional.sistema_trading_posicional import evaluar_con_scoring, evaluar_entrada_posicional
+
 
 RESULTADOS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data_cache", "posicional")
 os.makedirs(RESULTADOS_DIR, exist_ok=True)
 
 
 import math
+
 
 def _serializar_analisis(resultado):
     """Convierte todos los valores del resultado a tipos JSON-serializables."""
@@ -72,7 +77,12 @@ posicional_bp = Blueprint("posicional", __name__, url_prefix="/posicional")
 
 @posicional_bp.route("/")
 def index():
-    from estrategias.posicional.config_posicional import MIN_VOLATILIDAD_PCT, MIN_VOLUMEN_MEDIO_DIARIO, MIN_CAPITALIZACION, RIESGO_POR_TRADE_PCT
+    from estrategias.posicional.config_posicional import (
+        MIN_CAPITALIZACION,
+        MIN_VOLATILIDAD_PCT,
+        MIN_VOLUMEN_MEDIO_DIARIO,
+        RIESGO_POR_TRADE_PCT,
+    )
     contexto = {
         "sistema": "posicional",
         "titulo": "Sistema Posicional",
@@ -274,29 +284,35 @@ def historial():
 @posicional_bp.route("/backtest", methods=["GET", "POST"])
 def backtest_sistema():
     if request.method == "POST":
-        from estrategias.posicional.config_posicional import (IBEX_GRUPO_1, IBEX_GRUPO_2, IBEX_GRUPO_3,
-                                     CONTINUO_GRUPO_1, CONTINUO_GRUPO_2, CONTINUO_GRUPO_3)
+        from estrategias.posicional.config_posicional import (
+            CONTINUO_GRUPO_1,
+            CONTINUO_GRUPO_2,
+            CONTINUO_GRUPO_3,
+            IBEX_GRUPO_1,
+            IBEX_GRUPO_2,
+            IBEX_GRUPO_3,
+        )
         grupo   = request.form.get("grupo", "todos")
         mercado = request.form.get("mercado", "ibex")
-        
+
         universos = {
             "ibex":     {"grupo1": IBEX_GRUPO_1, "grupo2": IBEX_GRUPO_2, "grupo3": IBEX_GRUPO_3, "todos": IBEX35},
             "continuo": {"grupo1": CONTINUO_GRUPO_1, "grupo2": CONTINUO_GRUPO_2,
                          "grupo3": CONTINUO_GRUPO_3, "todos": CONTINUO}
         }
         universo  = universos.get(mercado, {}).get(grupo, IBEX35)
-        
+
         # Log para debug
         logger.info(f"🎯 Backtest posicional: mercado={mercado}, grupo={grupo}, universo={len(universo)} tickers")
         logger.info(f"   Tickers: {universo}")
-        
+
         resultado = ejecutar_backtest_sistema_completo(universo=universo, verbose=True)
         resultado["grupo"]   = grupo
         resultado["mercado"] = mercado
-        
+
         # Log resultado
         logger.info(f"✅ Backtest completado: {resultado.get('total_trades', 0)} trades")
-        
+
         return jsonify(resultado)
     return render_template("backtest_posicional.html", resultado=None)
 
@@ -327,15 +343,25 @@ def api_ultimo_backtest():
 @posicional_bp.route("/config")
 def config():
     from estrategias.posicional.config_posicional import (
-        MIN_VOLATILIDAD_PCT, MAX_VOLATILIDAD_PCT,
-        MIN_VOLUMEN_MEDIO_DIARIO, MIN_CAPITALIZACION,
-        RIESGO_POR_TRADE_PCT, RIESGO_MIN_PCT, RIESGO_MAX_PCT,
-        CONSOLIDACION_MIN_SEMANAS, CONSOLIDACION_MAX_SEMANAS, CONSOLIDACION_MAX_RANGO_PCT,
         BREAKOUT_VOLUMEN_MIN_RATIO,
-        DISTANCIA_MIN_MM50_PCT, DISTANCIA_MAX_MM50_PCT,
-        R_PARA_PROTEGER, R_PARA_TRAILING, TRAILING_R_MINIMO,
-        TRAILING_LOOKBACK, TRAILING_LOOKBACK_FINAL,
+        CONSOLIDACION_MAX_RANGO_PCT,
+        CONSOLIDACION_MAX_SEMANAS,
+        CONSOLIDACION_MIN_SEMANAS,
+        DISTANCIA_MAX_MM50_PCT,
+        DISTANCIA_MIN_MM50_PCT,
         DURACION_MINIMA_SEMANAS,
+        MAX_VOLATILIDAD_PCT,
+        MIN_CAPITALIZACION,
+        MIN_VOLATILIDAD_PCT,
+        MIN_VOLUMEN_MEDIO_DIARIO,
+        R_PARA_PROTEGER,
+        R_PARA_TRAILING,
+        RIESGO_MAX_PCT,
+        RIESGO_MIN_PCT,
+        RIESGO_POR_TRADE_PCT,
+        TRAILING_LOOKBACK,
+        TRAILING_LOOKBACK_FINAL,
+        TRAILING_R_MINIMO,
     )
     return render_template("config_posicional.html", titulo="Configuración Sistema Posicional",
                            sistema="posicional", parametros={

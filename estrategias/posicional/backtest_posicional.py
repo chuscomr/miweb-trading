@@ -3,20 +3,19 @@
 # Motor de backtest para un ticker individual
 # ==========================================================
 
-import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+
 
 try:
-    from .datos_posicional import obtener_datos_semanales
-    from .sistema_trading_posicional import evaluar_entrada_posicional
-    from .gestion_posicional import PosicionPosicional
     from .config_posicional import *
+    from .datos_posicional import obtener_datos_semanales
+    from .gestion_posicional import PosicionPosicional
+    from .sistema_trading_posicional import evaluar_entrada_posicional
 except ImportError:
-    from estrategias.posicional.datos_posicional import obtener_datos_semanales
-    from estrategias.posicional.sistema_trading_posicional import evaluar_entrada_posicional
-    from estrategias.posicional.gestion_posicional import PosicionPosicional
     from estrategias.posicional.config_posicional import *
+    from estrategias.posicional.datos_posicional import obtener_datos_semanales
+    from estrategias.posicional.gestion_posicional import PosicionPosicional
+    from estrategias.posicional.sistema_trading_posicional import evaluar_entrada_posicional
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🔙 BACKTEST INDIVIDUAL
@@ -66,7 +65,7 @@ def ejecutar_backtest_posicional(df_semanal, ticker, verbose=False, df_ibex=None
     if verbose:
         print(f"  Periodo: {fechas[0].date()} a {fechas[-1].date()}")
         print(f"  Semanas: {len(df_semanal)}")
-        print(f"  Buscando señales...\n")
+        print("  Buscando señales...\n")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # ITERAR SEMANA A SEMANA
@@ -234,7 +233,8 @@ def ejecutar_backtest_posicional(df_semanal, ticker, verbose=False, df_ibex=None
 
     # ── Benchmark IBEX — Buy & Hold en el mismo período ─────────────────────
     try:
-        import yfinance as yf, pandas as pd
+        import pandas as pd
+        import yfinance as yf
         fecha_ini = fechas[MIN_SEMANAS_HISTORICO]
         fecha_fin = fechas[-1]
         df_ibex = yf.download("^IBEX", start=fecha_ini, end=fecha_fin,
@@ -374,7 +374,7 @@ if __name__ == "__main__":
         resultado = ejecutar_backtest_posicional(df, ticker_test, verbose=True)
 
         if "error" not in resultado:
-            print(f"\n🎯 RESULTADO FINAL:")
+            print("\n🎯 RESULTADO FINAL:")
             print(f"  Expectancy:     {resultado['expectancy']}R")
             print(f"  Profit Factor:  {resultado['profit_factor']}")
             print(f"  Sharpe:         {resultado['sharpe']}")
@@ -384,6 +384,6 @@ if __name__ == "__main__":
         else:
             print(f"\n❌ Error: {resultado['error']}")
     else:
-        print(f"  ❌ Error descargando datos")
+        print("  ❌ Error descargando datos")
 
     print("\n" + "=" * 60)

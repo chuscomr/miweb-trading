@@ -13,11 +13,11 @@
 #   PULLBACK       — detectado setup de pullback por el scanner
 # ══════════════════════════════════════════════════════════════
 
-import sqlite3
-import os
 import logging
+import os
+import sqlite3
 from datetime import datetime
-from typing import Optional
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class AlertasDB:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    def obtener_por_id(self, alerta_id: int) -> Optional[dict]:
+    def obtener_por_id(self, alerta_id: int) -> dict | None:
         with self._con() as con:
             row = con.execute(
                 "SELECT * FROM alertas WHERE id = ?", (alerta_id,)
@@ -114,11 +114,11 @@ class AlertasDB:
         self,
         ticker:      str,
         tipo:        str,
-        nivel:       Optional[float] = None,
-        umbral:      Optional[float] = None,
-        descripcion: Optional[str]   = None,
-        nombre:      Optional[str]   = None,
-        notas:       Optional[str]   = None,
+        nivel:       float | None = None,
+        umbral:      float | None = None,
+        descripcion: str | None   = None,
+        nombre:      str | None   = None,
+        notas:       str | None   = None,
     ) -> int:
         """
         Crea una nueva alerta.

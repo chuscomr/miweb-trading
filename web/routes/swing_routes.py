@@ -10,18 +10,17 @@
 # Sin cálculos de riesgo, sin yfinance, sin indicadores.
 # ══════════════════════════════════════════════════════════════
 
-import json
 import numpy as np
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
+
 from analisis.fundamental.proveedor import obtener_datos_fundamentales
-from analisis.fundamental.rating   import calcular_rating_fundamental
-from core.sizing                    import calcular_sizing_recomendado
-from flask import Blueprint, request, redirect, url_for, render_template, current_app
-from core.universos import get_nombre, normalizar_ticker, IBEX35, CONTINUO
-from core.data_provider import get_precios
-from core.contexto_mercado import evaluar_contexto_ibex
-from core.riesgo import resumen_operacion, calcular_sizing
-from core.contexto_mercado import factor_riesgo_mercado
+from analisis.fundamental.rating import calcular_rating_fundamental
+from core.contexto_mercado import evaluar_contexto_ibex, factor_riesgo_mercado
+from core.riesgo import resumen_operacion
+from core.sizing import calcular_sizing_recomendado
+from core.universos import CONTINUO, IBEX35, get_nombre, normalizar_ticker
 from estrategias.swing import BreakoutSwing, PullbackSwing, ScannerSwing
+
 
 swing_bp = Blueprint("swing", __name__, url_prefix="/swing")
 
@@ -40,12 +39,11 @@ def _nivel_calidad(score):
     score = float(score or 0)
     if score >= 8.0:
         return {"nivel": "alta_probabilidad", "label": "Alta Probabilidad", "emoji": "⭐"}
-    elif score >= 6.5:
+    if score >= 6.5:
         return {"nivel": "confirmada",        "label": "Compra Confirmada", "emoji": "🔵"}
-    elif score >= 5.5:
+    if score >= 5.5:
         return {"nivel": "compra",            "label": "Compra",            "emoji": "🟢"}
-    else:
-        return {"nivel": "sin_nivel",         "label": "",                  "emoji": ""}
+    return {"nivel": "sin_nivel",         "label": "",                  "emoji": ""}
 
 
 def _params_capital(form):
@@ -62,12 +60,12 @@ def _params_capital(form):
 def _stats_y_grafico(ticker, cache, evaluacion=None):
     """Calcula max/min/mm20 recientes y genera gráfico Plotly."""
     try:
-        from core.data_provider import get_df
-        from core.indicadores import calcular_rsi
         import pandas as pd
-        import numpy as np
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
+
+        from core.data_provider import get_df
+        from core.indicadores import calcular_rsi
 
         df = get_df(ticker, periodo="1y", cache=cache)
         if df is None or len(df) < 20:
@@ -252,11 +250,10 @@ def panel():
                         backtest_r_acumulado  = resultado.get("r_acumulado", 0),
                         backtest_estrategia   = estrategia_bt,
                     )
-                else:
-                    return render_template("swing.html",
-                        contexto_mercado = contexto,
-                        error            = f"Datos insuficientes para backtest de {ticker}",
-                    )
+                return render_template("swing.html",
+                    contexto_mercado = contexto,
+                    error            = f"Datos insuficientes para backtest de {ticker}",
+                )
             except Exception as e:
                 return render_template("swing.html",
                     contexto_mercado = contexto,
@@ -436,7 +433,7 @@ def scanner():
     cache = _get_cache()
 
     universo = request.args.get("universo", "todo")
-    tickers  = {"ibex": IBEX35, "continuo": CONTINUO}.get(universo, None)
+    tickers  = {"ibex": IBEX35, "continuo": CONTINUO}.get(universo)
 
     resultados = _scanner.escanear_todo(tickers=tickers, cache=cache, top_n=20)
 

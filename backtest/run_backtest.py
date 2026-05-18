@@ -10,11 +10,12 @@
 # ══════════════════════════════════════════════════════════════
 
 import logging
-from typing import Optional
 
-from core.data_provider import get_df, get_df_con_fallback
+from core.data_provider import get_df_con_fallback
+
 from .config_backtest import ConfigBacktest
 from .engine import BacktestEngine
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def _cargar_estrategia(nombre: str):
         from estrategias.posicional.logica_posicional import Posicional
         return Posicional()
     if nombre in ("test", "simple"):
-        from estrategias.swing.breakout import BreakoutSwing   # usa breakout como test
+        from estrategias.swing.breakout import BreakoutSwing  # usa breakout como test
         return BreakoutSwing()
     raise ValueError(f"Estrategia '{nombre}' no reconocida")
 

@@ -6,9 +6,9 @@ def calcular_sentimiento_empresa(ticker, cache=None):
     Calcula el sentimiento técnico de mercado para un ticker.
     Score: -100 (muy bajista) a +100 (muy alcista)
     """
+
     from core.data_provider import get_df
-    from core.indicadores import calcular_rsi, calcular_macd, calcular_medias
-    import numpy as np
+    from core.indicadores import calcular_macd, calcular_medias, calcular_rsi
 
     resultado = {
         'ticker': ticker,
@@ -26,12 +26,12 @@ def calcular_sentimiento_empresa(ticker, cache=None):
 
         close = df['Close']
         precio = float(close.iloc[-1])
-        
+
         señales = []
 
         # ── 1. MEDIAS MÓVILES ──────────────────────────────
         df = calcular_medias(df, [20, 50, 200])
-        
+
         mm20  = float(df['MM20'].iloc[-1])  if 'MM20'  in df.columns and not df['MM20'].isna().iloc[-1]  else None
         mm50  = float(df['MM50'].iloc[-1])  if 'MM50'  in df.columns and not df['MM50'].isna().iloc[-1]  else None
         mm200 = float(df['MM200'].iloc[-1]) if 'MM200' in df.columns and not df['MM200'].isna().iloc[-1] else None
@@ -112,11 +112,11 @@ def calcular_sentimiento_empresa(ticker, cache=None):
             if m > s and h > 0:
                 mc_score, mc_txt, mc_sig, mc_col = 20, f'MACD sobre señal — impulso alcista (hist: {h:+.3f})', '🐂', '#22c55e'
             elif m > s and h < 0:
-                mc_score, mc_txt, mc_sig, mc_col = 8, f'MACD sobre señal pero histograma negativo', '🐂', '#86efac'
+                mc_score, mc_txt, mc_sig, mc_col = 8, 'MACD sobre señal pero histograma negativo', '🐂', '#86efac'
             elif m < s and h < 0:
                 mc_score, mc_txt, mc_sig, mc_col = -20, f'MACD bajo señal — impulso bajista (hist: {h:+.3f})', '🐻', '#ef4444'
             else:
-                mc_score, mc_txt, mc_sig, mc_col = -8, f'MACD bajo señal pero histograma positivo', '🐻', '#fca5a5'
+                mc_score, mc_txt, mc_sig, mc_col = -8, 'MACD bajo señal pero histograma positivo', '🐻', '#fca5a5'
 
             # Divergencia (histograma creciendo o menguando)
             tendencia_hist = '↑ acelerando' if h > h_prev else '↓ frenando'
@@ -128,9 +128,9 @@ def calcular_sentimiento_empresa(ticker, cache=None):
             vol_actual = float(vol.iloc[-1])
             vol_media20 = float(vol.rolling(20).mean().iloc[-1])
             ratio = vol_actual / vol_media20 if vol_media20 > 0 else 1.0
-            
+
             precio_sube = float(close.iloc[-1]) > float(close.iloc[-2])
-            
+
             if ratio >= 1.5 and precio_sube:
                 v_score, v_txt, v_sig, v_col = 20, f'Volumen {ratio:.1f}x sobre media — compras con convicción', '🐂', '#22c55e'
             elif ratio >= 1.5 and not precio_sube:

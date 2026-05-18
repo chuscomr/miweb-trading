@@ -9,8 +9,10 @@
 #   - Sin cambios en la lógica de visualización
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
 import logging
+
+import pandas as pd
+
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +136,11 @@ def crear_grafico_analisis_tecnico(
         yaxis2=dict(gridcolor="#e0e0e0", showgrid=True, title="Volumen"),
     )
 
-    return fig.to_html(full_html=False, include_plotlyjs="cdn")
+    # Usar versión específica de Plotly (no latest que está deprecated)
+    return fig.to_html(
+        full_html=False, 
+        include_plotlyjs='https://cdn.plot.ly/plotly-2.27.0.min.js'
+    )
 
 
 def crear_grafico_simple_sr(
@@ -178,4 +184,7 @@ def crear_grafico_simple_sr(
         plot_bgcolor="white",
     )
 
-    return fig.to_html(full_html=False, include_plotlyjs="cdn")
+    return fig.to_html(
+        full_html=False, 
+        include_plotlyjs='https://cdn.plot.ly/plotly-2.27.0.min.js'
+    )

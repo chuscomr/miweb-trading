@@ -5,15 +5,20 @@
 
 import numpy as np
 import pandas as pd
-from flask import Blueprint, render_template, request, jsonify, current_app
-from core.universos import normalizar_ticker, IBEX35, CONTINUO
-from core.data_provider import get_df
-from core.indicadores import (
-    calcular_rsi, calcular_macd, calcular_atr, calcular_bollinger,
-)
-from analisis.tecnico.soportes_resistencias import detectar_soportes_resistencias
+from flask import Blueprint, current_app, jsonify, render_template, request
+
 from analisis.tecnico.canales_tendencia import detectar_canales_tendencia
 from analisis.tecnico.patrones_velas import detectar_patrones_velas
+from analisis.tecnico.soportes_resistencias import detectar_soportes_resistencias
+from core.data_provider import get_df
+from core.indicadores import (
+    calcular_atr,
+    calcular_bollinger,
+    calcular_macd,
+    calcular_rsi,
+)
+from core.universos import CONTINUO, IBEX35, normalizar_ticker
+
 
 indicadores_bp = Blueprint(
     "indicadores", __name__,
@@ -421,39 +426,39 @@ def _detectar_patrones_chartistas(df, n=100):
     if len(maximos) >= 3 and len(minimos) >= 3:
         maxs = [highs[i] for i in maximos[-3:]]
         mins = [lows[i] for i in minimos[-3:]]
-        
+
         # Calcular pendientes de las líneas de tendencia
         pendiente_res = (maxs[-1] - maxs[0]) / len(maxs)  # Debe ser < 0
         pendiente_sop = (mins[-1] - mins[0]) / len(mins)  # Debe ser > 0
-        
+
         # Criterios ESTRICTOS para triángulo simétrico
         rango_inicial = maxs[0] - mins[0]
         rango_final = maxs[-1] - mins[-1]
         compresion_pct = ((rango_inicial - rango_final) / rango_inicial * 100) if rango_inicial > 0 else 0
-        
+
         # Tolerancia para detectar líneas planas
         precio_medio = (maxs[0] + mins[0]) / 2
         tolerancia_plana = precio_medio * 0.005  # 0.5%
-        
+
         # Condiciones TODAS deben cumplirse
         maximos_descendentes = maxs[-1] < maxs[-2] < maxs[0]
         minimos_ascendentes = mins[-1] > mins[-2] > mins[0]
         resistencia_baja_real = abs(pendiente_res) > tolerancia_plana
         convergencia = compresion_pct >= 25
-        
-        if (maximos_descendentes and minimos_ascendentes and 
+
+        if (maximos_descendentes and minimos_ascendentes and
             pendiente_res < 0 and pendiente_sop > 0 and
             resistencia_baja_real and convergencia):
-            
+
             vertice = round(float((maxs[-1] + mins[-1]) / 2), 2)
             amplitud = round(float(maxs[0] - mins[0]), 2)
             dir_actual = "alcista" if precio_actual > vertice else "bajista"
             objetivo = round(vertice + amplitud if dir_actual == "alcista" else vertice - amplitud, 2)
             confirmado = precio_actual > maxs[-1] or precio_actual < mins[-1]
-            
+
             idx_inicio = min(maximos[-3], minimos[-3])
             idx_fin = max(maximos[-1], minimos[-1])
-            
+
             patrones.append({
                 "tipo": "triangulo_simetrico",
                 "direccion": dir_actual,
@@ -568,8 +573,7 @@ def _detectar_contexto_trading(df, soportes, resistencias, patrones_velas) -> di
     Devuelve un dict con tipo_setup, madurez, descripcion y frases de contexto.
     """
     try:
-        import math
-        from core.indicadores import calcular_rsi, calcular_atr
+        from core.indicadores import calcular_rsi
 
         close  = df["Close"]
         precio = float(close.iloc[-1])
@@ -692,7 +696,7 @@ def _detectar_contexto_trading(df, soportes, resistencias, patrones_velas) -> di
             frases.append(f"⚠️ Volumen de venta elevado ({vol_ratio:.1f}x media)")
         if mm200 and precio < mm200:
             score_reversion += 2
-            frases.append(f"⚠️ Por debajo de MM200 — tendencia bajista macro")
+            frases.append("⚠️ Por debajo de MM200 — tendencia bajista macro")
 
         # ── DECISIÓN ─────────────────────────────────────────
         max_score = max(score_breakout, score_pullback, score_reversion)
@@ -747,7 +751,7 @@ def _detectar_contexto_trading(df, soportes, resistencias, patrones_velas) -> di
             }
         }
 
-    except Exception as e:
+    except Exception:
         return {"tipo": "neutral", "titulo": "Sin datos suficientes",
                 "madurez": "sin_setup", "color": "#64748b",
                 "frases": [], "scores": {}}
@@ -1184,7 +1188,8 @@ def api_datos():
     # ── Eliminar vela fantasma de hoy si el mercado aún no ha abierto ──
     try:
         if len(df) > 1:
-            from datetime import date as _date, datetime as _dt
+            from datetime import date as _date
+            from datetime import datetime as _dt
             ultima = df.iloc[-1]
             open_v  = float(ultima["Open"])
             high_v  = float(ultima["High"])
@@ -1541,7 +1546,7 @@ def _calcular_fiabilidad_patron(df, patron):
             elif dist_pct <= 3:
                 confirmaciones.append({"icono": "🎯", "texto": f"Precio a {round(dist_pct,1)}% de la neckline", "ok": None})
 
-    except Exception as e:
+    except Exception:
         pass
 
     # Convertir puntos a estrellas (max 5)
@@ -1558,7 +1563,7 @@ def _calcular_fiabilidad_patron(df, patron):
 @indicadores_bp.route("/scan_patrones", methods=["GET"])
 def scan_patrones():
     """Escanea patrones chartistas en IBEX35 o Mercado Continuo."""
-    from core.universos import IBEX35, CONTINUO, get_nombre
+    from core.universos import CONTINUO, IBEX35, get_nombre
     mercado  = request.args.get("mercado", "ibex35").lower()
     universe = IBEX35 if mercado == "ibex35" else CONTINUO
     cache    = current_app.extensions.get("cache")  # objeto cache real, no booleano
@@ -1644,29 +1649,30 @@ def get_vela_info(ticker):
         tf: timeframe (1d, 1wk, 1mo)
     """
     try:
-        from flask import current_app
         import pandas as pd
+        from flask import current_app
+
         from core.indicadores import calcular_atr, calcular_rsi
-        
+
         date_str = request.args.get('date')
         tf = request.args.get('tf', '1d')
-        
+
         if not date_str:
             return jsonify({'error': 'Fecha requerida'}), 400
-        
+
         # Obtener cache
         cache = current_app.config.get("CACHE_INSTANCE")
-        
+
         # Obtener datos diarios
         df = get_df(ticker, periodo='2y', cache=cache)
-        
+
         if df is None or df.empty:
             return jsonify({'error': 'No hay datos'}), 404
-        
+
         # ✅ FIX: Normalizar Volume a int64 SIEMPRE
         if 'Volume' in df.columns:
             df['Volume'] = df['Volume'].fillna(0).round().astype('int64')
-        
+
         # Resamplear si es necesario
         if tf == '1wk':
             df_resampled = pd.DataFrame({
@@ -1677,7 +1683,7 @@ def get_vela_info(ticker):
                 "Volume": df["Volume"].resample("W-FRI").sum().round().astype("int64"),
             }).dropna()
             df = df_resampled[df_resampled["Close"] > 0]
-            
+
         elif tf == '1mo':
             df_resampled = pd.DataFrame({
                 "Open":   df["Open"].resample("M").first(),
@@ -1687,16 +1693,16 @@ def get_vela_info(ticker):
                 "Volume": df["Volume"].resample("M").sum().round().astype("int64"),
             }).dropna()
             df = df_resampled[df_resampled["Close"] > 0]
-        
+
         # Buscar la vela por fecha
         df_date = df[df.index.strftime('%Y-%m-%d') == date_str]
-        
+
         if df_date.empty:
             return jsonify({'error': 'Vela no encontrada'}), 404
-        
+
         row = df_date.iloc[0]
         prev_close = df['Close'].shift(1).loc[row.name] if len(df) > 1 else None
-        
+
         # Calcular variación
         if pd.notna(prev_close) and prev_close > 0:
             var_abs = row['Close'] - prev_close
@@ -1704,11 +1710,11 @@ def get_vela_info(ticker):
         else:
             var_abs = 0
             var_pct = 0
-        
+
         # Calcular ATR (14 períodos) - siempre del diario para consistencia
         df_diario = get_df(ticker, periodo='2y', cache=cache)
         atr_series = calcular_atr(df_diario, periodo=14) if df_diario is not None else None
-        
+
         # Buscar ATR de la fecha más cercana
         atr_value = None
         if atr_series is not None and not atr_series.empty:
@@ -1719,7 +1725,7 @@ def get_vela_info(ticker):
                 idx_cercano = atr_series.index.searchsorted(fecha_buscar)
                 if 0 <= idx_cercano < len(atr_series):
                     atr_value = atr_series.iloc[idx_cercano]
-        
+
         # RSI - también del diario
         rsi_series = calcular_rsi(df_diario['Close'], periodo=14) if df_diario is not None else None
         rsi_value = None
@@ -1731,7 +1737,7 @@ def get_vela_info(ticker):
                 idx_cercano = rsi_series.index.searchsorted(fecha_buscar)
                 if 0 <= idx_cercano < len(rsi_series):
                     rsi_value = rsi_series.iloc[idx_cercano]
-        
+
         # Calcular volumen vs media 20d
         vol_vs_media_pct = None
         rvol = None
@@ -1744,11 +1750,11 @@ def get_vela_info(ticker):
                     # Calcular media de los 20 días anteriores (sin incluir el día actual)
                     vol_media_20d = df_diario['Volume'].iloc[idx-20:idx].mean()
                     vol_actual = df_diario['Volume'].iloc[idx]
-                    
+
                     if vol_media_20d > 0:
                         vol_vs_media_pct = ((vol_actual - vol_media_20d) / vol_media_20d) * 100
                         rvol = vol_actual / vol_media_20d
-        
+
         info = {
             'fecha': row.name.strftime('%Y-%m-%d'),
             'dia_semana': row.name.strftime('%A'),
@@ -1764,9 +1770,9 @@ def get_vela_info(ticker):
             'vol_vs_media_pct': round(float(vol_vs_media_pct), 1) if vol_vs_media_pct is not None else None,
             'rvol': round(float(rvol), 2) if rvol is not None else None
         }
-        
+
         return jsonify(info)
-        
+
     except Exception as e:
         logger.error(f"Error obteniendo info de vela {ticker} {date_str}: {e}")
         import traceback

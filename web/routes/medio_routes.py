@@ -1,16 +1,18 @@
 # web/routes/medio_routes.py
 
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
+
 from analisis.fundamental.proveedor import obtener_datos_fundamentales
-from analisis.fundamental.rating   import calcular_rating_fundamental
-from core.sizing                    import calcular_sizing_recomendado
-from flask import Blueprint, request, redirect, url_for, render_template, current_app
-from core.universos import get_nombre, normalizar_ticker, IBEX35, CONTINUO
+from analisis.fundamental.rating import calcular_rating_fundamental
 from core.contexto_mercado import evaluar_contexto_ibex, factor_riesgo_mercado
 from core.riesgo import resumen_operacion
+from core.sizing import calcular_sizing_recomendado
+from core.universos import CONTINUO, IBEX35, normalizar_ticker
 from estrategias.medio import MedioPlazo, ScannerMedio
 from estrategias.medio.backtest_medio import ejecutar_backtest_medio_plazo
 from estrategias.medio.backtest_sistema_medio import ejecutar_backtest_sistema_completo
 from estrategias.posicional.datos_posicional import obtener_datos_semanales
+
 
 medio_bp = Blueprint("medio", __name__, url_prefix="/medio")
 
@@ -25,10 +27,11 @@ def _get_cache():
 def _grafico_semanal(ticker, señal):
     """Genera gráfico Plotly semanal con precio + MM20 + MM50 + RSI."""
     try:
+        import numpy as np
         import pandas as pd
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
-        import numpy as np
+
         from core.data_provider import get_df
 
         df_d = get_df(ticker, periodo="3y")
@@ -147,22 +150,22 @@ def _construir_resultado(ticker, señal):
 
     # Detalles técnicos — incluye MM50, MM200 del nuevo evaluar()
     detalles = señal.get("detalles", {})
-    
+
     # NUEVA FUNCIONALIDAD: Calcular scores fundamental y global
     score_tecnico = señal.get("setup_score", 0)
     score_fundamental = None
     score_global = None
-    
+
     try:
         # Intentar obtener score fundamental
-        from analisis.fundamental.scoring import calcular_score_fundamental
         from analisis.fundamental.proveedor import obtener_datos_fundamentales
-        
+        from analisis.fundamental.scoring import calcular_score_fundamental
+
         datos_fund = obtener_datos_fundamentales(ticker)
         if datos_fund and datos_fund.get("disponible", False):
             scoring_fund = calcular_score_fundamental(datos_fund)
             score_fundamental = scoring_fund.get("score_total", 0)
-            
+
             # Calcular score global (70% técnico / 30% fundamental)
             if score_fundamental is not None:
                 from estrategias.medio.logica_medio import calcular_setup_global
@@ -190,13 +193,13 @@ def _construir_resultado(ticker, señal):
         "fecha_desde":       señal.get("fecha_desde", ""),
         "fecha_hasta":       señal.get("fecha_hasta", ""),
     }
-    
+
     # Añadir scores adicionales si existen
     if score_fundamental is not None:
         resultado["score_fundamental"] = score_fundamental
     if score_global is not None:
         resultado["score_global"] = score_global
-    
+
     return resultado
 
 
@@ -295,6 +298,7 @@ def analizar():
     stats_semanales = {}
     try:
         import pandas as pd
+
         from core.data_provider import get_df
         df_d = get_df(ticker, periodo="2y", cache=cache)
         df_w = None
@@ -490,7 +494,7 @@ def backtest_sistema():
                 verbose=True,
                 usar_continuo=usar_continuo,
             )
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
             resultado = None

@@ -1,6 +1,7 @@
 import sqlite3
 import time
 
+
 DB_NAME = "trading.db"
 
 def crear_base_datos():

@@ -1,6 +1,9 @@
 import os
 import sys
+
 from dotenv import load_dotenv
+
+
 load_dotenv()
 
 # ════════════════════════════════════════════════════════════════
@@ -15,7 +18,10 @@ if BASE_DIR not in sys.path:
 # ════════════════════════════════════════════════════════════════
 import logging
 import warnings
+
 import matplotlib
+
+
 matplotlib.use('Agg')
 
 # ════════════════════════════════════════════════════════════════
@@ -37,24 +43,26 @@ logging.basicConfig(
 )
 logging.getLogger("werkzeug").setLevel(logging.WARNING)  # menos ruido HTTP
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_caching import Cache
+
+from contexto_bp import contexto_bp
+from web.routes.alertas_routes import alertas_bp
+from web.routes.analisis_routes import analisis_bp
+from web.routes.analizar_zona_routes import analizar_zona_bp
+from web.routes.backtest_routes import backtest_bp
+from web.routes.cartera_routes import cartera_bp
+from web.routes.grafico_pro_routes import grafico_pro_bp
+from web.routes.guardar_analisis_routes import guardar_analisis_bp
+from web.routes.indicadores_routes import indicadores_bp
+from web.routes.medio_routes import medio_bp
+from web.routes.posicional_routes import posicional_bp
 
 # ════════════════════════════════════════════════════════════════
 # 3️⃣  BLUEPRINTS
 # ════════════════════════════════════════════════════════════════
-from web.routes.swing_routes       import swing_bp
-from web.routes.medio_routes       import medio_bp
-from web.routes.posicional_routes  import posicional_bp
-from web.routes.backtest_routes    import backtest_bp
-from web.routes.cartera_routes     import cartera_bp
-from web.routes.analisis_routes    import analisis_bp
-from web.routes.alertas_routes     import alertas_bp
-from web.routes.indicadores_routes import indicadores_bp
-from web.routes.grafico_pro_routes import grafico_pro_bp
-from web.routes.analizar_zona_routes import analizar_zona_bp
-from web.routes.guardar_analisis_routes import guardar_analisis_bp
-from contexto_bp                   import contexto_bp
+from web.routes.swing_routes import swing_bp
+
 
 # ════════════════════════════════════════════════════════════════
 # 4️⃣  APLICACIÓN
@@ -107,10 +115,10 @@ def debug_fechas(ticker):
     token = request.args.get("token", "")
     if token != os.environ.get("DEBUG_TOKEN", "") or not token:
         return jsonify({"error": "Acceso no autorizado"}), 403
+    import math
+
     from core.data_provider import get_df
     from core.indicadores import calcular_rsi
-    from datetime import date
-    import math
     resultado = {}
     try:
         df = get_df(ticker.upper(), periodo="1y", cache=None)
@@ -158,9 +166,9 @@ def clear_cache():
 
 @application.route("/popup/ibex")
 def popup_ibex():
-    from estrategias.swing.scanner_swing import escanear_mercado
-    from core.universos import IBEX35
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import IBEX35
+    from estrategias.swing.scanner_swing import escanear_mercado
 
     escaneo = cache.get("escaneo_ibex")
     if not escaneo:
@@ -202,9 +210,9 @@ def popup_ibex():
 
 @application.route("/popup/continuo")
 def popup_continuo():
-    from estrategias.swing.scanner_swing import escanear_mercado
-    from core.universos import CONTINUO
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import CONTINUO
+    from estrategias.swing.scanner_swing import escanear_mercado
 
     escaneo = cache.get("escaneo_continuo")
     if not escaneo:
@@ -243,9 +251,9 @@ def popup_continuo():
 
 @application.route("/popup/medio_ibex")
 def popup_medio_ibex():
-    from estrategias.medio import MedioPlazo
-    from core.universos import IBEX35
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import IBEX35
+    from estrategias.medio import MedioPlazo
 
     escaneo_cache = cache.get("escaneo_medio_ibex")
     if not escaneo_cache:
@@ -293,9 +301,9 @@ def popup_medio_ibex():
 
 @application.route("/popup/medio_continuo")
 def popup_medio_continuo():
-    from estrategias.medio import MedioPlazo
-    from core.universos import CONTINUO
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import CONTINUO
+    from estrategias.medio import MedioPlazo
 
     escaneo_cache = cache.get("escaneo_medio_continuo")
     if not escaneo_cache:
@@ -343,9 +351,9 @@ def popup_medio_continuo():
 
 @application.route("/popup/posicional_ibex")
 def popup_posicional_ibex():
-    from estrategias.posicional.scanner_posicional import ScannerPosicional
-    from core.universos import IBEX35
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import IBEX35
+    from estrategias.posicional.scanner_posicional import ScannerPosicional
 
     escaneo_cache = cache.get("escaneo_pos_ibex")
     if not escaneo_cache:
@@ -392,9 +400,9 @@ def popup_posicional_ibex():
 
 @application.route("/popup/posicional_continuo")
 def popup_posicional_continuo():
-    from estrategias.posicional.scanner_posicional import ScannerPosicional
-    from core.universos import CONTINUO
     from core.contexto_mercado import evaluar_contexto_ibex
+    from core.universos import CONTINUO
+    from estrategias.posicional.scanner_posicional import ScannerPosicional
 
     escaneo_cache = cache.get("escaneo_pos_continuo")
     if not escaneo_cache:

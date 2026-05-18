@@ -5,7 +5,11 @@ from core.universos import normalizar_ticker, get_nombre, IBEX35, CONTINUO
 from cartera.cartera_db import CarteraDB
 from cartera.cartera_logica import CarteraLogica
 from core.contexto_mercado import evaluar_contexto_ibex
+from analytics.integrador import registrar_apertura, registrar_cierre
+import logging
 
+
+logger = logging.getLogger(__name__)
 cartera_bp = Blueprint("cartera", __name__, url_prefix="/cartera")
 _db     = CarteraDB()
 _logica = CarteraLogica()
@@ -87,7 +91,26 @@ def nueva_guardar():
         contexto = evaluar_contexto_ibex(cache)
         estado   = contexto.get("estado", "TRANSICION") if contexto else "TRANSICION"
 
-        _db.agregar_posicion(
+        # 1. Registrar en Analytics PRIMERO
+        analytics_id = None
+        try:
+            analytics_id = registrar_apertura(
+                ticker=ticker,
+                sistema=sistema,
+                tipo_setup=score_nivel or "MANUAL",
+                precio_entrada=precio_entrada,
+                stop=stop_inicial or 0,
+                contexto_mercado=estado,
+                score_fundamental=None,
+                notas=notas
+            )
+            logger.info(f"✅ Analytics: trade_id={analytics_id} para {ticker}")
+        except Exception as e:
+            logger.warning(f"⚠️ Analytics falló (continuando): {e}")
+            # Continuar sin analytics_id
+
+        # 2. Crear posición en cartera
+        pid = _db.agregar_posicion(
             ticker        = ticker,
             nombre        = f.get("nombre") or get_nombre(ticker) or ticker.replace(".MC",""),
             sistema       = sistema,
@@ -100,9 +123,13 @@ def nueva_guardar():
             contexto_ibex = estado,
             es_excepcion  = es_excepcion,
             notas         = notas,
+            analytics_id  = analytics_id,
         )
+        logger.info(f"✅ Posición creada: pid={pid}, analytics_id={analytics_id}")
+        
         return redirect(url_for("cartera.ver_cartera"))
     except Exception as e:
+        logger.error(f"❌ Error creando posición: {e}", exc_info=True)
         return redirect(url_for("cartera.nueva_form"))
 
 
@@ -160,16 +187,8 @@ def editar_guardar(pid):
                 if f.get("sistema"):
                     con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
                                (f.get("sistema", "SWING").upper(), pid))
-        except Exception as e:
-            logger.warning(f"Error actualizando campos extras: {e}")
-            # Si falla, intentar solo el sistema (campo más importante)
-            try:
-                with _db._conexion() as con:
-                    con.execute("UPDATE posiciones SET sistema=? WHERE id=?",
-                               (f.get("sistema", "SWING").upper(), pid))
-            except Exception as e2:
-                logger.error(f"❌ Error actualizando sistema: {e2}")
-                logger.error(f"💡 Ejecuta: python migrar_cartera_sistema.py")
+        except Exception:
+            pass
     return redirect(url_for("cartera.ver_cartera"))
 
 
@@ -193,15 +212,39 @@ def cerrar_guardar(pid):
     motivo_cierre = f.get("motivo_cierre", "Manual")
 
     pos = _db.obtener_posicion_por_id(pid)
-    r_final = None
-    if pos:
-        entrada  = float(pos.get("precio_entrada", 0))
-        stop_ini = float(pos.get("stop_inicial") or pos.get("stop_actual") or entrada)
-        R_unit   = entrada - stop_ini
-        if R_unit > 0:
-            r_final = round((precio_cierre - entrada) / R_unit, 2)
+    if not pos:
+        logger.error(f"❌ Posición {pid} no encontrada")
+        return redirect(url_for("cartera.ver_cartera"))
 
+    # Calcular R
+    r_final = None
+    entrada  = float(pos.get("precio_entrada", 0))
+    stop_ini = float(pos.get("stop_inicial") or pos.get("stop_actual") or entrada)
+    R_unit   = entrada - stop_ini
+    if R_unit > 0:
+        r_final = round((precio_cierre - entrada) / R_unit, 2)
+
+    # 1. Cerrar en BD cartera
     _db.cerrar_posicion(pid, fecha_cierre, precio_cierre, motivo_cierre, r_final)
+    
+    # 2. Actualizar Analytics si existe analytics_id
+    analytics_id = pos.get("analytics_id")
+    if analytics_id:
+        try:
+            registrar_cierre(
+                trade_id=analytics_id,
+                precio_salida=precio_cierre,
+                precio_entrada=entrada,
+                stop=stop_ini,
+                tipo_salida=motivo_cierre,
+                r_multiple=r_final
+            )
+            logger.info(f"✅ Analytics actualizado: trade_id={analytics_id}, R={r_final}")
+        except Exception as e:
+            logger.warning(f"⚠️ Error actualizando Analytics: {e}")
+    else:
+        logger.info(f"ℹ️ Posición {pid} sin analytics_id (posición antigua, OK)")
+    
     return redirect(url_for("cartera.ver_cartera"))
 
 
@@ -234,74 +277,6 @@ def historial():
         },
         config    = cfg,
     )
-
-
-# ── EDITAR TRADE CERRADO ───────────────────────────────────────
-
-@cartera_bp.route("/editar_cerrado/<int:pid>", methods=["GET"])
-def editar_cerrado_form(pid):
-    """Formulario para editar un trade cerrado"""
-    posicion = _db.obtener_posicion_por_id(pid)
-    if not posicion:
-        return redirect(url_for("cartera.historial"))
-    
-    return render_template("cartera_editar_cerrado.html",
-        posicion = posicion,
-        tickers  = TODOS_TICKERS,
-    )
-
-
-@cartera_bp.route("/editar_cerrado/<int:pid>", methods=["POST"])
-def editar_cerrado_guardar(pid):
-    """Guardar cambios en un trade cerrado"""
-    f = request.form
-    
-    # Validar que la posición existe
-    pos = _db.obtener_posicion_por_id(pid)
-    if not pos:
-        return redirect(url_for("cartera.historial"))
-    
-    # Parsear fechas
-    try:
-        fecha_entrada = datetime.strptime(f.get("fecha_entrada"), "%Y-%m-%d").date()
-    except:
-        fecha_entrada = pos.get("fecha_entrada")
-    
-    try:
-        fecha_cierre = datetime.strptime(f.get("fecha_salida"), "%Y-%m-%d").date() if f.get("fecha_salida") else None
-    except:
-        fecha_cierre = pos.get("fecha_cierre")
-    
-    # Construir datos actualizados (mapear nombres del form a nombres BD)
-    datos_actualizados = {
-        "ticker": f.get("ticker", pos.get("ticker")),
-        "sistema": f.get("sistema", pos.get("sistema")),
-        "fecha_entrada": fecha_entrada,
-        "precio_entrada": float(f.get("precio_entrada", 0)),
-        "acciones": int(f.get("acciones", 0)),
-        "stop_inicial": float(f.get("stop_inicial", 0)) if f.get("stop_inicial") else None,
-        "objetivo": float(f.get("objetivo", 0)) if f.get("objetivo") else None,
-        "fecha_cierre": fecha_cierre,  # BD usa fecha_cierre
-        "precio_cierre": float(f.get("salida", 0)) if f.get("salida") else None,  # BD usa precio_cierre
-        "motivo_cierre": f.get("motivo", pos.get("motivo_cierre")),  # BD usa motivo_cierre
-        "notas": f.get("notas", pos.get("notas")),
-    }
-    
-    # Calcular R final si hay salida
-    if datos_actualizados["precio_cierre"] and datos_actualizados["stop_inicial"]:
-        entrada = datos_actualizados["precio_entrada"]
-        salida = datos_actualizados["precio_cierre"]
-        stop = datos_actualizados["stop_inicial"]
-        riesgo = entrada - stop
-        if riesgo > 0:
-            beneficio = salida - entrada
-            r_final = round(beneficio / riesgo, 2)
-            datos_actualizados["r_final"] = r_final
-    
-    # Actualizar en BD usando el nuevo método
-    _db.actualizar_trade_cerrado(pid, datos_actualizados)
-    
-    return redirect(url_for("cartera.historial"))
 
 
 # ── REVISIÓN DOMINGO ───────────────────────────────────────────

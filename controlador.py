@@ -41,10 +41,7 @@ def ejecutar_contexto(modo, datos, cache):
     elif modo == "escaner_continuo":
         fake_request.form = ImmutableMultiDict({"escanear_continuo": "1"})
 
-    elif modo == "analizar" and datos:
-        fake_request.form = ImmutableMultiDict(datos)
-
-    elif modo == "backtest" and datos:
+    elif modo == "analizar" and datos or modo == "backtest" and datos:
         fake_request.form = ImmutableMultiDict(datos)
 
     else:
@@ -77,6 +74,7 @@ def blindar_contexto(contexto):
 import base64
 import os
 import time
+
 
 def guardar_pantallazo_controlador(data):
     imagen_base64 = data.get("imagen")

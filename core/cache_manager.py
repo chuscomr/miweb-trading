@@ -9,9 +9,10 @@
 # un dict simple en memoria como sustituto.
 # ══════════════════════════════════════════════════════════════
 
-import time
 import logging
-from typing import Any, Optional
+import time
+from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class MemoryCache:
         self._store: dict = {}
         self._default_timeout = timeout
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         if key not in self._store:
             return None
         value, expires_at = self._store[key]
@@ -69,7 +70,7 @@ class MemoryCache:
 # HELPER PARA USAR INDISTINTAMENTE FLASK-CACHE O MEMORY-CACHE
 # ─────────────────────────────────────────────────────────────
 
-def cache_get(cache, key: str) -> Optional[Any]:
+def cache_get(cache, key: str) -> Any | None:
     """Lee de cache independientemente del tipo (Flask o Memory)."""
     if cache is None:
         return None

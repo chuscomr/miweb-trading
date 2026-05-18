@@ -14,13 +14,15 @@ Motor: Diccionario financiero español/inglés (sin TextBlob)
 Coste: 0€
 """
 
+import os
+import re
+import time
+from datetime import datetime
+from urllib.parse import quote
+
 import feedparser
 import requests
-import re
-import os
-import time
-from datetime import datetime, timedelta, date
-from urllib.parse import quote
+
 
 # ─ Fuentes a ignorar (contenido publicitario / broker)
 _FUENTES_EXCLUIDAS = {'xtb', 'xtb.com', 'xtb es', 'xtb.com/es'}
@@ -371,15 +373,15 @@ IBEX35_EMPRESAS = [
 # UTILIDADES DE SCORE
 # ─────────────────────────────────────────────────────────────────
 
-def _trend(s): 
+def _trend(s):
     return 'alcista' if s > 0.25 else 'bajista' if s < -0.25 else 'lateral'
 
 def _alert(s, n):
-    if s >= 0.65: 
+    if s >= 0.65:
         return '📈 MOMENTUM'
-    if s <= -0.65: 
+    if s <= -0.65:
         return '⚡ RUPTURA'
-    if s <= -0.45 and n >= 3: 
+    if s <= -0.45 and n >= 3:
         return '⚠️ ALERTA'
     return None
 

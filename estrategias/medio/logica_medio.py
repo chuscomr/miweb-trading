@@ -3,9 +3,236 @@
 # Indicadores y análisis técnico para timeframe semanal
 # ==========================================================
 
+import logging
+
 import numpy as np
 import pandas as pd
+
+from core.indicadores import calcular_rsi
+
 from .config_medio import *
+
+
+logger = logging.getLogger(__name__)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🎯 SCORING PROFESIONAL V2 — Sistema de componentes
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def calcular_score_medio_v2(precios, tendencia, pullback, df=None):
+    """
+    Sistema de scoring profesional con componentes separados.
+    
+    Arquitectura:
+    - ESTRUCTURA (0-5): Calidad de la tendencia macro
+    - TIMING (0-3): Momento óptimo de entrada
+    - MOMENTUM (0-2): Fuerza compradora actual
+    
+    Total: 0-10 puntos
+    
+    Ventaja vs sistema anterior:
+    - Separa calidad estructural de timing de entrada
+    - Estar bajo MM20 puede ser POSITIVO si estructura intacta
+    - Penalización contextual (no binaria)
+    - Distingue pullback sano de deterioro real
+    
+    Returns:
+        dict con score, desglose y validación
+    """
+
+    # ═══════════════════════════════════════
+    # COMPONENTE 1: ESTRUCTURA (0-5)
+    # ═══════════════════════════════════════
+    estructura_score = 0
+
+    mm20 = tendencia.get("mm20", 0) or 0
+    mm50 = tendencia.get("mm50", 0) or 0
+    mm200 = tendencia.get("mm200", 0) or 0
+    pendiente_mm20 = tendencia.get("pendiente_mm20", 0) or 0
+    mm50_sobre_mm200 = tendencia.get("mm50_sobre_mm200", False)
+    precio = precios[-1] if precios else 0
+
+    # 1.1 Tendencia macro (MM50 > MM200) - OBLIGATORIO
+    if mm50_sobre_mm200:
+        estructura_score += ESTRUCTURA_MM50_MM200
+    else:
+        # Filtro duro: sin tendencia macro no hay setup
+        return {
+            "score": 0,
+            "score_max": 10,
+            "valido": False,
+            "desglose": {"estructura": 0, "timing": 0, "momentum": 0},
+            "motivo_rechazo": "MM50 no está sobre MM200"
+        }
+
+    # 1.2 MM20 ascendente/descendente
+    if pendiente_mm20 > 0:
+        estructura_score += ESTRUCTURA_MM20_ASCENDENTE
+    elif pendiente_mm20 < -1:  # Girando claramente a la baja
+        estructura_score += ESTRUCTURA_MM20_BAJISTA
+
+    # 1.3 MM50 ascendente (pendiente medio plazo)
+    # RELAJADO: Requiere menos datos históricos
+    if len(precios) >= 52:  # 1 año de datos semanales
+        # Comparar MM50 actual vs MM50 de hace 2 semanas (no 50)
+        mm50_hace_2sem = sum(precios[-52:-2]) / 50 if len(precios) >= 52 else 0
+        if mm50_hace_2sem > 0:
+            pendiente_mm50 = (mm50 - mm50_hace_2sem) / mm50_hace_2sem * 100
+            # Menos estricto: solo necesita NO estar bajando claramente
+            if pendiente_mm50 > -1:  # Incluso plana cuenta como válida
+                estructura_score += ESTRUCTURA_MM50_ASCENDENTE
+
+    # 1.4 Precio vs MM50 - Posición estructural
+    # NOTA: En medio plazo, estar +9-10% sobre MM50 es NORMAL en tendencia alcista
+    # Solo penalizamos si está BAJO soporte principal
+    if mm50 > 0:
+        dist_mm50 = (precio - mm50) / mm50 * 100
+        # Ya no penalizamos por estar extendido (era incorrectamente castigador)
+        if dist_mm50 < -2:  # Bajo soporte principal
+            estructura_score += ESTRUCTURA_BAJO_MM50
+
+    # 1.5 Máximos crecientes (estructura alcista)
+    if len(precios) >= 20:
+        max_reciente = max(precios[-10:])
+        max_anterior = max(precios[-20:-10])
+        if max_reciente > max_anterior:
+            estructura_score += ESTRUCTURA_MAXIMOS_CRECIENTES
+
+    # Bonus base: Si llegamos aquí (MM50>MM200 válido), sumar pequeño bonus
+    # Esto evita que estructuras sólidas caigan a 3.0 por requisitos muy estrictos
+    if estructura_score >= 2.5:
+        estructura_score += 0.5  # Bonus por estructura base válida
+
+    # Cap estructura entre 0-5
+    estructura_score = max(0, min(5, estructura_score))
+
+    # ═══════════════════════════════════════
+    # COMPONENTE 2: TIMING (0-3)
+    # ═══════════════════════════════════════
+    timing_score = 0
+
+    # 2.1 Distancia a MM20 - CONTEXTUAL
+    # CLAVE: Estar bajo MM20 NO es malo si estructura intacta
+    if mm20 > 0:
+        dist_mm20 = (precio - mm20) / mm20 * 100
+
+        if pendiente_mm20 > 0:  # Tendencia corto plazo intacta
+            # Timing perfecto: cerca de MM20 (±1.5%)
+            if TIMING_PERFECTO_MIN <= dist_mm20 <= TIMING_PERFECTO_MAX:
+                timing_score += TIMING_PERFECTO_PUNTOS
+            # Pullback sano: moderadamente bajo (-3% a -1.5%)
+            elif TIMING_SANO_MIN <= dist_mm20 < TIMING_PERFECTO_MIN:
+                timing_score += TIMING_SANO_PUNTOS
+            # Deterioro real: muy bajo MM20 (<-3%)
+            elif dist_mm20 < TIMING_DETERIORO_UMBRAL:
+                timing_score += TIMING_DETERIORO_PENALIZACION
+            # Muy extendido: lejos arriba (>3%)
+            elif dist_mm20 > TIMING_EXTENDIDO_UMBRAL:
+                timing_score += TIMING_EXTENDIDO_PENALIZACION
+        else:  # MM20 plana o bajando
+            # Bajo MM20 con momentum roto = peligro
+            if dist_mm20 < 0:
+                timing_score += TIMING_MM20_ROTA_PENALIZACION
+
+    # 2.2 Calidad del pullback
+    retroceso = pullback.get("retroceso_pct", 0)
+    if TIMING_PULLBACK_OPTIMO_MIN <= retroceso <= TIMING_PULLBACK_OPTIMO_MAX:
+        timing_score += TIMING_PULLBACK_OPTIMO_PUNTOS
+    elif TIMING_PULLBACK_VALIDO_MIN <= retroceso < TIMING_PULLBACK_OPTIMO_MIN:
+        timing_score += TIMING_PULLBACK_VALIDO_PUNTOS
+    elif retroceso > TIMING_PULLBACK_PROFUNDO:
+        timing_score += TIMING_PULLBACK_PROFUNDO_PENALIZACION
+
+    # 2.3 Proximidad a soporte previo (mínimo 10 semanas)
+    if df is not None and len(df) >= 10:
+        try:
+            minimo_10w = float(df["Low"].iloc[-10:].min())
+            if minimo_10w > 0:
+                dist_soporte = (precio - minimo_10w) / minimo_10w * 100
+                if 0 <= dist_soporte <= TIMING_CERCA_SOPORTE_UMBRAL:
+                    timing_score += TIMING_CERCA_SOPORTE_PUNTOS
+        except Exception as e:
+            logger.debug(f"Error calculando soporte: {e}")
+
+    # Cap timing entre -1 y 3
+    timing_score = max(-1, min(3, timing_score))
+
+    # ═══════════════════════════════════════
+    # COMPONENTE 3: MOMENTUM (0-2)
+    # ═══════════════════════════════════════
+    momentum_score = 0
+
+    # 3.1 RSI semanal en zona pullback — método Wilder correcto
+    rsi_val = None
+    if len(precios) >= 15:
+        try:
+            rsi_series = calcular_rsi(pd.Series(precios), periodo=14)
+            rsi_val = round(rsi_series.iloc[-1], 1) if not pd.isna(rsi_series.iloc[-1]) else None
+
+            if rsi_val is not None:
+                if RSI_MIN_PULLBACK <= rsi_val <= RSI_MAX_PULLBACK:
+                    momentum_score += MOMENTUM_RSI_PUNTOS
+                elif rsi_val < MOMENTUM_RSI_SOBREVENTA:
+                    momentum_score += MOMENTUM_RSI_SOBREVENTA_PENALIZACION
+        except Exception as e:
+            logger.debug(f"Error calculando RSI: {e}")
+
+    # 3.2 Volumen decreciente en pullback
+    if df is not None and "Volume" in df.columns and len(df) >= 10:
+        try:
+            vol_media = float(df["Volume"].iloc[-20:].mean())
+            vol_actual = float(df["Volume"].iloc[-1])
+            if vol_actual < vol_media * MOMENTUM_VOLUMEN_RATIO:
+                momentum_score += MOMENTUM_VOLUMEN_PUNTOS
+            elif vol_actual > vol_media * MOMENTUM_VOLUMEN_VENDEDOR_RATIO:
+                momentum_score += MOMENTUM_VOLUMEN_VENDEDOR_PENALIZACION
+        except Exception as e:
+            logger.debug(f"Error calculando volumen: {e}")
+
+    # 3.3 Vela de reversión (doji/martillo)
+    if df is not None and len(df) >= 2:
+        try:
+            ultima_vela = df.iloc[-1]
+            body = abs(float(ultima_vela["Close"]) - float(ultima_vela["Open"]))
+            rango = float(ultima_vela["High"]) - float(ultima_vela["Low"])
+            if rango > 0 and (body / rango) < MOMENTUM_VELA_REVERSION_RATIO:
+                momentum_score += MOMENTUM_VELA_REVERSION_PUNTOS
+        except Exception as e:
+            logger.debug(f"Error calculando vela: {e}")
+
+    # Cap momentum entre 0 y 2 (NO permitir momentum negativo)
+    momentum_score = max(0, min(2, momentum_score))
+
+    # Bonus base: Si hay pullback válido, mínimo 0.5 momentum
+    # Evita que RSI fuera de rango destruya setup completo
+    if pullback.get("es_pullback", False) and momentum_score < 0.5:
+        momentum_score = 0.5
+
+    # ═══════════════════════════════════════
+    # SCORE FINAL
+    # ═══════════════════════════════════════
+    score_final = estructura_score + timing_score + momentum_score
+    score_final = max(0, min(10, score_final))
+
+    # ═══════════════════════════════════════
+    # VALIDACIÓN FINAL
+    # ═══════════════════════════════════════
+    # Requiere estructura mínima Y timing no negativo
+    valido = (estructura_score >= SCORE_MIN_ESTRUCTURA and
+              timing_score >= SCORE_MIN_TIMING)
+
+    return {
+        "score": round(score_final, 1),
+        "score_max": 10,
+        "valido": valido,
+        "desglose": {
+            "estructura": round(estructura_score, 1),
+            "timing": round(timing_score, 1),
+            "momentum": round(momentum_score, 1)
+        },
+        "rsi": rsi_val
+    }
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -25,21 +252,21 @@ def calcular_atr_semanal(df, periodo=ATR_PERIODO):
     """
     if df is None or len(df) < periodo + 1:
         return None
-    
+
     high = df['High']
     low = df['Low']
     close_prev = df['Close'].shift(1)
-    
+
     # True Range
     tr1 = high - low
     tr2 = (high - close_prev).abs()
     tr3 = (low - close_prev).abs()
-    
+
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    
+
     # ATR = media del TR
     atr = tr.rolling(periodo).mean()
-    
+
     return atr.iloc[-1] if not pd.isna(atr.iloc[-1]) else None
 
 
@@ -57,15 +284,15 @@ def calcular_atr_desde_listas(precios, periodo=ATR_PERIODO):
     """
     if len(precios) < periodo + 1:
         return None
-    
+
     precios = np.array(precios, dtype=float)
-    
+
     # Rangos semanales (aproximación)
     rangos = np.abs(np.diff(precios))
-    
+
     # Media de rangos
     atr = np.mean(rangos[-periodo:])
-    
+
     return atr
 
 
@@ -82,7 +309,7 @@ def calcular_mm(precios, periodo):
     """
     if len(precios) < periodo:
         return None
-    
+
     return np.mean(precios[-periodo:])
 
 
@@ -99,15 +326,15 @@ def calcular_volatilidad(precios, ventana=52):
     """
     if len(precios) < ventana:
         ventana = len(precios)
-    
+
     if ventana < 10:
         return None
-    
+
     precios = np.array(precios[-ventana:])
-    
+
     # Desviación estándar / media
     volatilidad = (np.std(precios) / np.mean(precios)) * 100
-    
+
     return volatilidad
 
 
@@ -282,10 +509,10 @@ def calcular_stop_inicial(precio_entrada, precios, df=None, stop_atr_mult=None):
     CORRECCIÓN LOOKAHEAD: Usa histórico (excluye el precio actual)
     """
     lookback = min(STOP_ESTRUCTURA_LOOKBACK, len(precios) - 1)  # -1 para excluir actual
-    
+
     # Excluye el precio actual (no usamos información futura)
     precios_historicos = precios[-(lookback + 1):-1]
-    
+
     if not precios_historicos:
         # Fallback: usa estructura simple si no hay histórico
         stop_estructura = precio_entrada * 0.95
@@ -324,23 +551,23 @@ def validar_riesgo(entrada, stop):
             "riesgo_pct": 0,
             "motivo": "Stop >= entrada"
         }
-    
+
     riesgo_pct = ((entrada - stop) / entrada) * 100
-    
+
     if riesgo_pct < RIESGO_MIN_PCT:
         return {
             "riesgo_valido": False,
             "riesgo_pct": riesgo_pct,
             "motivo": f"Riesgo muy bajo ({riesgo_pct:.2f}%)"
         }
-    
+
     if riesgo_pct > RIESGO_MAX_PCT:
         return {
             "riesgo_valido": False,
             "riesgo_pct": riesgo_pct,
             "motivo": f"Riesgo muy alto ({riesgo_pct:.2f}%)"
         }
-    
+
     return {
         "riesgo_valido": True,
         "riesgo_pct": riesgo_pct,
@@ -355,26 +582,26 @@ def validar_riesgo(entrada, stop):
 if __name__ == "__main__":
     print("🧪 Test logica_medio.py")
     print("=" * 50)
-    
+
     # Datos de prueba
     precios_test = [10, 10.5, 11, 11.5, 12, 12.5, 13, 12, 11.5, 11, 10.8, 11.2]
-    
+
     print("\n1️⃣ Tendencia:")
     tendencia = detectar_tendencia_semanal(precios_test + [0]*30)
     print(f"   {tendencia}")
-    
+
     print("\n2️⃣ Pullback:")
     pullback = detectar_pullback(precios_test)
     print(f"   {pullback}")
-    
+
     print("\n3️⃣ Giro:")
     giro = detectar_giro_semanal(precios_test)
     print(f"   {giro}")
-    
+
     print("\n4️⃣ Stop:")
     stop = calcular_stop_inicial(11.2, precios_test)
     print(f"   Stop: {stop:.2f}")
-    
+
     validacion = validar_riesgo(11.2, stop)
     print(f"   {validacion}")
 
@@ -424,19 +651,16 @@ def calcular_score_medio(precios, tendencia, pullback, df=None):
         score += 0.5   # válido zona baja
 
     # 4. RSI semanal 40-55 zona pullback sano (+1.5)
+    #    IMPORTANTE: RSI calculado con método Wilder sobre datos SEMANALES
     rsi_val = None
     if len(precios) >= 15:
         try:
-            deltas    = [precios[i]-precios[i-1] for i in range(1, min(15, len(precios)))]
-            ganancias = [d for d in deltas if d > 0]
-            perdidas  = [-d for d in deltas if d < 0]
-            avg_g     = sum(ganancias)/14 if ganancias else 0
-            avg_p     = sum(perdidas)/14  if perdidas  else 0.001
-            rsi_val   = round(100-(100/(1+avg_g/avg_p)), 1)
-            if 40 <= rsi_val <= 55:
+            rsi_series = calcular_rsi(pd.Series(precios), periodo=14)
+            rsi_val = round(rsi_series.iloc[-1], 1) if not pd.isna(rsi_series.iloc[-1]) else None
+            if rsi_val is not None and RSI_MIN_PULLBACK <= rsi_val <= RSI_MAX_PULLBACK:
                 score += 1.5
         except Exception as _e:
-            logger.debug(f'logica_medio cálculo ignorado: {_e}')
+            logger.debug(f'logica_medio cálculo RSI ignorado: {_e}')
 
     # 5. Precio cerca de MM20 — timing de entrada
     #    ≤2% → muy buen timing (+1.5) | 2-3% → aceptable (+0.5)
@@ -450,7 +674,6 @@ def calcular_score_medio(precios, tendencia, pullback, df=None):
     # 6. Volumen decreciente en pullback — confirma corrección sana (+1.0)
     if df is not None and "Volume" in df.columns and len(df) >= 10:
         try:
-            import numpy as _np
             vol_media  = float(df["Volume"].iloc[-20:].mean())
             vol_actual = float(df["Volume"].iloc[-1])
             if vol_actual < vol_media * 0.85:
@@ -507,7 +730,6 @@ def calcular_semaforo_medio(precios, tendencia, pullback, df=None):
     vol_ok = False
     if df is not None and "Volume" in df.columns and len(df) >= 10:
         try:
-            import numpy as _np
             vol_media  = float(df["Volume"].iloc[-20:].mean())
             vol_actual = float(df["Volume"].iloc[-1])
             vol_ok     = vol_actual < vol_media * 0.85
@@ -583,7 +805,7 @@ def clasificar_setup_medio(score_0_10, valido_criticos=True):
             "decision": "NO_OPERAR",
             "clasificacion": "RECHAZADO",
         }
-    
+
     if score_0_10 >= 8.5:
         clasificacion = "EXCELENTE"
         decision = "COMPRA"
@@ -596,7 +818,7 @@ def clasificar_setup_medio(score_0_10, valido_criticos=True):
     else:
         clasificacion = "DÉBIL"
         decision = "NO_OPERAR"
-    
+
     return {
         "decision": decision,
         "clasificacion": clasificacion,
@@ -620,27 +842,26 @@ def clasificar_fundamental(score_fundamental):
             "color": "#10b981",  # Verde
             "score": score_fundamental
         }
-    elif score_fundamental >= 6.0:
+    if score_fundamental >= 6.0:
         return {
             "emoji": "🟡",
             "etiqueta": "ACEPTABLE",
             "color": "#f59e0b",  # Amarillo
             "score": score_fundamental
         }
-    elif score_fundamental >= 4.0:
+    if score_fundamental >= 4.0:
         return {
             "emoji": "🟠",
             "etiqueta": "DÉBIL",
             "color": "#f97316",  # Naranja
             "score": score_fundamental
         }
-    else:
-        return {
-            "emoji": "🔴",
-            "etiqueta": "RIESGO",
-            "color": "#ef4444",  # Rojo
-            "score": score_fundamental
-        }
+    return {
+        "emoji": "🔴",
+        "etiqueta": "RIESGO",
+        "color": "#ef4444",  # Rojo
+        "score": score_fundamental
+    }
 
 
 def calcular_setup_global(score_tecnico, score_fundamental):
@@ -658,10 +879,10 @@ def calcular_setup_global(score_tecnico, score_fundamental):
     """
     PESO_TECNICO = 0.70
     PESO_FUNDAMENTAL = 0.30
-    
+
     score_global = (score_tecnico * PESO_TECNICO) + (score_fundamental * PESO_FUNDAMENTAL)
     score_global = round(score_global, 1)
-    
+
     # Clasificación del setup global
     if score_global >= 8.5:
         clasificacion = "EXCELENTE"
@@ -673,7 +894,7 @@ def calcular_setup_global(score_tecnico, score_fundamental):
         clasificacion = "ACEPTABLE"
     else:
         clasificacion = "DÉBIL"
-    
+
     return {
         "score_global": score_global,
         "clasificacion_global": clasificacion
@@ -696,9 +917,8 @@ class MedioPlazo:
           5. Riesgo controlado 1.5-8%
           6. Trigger: high semana × 1.001
         """
+        from core.riesgo import calcular_rr
         from estrategias.posicional.datos_posicional import obtener_datos_semanales
-        from core.riesgo import calcular_objetivo, calcular_rr
-        from core.utilidades import respuesta_invalida
 
         # Intentar con get_df_semanal primero, fallback a get_df + resample
         df = None
@@ -718,7 +938,6 @@ class MedioPlazo:
 
         if df is None or df.empty:
             try:
-                import pandas as pd
                 from core.data_provider import get_df
                 df_d = get_df(ticker, periodo="5y", cache=cache)
                 if df_d is not None and not df_d.empty:
@@ -755,7 +974,13 @@ class MedioPlazo:
         pullback  = detectar_pullback(precios)
         giro      = detectar_giro_semanal(precios, highs=highs)
         vol_anual = calcular_volatilidad(precios, ventana=52)
-        score, score_max = calcular_score_medio(precios, tendencia, pullback, df=df)
+
+        # Scoring V2 profesional (estructura + timing + momentum)
+        resultado_score = calcular_score_medio_v2(precios, tendencia, pullback, df=df)
+        score = resultado_score["score"]
+        score_max = resultado_score["score_max"]
+        desglose_scoring = resultado_score.get("desglose", {})
+
         semaforo         = calcular_semaforo_medio(precios, tendencia, pullback, df=df)
 
         # Valores de MMs
@@ -767,18 +992,14 @@ class MedioPlazo:
         retroceso        = pullback.get("retroceso_pct", 0)
         trigger          = giro.get("trigger", round(precio_actual * 1.001, 2))
 
-        # RSI semanal aproximado
+        # RSI semanal — método Wilder correcto sobre datos SEMANALES
         rsi_val = None
         if len(precios) >= 15:
             try:
-                deltas    = [precios[i]-precios[i-1] for i in range(1, min(15, len(precios)))]
-                ganancias = [d for d in deltas if d > 0]
-                perdidas  = [-d for d in deltas if d < 0]
-                avg_g     = sum(ganancias)/14 if ganancias else 0
-                avg_p     = sum(perdidas)/14  if perdidas  else 0.001
-                rsi_val   = round(100 - (100 / (1 + avg_g / avg_p)), 1)
+                rsi_series = calcular_rsi(pd.Series(precios), periodo=14)
+                rsi_val = round(rsi_series.iloc[-1], 1) if not pd.isna(rsi_series.iloc[-1]) else None
             except Exception as _e:
-                logger.debug(f'logica_medio cálculo ignorado: {_e}')
+                logger.debug(f'logica_medio cálculo RSI ignorado: {_e}')
 
         # ── Detalles para el template ─────────────────────────────────────────
         detalles_base = {
@@ -897,11 +1118,11 @@ class MedioPlazo:
         # Eliminación doble criterio (criticos + score umbral)
         valido_criticos = len(rechazos) == 0 and val_riesgo["riesgo_valido"]
         clasificacion_unif = clasificar_setup_medio(score, valido_criticos)
-        
+
         atr      = calcular_atr_semanal(df)
         R_unit   = trigger - stop
         objetivo = round(trigger + 6.0 * R_unit, 2) if R_unit > 0 else None
-        
+
         # MEJORA v82.5: Validar RR mínimo
         # RR < 1.5 no tiene ventaja matemática (necesita winrate > 67%)
         rr = None
@@ -932,6 +1153,7 @@ class MedioPlazo:
             "riesgo_pct":  round(riesgo_pct, 1),
             "setup_score": score,
             "setup_max":   score_max,
+            "desglose_scoring": desglose_scoring,  # NUEVO: Estructura/Timing/Momentum
             "semaforo":    semaforo,
             "motivos":     motivos,
             "advertencias": [],

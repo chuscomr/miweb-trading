@@ -3,19 +3,18 @@
 # Backtest completo sobre múltiples valores
 # ==========================================================
 
-import pandas as pd
-import numpy as np
-from datetime import datetime
 import time
+from datetime import datetime
+
 
 try:
-    from .datos_posicional import obtener_datos_semanales, filtrar_universo_posicional
     from .backtest_posicional import ejecutar_backtest_posicional
     from .config_posicional import *
+    from .datos_posicional import filtrar_universo_posicional, obtener_datos_semanales
 except ImportError:
-    from datos_posicional import obtener_datos_semanales, filtrar_universo_posicional
     from backtest_posicional import ejecutar_backtest_posicional
     from config_posicional import *
+    from datos_posicional import obtener_datos_semanales
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -56,7 +55,7 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=True):
     if verbose:
         print(f"\n📊 Valores a analizar: {len(universo)}")
         print(f"   {', '.join(universo)}")
-        print(f"\n⏱️ Procesando (puede tardar 2-3 minutos)...\n")
+        print("\n⏱️ Procesando (puede tardar 2-3 minutos)...\n")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # PROCESAR TICKERS SECUENCIALMENTE
@@ -68,8 +67,8 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=True):
     # ── Descargar IBEX UNA SOLA VEZ ──────────────────────────────────────
     df_ibex_global = None
     try:
-        import yfinance as yf
         import pandas as pd
+        import yfinance as yf
         print("  📥 Descargando IBEX (^IBEX) una sola vez...")
         time.sleep(3)
         ibex_obj = yf.Ticker("^IBEX")
@@ -129,10 +128,8 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=True):
                             print(f"  ⏳ {ticker}: rate limit, esperando {wait}s... ({intento+1}/{max_intentos})")
                         time.sleep(wait)
                         continue
-                    else:
-                        return {"ticker": ticker, "error": f"Rate limit tras {max_intentos} intentos"}
-                else:
-                    return {"ticker": ticker, "error": str(e)}
+                    return {"ticker": ticker, "error": f"Rate limit tras {max_intentos} intentos"}
+                return {"ticker": ticker, "error": str(e)}
 
         return {"ticker": ticker, "error": "No se pudo procesar"}
 
@@ -274,7 +271,7 @@ def mostrar_resumen_sistema(metricas):
     print("📊 RESULTADOS DEL SISTEMA POSICIONAL")
     print("=" * 70)
 
-    print(f"\n📈 MÉTRICAS GLOBALES:")
+    print("\n📈 MÉTRICAS GLOBALES:")
     print(f"  Valores analizados: {metricas['tickers_analizados']}")
     print(f"  Total trades:       {metricas['total_trades']}")
     print(f"  Expectancy:         {metricas['expectancy_global']}R")
@@ -286,7 +283,7 @@ def mostrar_resumen_sistema(metricas):
     print(f"  Duración media:     {metricas['duracion_media_global']:.0f} sem "
           f"({metricas['duracion_media_global']/52:.1f} años)")
 
-    print(f"\n📊 BALANCE POR TICKER:")
+    print("\n📊 BALANCE POR TICKER:")
     print(f"  Rentables:      {metricas['tickers_rentables']}")
     print(f"  No rentables:   {metricas['tickers_no_rentables']}")
     pct = metricas['tickers_rentables'] / (
@@ -296,7 +293,7 @@ def mostrar_resumen_sistema(metricas):
 
     resultados = metricas.get("resultados_detallados", [])
 
-    print(f"\n🏆 TOP 5 MEJORES VALORES:")
+    print("\n🏆 TOP 5 MEJORES VALORES:")
     top5 = sorted(
         [r for r in resultados if r.get("total_trades", 0) > 0],
         key=lambda x: x.get("expectancy", 0),
@@ -310,7 +307,7 @@ def mostrar_resumen_sistema(metricas):
               f"Sharpe:{r.get('sharpe',0):.2f} | "
               f"Equity:{r.get('equity_final',0):+6.2f}R")
 
-    print(f"\n💀 TOP 5 PEORES VALORES:")
+    print("\n💀 TOP 5 PEORES VALORES:")
     bottom5 = sorted(
         [r for r in resultados if r.get("total_trades", 0) > 0],
         key=lambda x: x.get("expectancy", 0)
@@ -326,7 +323,7 @@ def mostrar_resumen_sistema(metricas):
     if metricas.get("tickers_con_error", 0) > 0:
         print(f"\n⚠️ Valores con error: {metricas['tickers_con_error']}")
 
-    print(f"\n🎯 EVALUACIÓN:")
+    print("\n🎯 EVALUACIÓN:")
     exp = metricas['expectancy_global']
     sharpe = metricas['sharpe_medio']
     if exp >= 2.0 and sharpe >= 1.0:
@@ -351,6 +348,6 @@ if __name__ == "__main__":
     resultado = ejecutar_backtest_sistema_completo(verbose=True)
 
     if "error" not in resultado:
-        print(f"\n✅ Backtest completado exitosamente")
+        print("\n✅ Backtest completado exitosamente")
     else:
         print(f"\n❌ Error: {resultado['error']}")

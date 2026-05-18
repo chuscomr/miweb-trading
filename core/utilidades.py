@@ -7,9 +7,9 @@
 # evitar dependencias circulares.
 # ══════════════════════════════════════════════════════════════
 
-import pandas as pd
+
 import numpy as np
-from typing import Optional, Union
+import pandas as pd
 
 
 # ─────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ def alinear_series(
             df["volumen"].tolist(),
             df.index.to_pydatetime().tolist(),
         )
-    except Exception as e:
+    except Exception:
         return [], [], []
 
 
@@ -218,14 +218,14 @@ def respuesta_valida(
 # FORMATEO
 # ─────────────────────────────────────────────────────────────
 
-def formatear_precio(precio: Optional[float], decimales: int = 2) -> str:
+def formatear_precio(precio: float | None, decimales: int = 2) -> str:
     """Formatea un precio como string con símbolo €."""
     if precio is None:
         return "—"
     return f"{precio:,.{decimales}f} €"
 
 
-def formatear_pct(valor: Optional[float], decimales: int = 2) -> str:
+def formatear_pct(valor: float | None, decimales: int = 2) -> str:
     """Formatea un porcentaje."""
     if valor is None:
         return "—"
@@ -242,7 +242,7 @@ def formatear_fechas_para_json(fechas):
     import pandas as pd
     if isinstance(fechas, pd.DatetimeIndex):
         return [f.strftime('%Y-%m-%dT%H:%M:%S') for f in fechas]
-    elif isinstance(fechas, list):
+    if isinstance(fechas, list):
         return [
             f.strftime('%Y-%m-%dT%H:%M:%S') if isinstance(f, (datetime, pd.Timestamp)) else f
             for f in fechas
@@ -266,7 +266,6 @@ def obtener_rango_fechas(periodo: str):
 def preparar_para_json(df) -> list:
     """Convierte DataFrame OHLCV+indicadores a lista de dicts JSON-safe."""
     import pandas as pd
-    import numpy as np
     if df is None or df.empty:
         return []
     registros = []

@@ -18,10 +18,11 @@
 # Gestión: BE(+1R) → Parcial 50%@+2R → Trailing ATR → Target +3R
 # ══════════════════════════════════════════════════════════════
 
-import logging
 import datetime
+import logging
+
 import pandas as pd
-import numpy as np
+
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,11 @@ def _cargar_ibex_mm200(periodo="5y"):
 
     if df_ibex is None or df_ibex.empty:
         try:
-            import os, requests
-            from datetime import datetime as _dt, timedelta
+            import os
+            from datetime import datetime as _dt
+            from datetime import timedelta
+
+            import requests
             fmp_key = os.getenv("FMP_API_KEY")
             if fmp_key:
                 anos = int(periodo.replace("y","")) if "y" in periodo else 2
@@ -115,8 +119,8 @@ def _estado_mercado(fecha, filtro_ibex):
         return "ALCISTA"
     ratio = datos["close"] / ref
     if ratio >= 1.0:    return "ALCISTA"
-    elif ratio >= 0.95: return "TRANSICION"
-    else:               return "BAJISTA"
+    if ratio >= 0.95: return "TRANSICION"
+    return "BAJISTA"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -674,7 +678,7 @@ def ejecutar_backtest_f1_sistema(tickers, cache=None, capital_inicial=10_000,
                             "excluidos": tickers_excluidos},
                 "recomendacion": {"titulo":"Sin datos","acciones":[]},
                 "config": {"target":"3","breakeven":"1","riesgo":"1.0","filtro_vol":">9"},
-                "periodo":"5 años","universo":f"IBEX 35 (0 tickers)"}
+                "periodo":"5 años","universo":"IBEX 35 (0 tickers)"}
 
     Rs      = [t.get("R_alcanzado",0) for t in todos_trades]
     g_R     = [r for r in Rs if r > 0]

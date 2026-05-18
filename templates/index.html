@@ -229,8 +229,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laboratorio de Indicadores Técnicos</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('indicadores.static', filename='css/indicadores.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/indicadores.css') }}">
 </head>
 <body>
     <div class="contenedor">
@@ -317,6 +317,6 @@
         </div>
     </div>
     
-    <script src="{{ url_for('indicadores.static', filename='js/grafico.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/grafico.js') }}"></script>
 </body>
 </html>

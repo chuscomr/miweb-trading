@@ -7,8 +7,7 @@
 # Sin config dispersa por engine, strategy y risk.
 # ══════════════════════════════════════════════════════════════
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass

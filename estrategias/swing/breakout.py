@@ -18,16 +18,16 @@ Criterios (ajustados por Salva):
   6. Estructura alcista  (precio ≥ MM20 · MM20 ≥ MM50)
 """
 
-import pandas as pd
-import numpy as np
 import logging
 from datetime import datetime
 
+import pandas as pd
+
+from core.indicadores import calcular_atr, calcular_rsi
+from core.riesgo import calcular_objetivo, calcular_rr
+from core.utilidades import f, respuesta_invalida, respuesta_valida
 from estrategias.base import EstrategiaBase
-from core.indicadores import calcular_rsi, calcular_atr, atr_actual
-from core.riesgo import calcular_rr, calcular_objetivo
-from core.universos import es_ibex
-from core.utilidades import respuesta_invalida, respuesta_valida, f
+
 
 logger = logging.getLogger(__name__)
 

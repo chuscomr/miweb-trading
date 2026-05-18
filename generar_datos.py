@@ -1,7 +1,9 @@
+import json
 from datetime import datetime, timedelta
+
 import pandas as pd
 import yfinance as yf
-import json
+
 
 # ⚠️ IMPORTAMOS TU SISTEMA LOCAL TAL CUAL
 try:

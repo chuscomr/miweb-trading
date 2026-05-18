@@ -16,6 +16,8 @@ Lógica de color final:
 """
 
 import logging
+
+
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────

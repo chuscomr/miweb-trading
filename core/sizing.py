@@ -22,6 +22,8 @@ Uso:
 """
 
 import logging
+
+
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────
@@ -52,12 +54,11 @@ def _factor_setup(score_normalizado: float) -> tuple:
     """
     if score_normalizado >= 0.85:
         return 1.00, "A+"
-    elif score_normalizado >= 0.70:
+    if score_normalizado >= 0.70:
         return 0.85, "A"
-    elif score_normalizado >= 0.55:
+    if score_normalizado >= 0.55:
         return 0.70, "B"
-    else:
-        return 0.55, "C"
+    return 0.55, "C"
 
 SIZE_MIN = 0.30   # 30% mínimo
 SIZE_MAX = 1.00   # 100% máximo

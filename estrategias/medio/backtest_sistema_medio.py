@@ -2,10 +2,12 @@
 # Backtest multi-ticker del sistema medio plazo completo
 
 from datetime import datetime
+
 import numpy as np
-from estrategias.medio.config_medio import MIN_SEMANAS_HISTORICO, TICKER_EMPRESA
+
 from core.data_provider import get_df_semanal
 from estrategias.medio.backtest_medio import ejecutar_backtest_medio_plazo
+from estrategias.medio.config_medio import MIN_SEMANAS_HISTORICO, TICKER_EMPRESA
 
 
 # ──────────────────────────────────────────────────────────
@@ -17,7 +19,7 @@ def ejecutar_backtest_sistema_completo(universo=None, verbose=True, usar_continu
     Ejecuta backtest sobre todo el universo de valores.
     Returns dict con resultados agregados compatible con backtest_sistema_medio.html
     """
-    from core.universos import IBEX35, CONTINUO
+    from core.universos import CONTINUO, IBEX35
 
     if universo is None:
         universo = IBEX35.copy()

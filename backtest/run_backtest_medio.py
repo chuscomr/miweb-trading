@@ -2,8 +2,9 @@
 Script standalone para ejecutar backtest del sistema medio plazo.
 Uso: python -m backtest.run_backtest_medio
 """
-from estrategias.posicional.datos_posicional import obtener_datos_semanales
 from estrategias.medio.scanner_medio import ejecutar_backtest_medio_plazo
+from estrategias.posicional.datos_posicional import obtener_datos_semanales
+
 
 TICKER = "ACS.MC"
 

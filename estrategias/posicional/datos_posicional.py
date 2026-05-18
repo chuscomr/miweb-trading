@@ -8,7 +8,7 @@
 # ==========================================================
 
 import yfinance as yf
-import pandas as pd
+
 
 try:
     from .config_posicional import *
@@ -93,7 +93,7 @@ def filtrar_universo_posicional(verbose=False):
     valores_aptos = []
 
     if verbose:
-        print(f"\n🔍 Filtrando universo IBEX 35...")
+        print("\n🔍 Filtrando universo IBEX 35...")
         print(f"   Min volatilidad:   {MIN_VOLATILIDAD_PCT}%")
         print(f"   Min volumen:       {MIN_VOLUMEN_MEDIO_DIARIO/1_000_000:.0f}M€/día")
         print(f"   Min capitalización:{MIN_CAPITALIZACION/1_000_000_000:.0f}B€")

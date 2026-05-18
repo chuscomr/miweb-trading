@@ -7,9 +7,10 @@
 # no calculan riesgo por su cuenta.
 # ══════════════════════════════════════════════════════════════
 
-import numpy as np
 import logging
-from typing import Optional
+
+import numpy as np
+
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +86,13 @@ def _sizing_vacio(motivo: str) -> dict:
 
 def calcular_stop(
     entrada: float,
-    atr: Optional[float] = None,
-    precios: Optional[list] = None,
-    min_reciente: Optional[float] = None,
+    atr: float | None = None,
+    precios: list | None = None,
+    min_reciente: float | None = None,
     setup_score: int = 3,
     max_riesgo_pct: float = 5.0,
     min_riesgo_pct: float = 1.0,
-) -> Optional[float]:
+) -> float | None:
     """
     Calcula stop loss con múltiples métodos y selecciona el más alto
     (más cercano al precio → menor riesgo).
@@ -177,10 +178,10 @@ def calcular_stop(
 def calcular_objetivo(
     entrada: float,
     stop: float,
-    atr: Optional[float] = None,
+    atr: float | None = None,
     setup_score: int = 3,
     rr_minimo: float = 2.0,
-) -> Optional[float]:
+) -> float | None:
     """
     Calcula el objetivo de precio.
 
@@ -230,7 +231,7 @@ def calcular_objetivo(
 # RR (RISK/REWARD)
 # ─────────────────────────────────────────────────────────────
 
-def calcular_rr(entrada: float, stop: float, objetivo: float, rr_minimo: float = 1.5) -> Optional[float]:
+def calcular_rr(entrada: float, stop: float, objetivo: float, rr_minimo: float = 1.5) -> float | None:
     """
     Calcula el ratio Riesgo/Recompensa.
     
@@ -259,13 +260,13 @@ def calcular_rr(entrada: float, stop: float, objetivo: float, rr_minimo: float =
     beneficio = objetivo - entrada
     if riesgo <= 0 or beneficio <= 0:
         return None
-    
+
     rr = round(beneficio / riesgo, 2)
-    
+
     # MEJORA: Rechaza RR insuficiente (sin ventaja matemática)
     if rr < rr_minimo:
         return None
-    
+
     return rr
 
 

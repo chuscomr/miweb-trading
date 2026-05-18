@@ -141,7 +141,28 @@ a.back:hover { background:rgba(255,255,255,0.9); }
 .pill.azul   { background:#dbeafe; color:#2563eb; }
 .pill.amaril { background:#fef9c3; color:#ca8a04; }
 .pill.rojo   { background:#fee2e2; color:#dc2626; }
+
+/* ── ANALYTICS STATS ── */
+.selector-row { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+.stat-box { background:#f8fafc; border-radius:10px; padding:16px; text-align:center; }
+.stat-label { font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.stat-value { font-size:1.5rem; font-weight:800; color:#1e293b; }
+.stat-value.positive { color:#16a34a; }
+.stat-value.negative { color:#dc2626; }
+
+.analytics-row {
+    display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:12px;
+    padding:10px 14px; background:#fafafa; border-radius:8px;
+    margin-bottom:8px; align-items:center;
+}
+.analytics-row.header { background:#f1f5f9; font-weight:700; font-size:.8rem; color:#64748b; text-transform:uppercase; }
+.analytics-row .label { font-size:.85rem; font-weight:600; color:#334155; }
+.analytics-row .value { font-size:.85rem; text-align:center; }
+.analytics-row .expectancy { font-weight:700; }
+.analytics-row .expectancy.positive { color:#16a34a; }
+.analytics-row .expectancy.negative { color:#dc2626; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -198,7 +219,6 @@ a.back:hover { background:rgba(255,255,255,0.9); }
                 <option value="TUB.MC">TUB — Tubacex</option><option value="VID.MC">VID — Vidrala</option>
                 <option value="VIS.MC">VIS — Viscofan</option>
                 
-        </select>
         </select>
         <button class="btn-primary" onclick="abrirFundamental()">💼 Analizar</button>
         <button class="btn-link" onclick="abrirDefFund()" style="margin-left:8px;">📖 Definiciones</button>
@@ -257,14 +277,113 @@ a.back:hover { background:rgba(255,255,255,0.9); }
     <div id="not-lista" style="display:none;"></div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     BLOQUE 4 — ANALYTICS: TRACKING DE RESULTADOS
+══════════════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-title">📊 Analytics · Tracking Real de Resultados</div>
+    <div class="card-subtitle">KPIs reales · Expectancy · Profit Factor · Cruces potentes</div>
+
+    <div class="selector-row">
+        <select id="analytics-sistema">
+            <option value="">Todos los sistemas</option>
+            <option value="swing">Swing</option>
+            <option value="medio">Medio Plazo</option>
+            <option value="posicional">Posicional</option>
+        </select>
+        <button class="btn-primary" onclick="cargarAnalytics()">📊 Cargar métricas</button>
+    </div>
+
+    <div class="spinner" id="analytics-spinner"><div class="spinner-ring"></div>Cargando analytics...</div>
+    <div class="error-box" id="analytics-error"></div>
+    
+    <!-- KPIs Principales -->
+    <div id="analytics-kpis" style="display:none;">
+        <!-- Warning muestra pequeña -->
+        <div id="analytics-warning" style="display:none; background:#fef3c7; border-left:3px solid #f59e0b; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:.88rem; color:#92400e;">
+            ⚠️ <strong>Muestra pequeña (<span id="warning-count"></span> trades).</strong> Resultados no concluyentes. Mínimo recomendado: 20 trades.
+        </div>
+        
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:24px;">
+            <div class="stat-box">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="kpi-total">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Winrate</div>
+                <div class="stat-value" id="kpi-winrate">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Expectancy</div>
+                <div class="stat-value" id="kpi-expectancy">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Profit Factor</div>
+                <div class="stat-value" id="kpi-pf">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">R Medio ↗</div>
+                <div class="stat-value" id="kpi-ravg-win">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">R Medio ↘</div>
+                <div class="stat-value" id="kpi-ravg-loss">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">R Mejor</div>
+                <div class="stat-value" id="kpi-rbest">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">R Peor</div>
+                <div class="stat-value" id="kpi-rworst">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">R Total</div>
+                <div class="stat-value" id="kpi-rtotal">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Max Drawdown</div>
+                <div class="stat-value" id="kpi-dd">-</div>
+            </div>
+        </div>
+
+        <!-- Curva de Equity -->
+        <div style="margin-bottom:28px;">
+            <h4 style="font-size:.95rem; font-weight:700; color:#334155; margin-bottom:14px;">📈 Curva de Equity (R acumulado)</h4>
+            <canvas id="equity-chart" style="max-height:240px;"></canvas>
+        </div>
+
+        <!-- Cruces -->
+        <div style="display:grid; gap:20px;">
+            <div>
+                <h4 style="font-size:.9rem; font-weight:700; color:#334155; margin-bottom:12px;">🎯 Resultados por Setup</h4>
+                <div id="analytics-setups"></div>
+            </div>
+            <div>
+                <h4 style="font-size:.9rem; font-weight:700; color:#334155; margin-bottom:12px;">📈 Resultados por Contexto</h4>
+                <div id="analytics-contexto"></div>
+            </div>
+            <div>
+                <h4 style="font-size:.9rem; font-weight:700; color:#334155; margin-bottom:12px;">💎 Resultados por Fundamental</h4>
+                <div id="analytics-fundamental"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </div><!-- /container -->
 
 <script>
 // ═══════════════════════════════════════════════
 // BLOQUE 1: ANÁLISIS FUNDAMENTAL
 // ═══════════════════════════════════════════════
-document.getElementById('fund-ticker').addEventListener('change', function() {
-    if (this.value) analizarFundamental();
+document.addEventListener('DOMContentLoaded', function() {
+    const fundTicker = document.getElementById('fund-ticker');
+    if (fundTicker) {
+        fundTicker.addEventListener('change', function() {
+            if (this.value) analizarFundamental();
+        });
+    }
 });
 
 async function analizarFundamental() {
@@ -432,10 +551,131 @@ async function cargarNoticias() {
     }
 }
 
-// Cargar noticias automáticamente al abrir
-document.addEventListener('DOMContentLoaded', function() {
-    cargarNoticias();
-});
+// ═══════════════════════════════════════════════
+// BLOQUE 4: ANALYTICS
+// ═══════════════════════════════════════════════
+async function cargarAnalytics() {
+    const sistema = document.getElementById('analytics-sistema').value;
+    
+    document.getElementById('analytics-spinner').style.display = 'block';
+    document.getElementById('analytics-error').style.display = 'none';
+    document.getElementById('analytics-kpis').style.display = 'none';
+
+    try {
+        // Cargar KPIs
+        const params = sistema ? `?sistema=${sistema}` : '';
+        const [kpisResp, setupsResp, ctxResp, fundResp] = await Promise.all([
+            fetch(`/contexto/analytics/kpis${params}`),
+            fetch(`/contexto/analytics/resultados-setup${params}`),
+            fetch('/contexto/analytics/resultados-contexto'),
+            fetch('/contexto/analytics/resultados-fundamental?semaforo=true')
+        ]);
+
+        if (!kpisResp.ok) throw new Error('Error cargando KPIs');
+
+        const kpis = await kpisResp.json();
+        const setups = await setupsResp.json();
+        const contextos = await ctxResp.json();
+        const fundamentales = await fundResp.json();
+
+        // Warning si muestra pequeña
+        const warningDiv = document.getElementById('analytics-warning');
+        if (kpis.total_trades < 20) {
+            document.getElementById('warning-count').textContent = kpis.total_trades;
+            warningDiv.style.display = 'block';
+        } else {
+            warningDiv.style.display = 'none';
+        }
+
+        // Mostrar KPIs
+        document.getElementById('kpi-total').textContent = kpis.total_trades;
+        document.getElementById('kpi-winrate').textContent = kpis.winrate + '%';
+        
+        const expEl = document.getElementById('kpi-expectancy');
+        expEl.textContent = kpis.expectancy + 'R';
+        expEl.className = 'stat-value ' + (kpis.expectancy > 0 ? 'positive' : 'negative');
+        
+        document.getElementById('kpi-pf').textContent = kpis.profit_factor;
+        
+        // R Medio ganador/perdedor
+        const ravgWinEl = document.getElementById('kpi-ravg-win');
+        ravgWinEl.textContent = '+' + kpis.r_promedio_ganador + 'R';
+        ravgWinEl.className = 'stat-value positive';
+        
+        const ravgLossEl = document.getElementById('kpi-ravg-loss');
+        ravgLossEl.textContent = kpis.r_promedio_perdedor + 'R';
+        ravgLossEl.className = 'stat-value negative';
+        
+        // R Mejor/Peor
+        const rbestEl = document.getElementById('kpi-rbest');
+        rbestEl.textContent = '+' + kpis.r_mejor + 'R';
+        rbestEl.className = 'stat-value positive';
+        
+        const rworstEl = document.getElementById('kpi-rworst');
+        rworstEl.textContent = kpis.r_peor + 'R';
+        rworstEl.className = 'stat-value negative';
+        
+        const rtotalEl = document.getElementById('kpi-rtotal');
+        rtotalEl.textContent = kpis.r_total + 'R';
+        rtotalEl.className = 'stat-value ' + (kpis.r_total > 0 ? 'positive' : 'negative');
+        
+        document.getElementById('kpi-dd').textContent = kpis.max_drawdown + 'R';
+
+        // Renderizar curva de equity
+        renderEquityChart(kpis.curva_equity);
+
+        // Resultados por Setup
+        let setupsHtml = '<div class="analytics-row header"><div>Setup</div><div>Trades</div><div>Winrate</div><div>Expectancy</div></div>';
+        setups.forEach(s => {
+            const expClass = s.expectancy > 0 ? 'positive' : 'negative';
+            setupsHtml += `
+                <div class="analytics-row">
+                    <div class="label">${s.setup}</div>
+                    <div class="value">${s.trades}</div>
+                    <div class="value">${s.winrate}%</div>
+                    <div class="value expectancy ${expClass}">${s.expectancy}R</div>
+                </div>`;
+        });
+        document.getElementById('analytics-setups').innerHTML = setupsHtml;
+
+        // Resultados por Contexto
+        let ctxHtml = '<div class="analytics-row header"><div>Contexto</div><div>Trades</div><div>Winrate</div><div>Expectancy</div></div>';
+        contextos.forEach(c => {
+            const expClass = c.expectancy > 0 ? 'positive' : 'negative';
+            ctxHtml += `
+                <div class="analytics-row">
+                    <div class="label">${c.contexto}</div>
+                    <div class="value">${c.trades}</div>
+                    <div class="value">${c.winrate}%</div>
+                    <div class="value expectancy ${expClass}">${c.expectancy}R</div>
+                </div>`;
+        });
+        document.getElementById('analytics-contexto').innerHTML = ctxHtml;
+
+        // Resultados por Fundamental
+        let fundHtml = '<div class="analytics-row header"><div>Semáforo</div><div>Trades</div><div>Winrate</div><div>Expectancy</div></div>';
+        fundamentales.forEach(f => {
+            const expClass = f.expectancy > 0 ? 'positive' : 'negative';
+            fundHtml += `
+                <div class="analytics-row">
+                    <div class="label">${f.categoria}</div>
+                    <div class="value">${f.trades}</div>
+                    <div class="value">${f.winrate}%</div>
+                    <div class="value expectancy ${expClass}">${f.expectancy}R</div>
+                </div>`;
+        });
+        document.getElementById('analytics-fundamental').innerHTML = fundHtml;
+
+        document.getElementById('analytics-kpis').style.display = 'block';
+
+    } catch(e) {
+        document.getElementById('analytics-error').textContent = '⚠️ Error: ' + e.message;
+        document.getElementById('analytics-error').style.display = 'block';
+    } finally {
+        document.getElementById('analytics-spinner').style.display = 'none';
+    }
+}
+
 </script>
 
 <!-- ══ OVERLAY (invisible, no bloquea) ══ -->
@@ -564,8 +804,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 <script>
 // ══ DRAG & DROP DEL MODAL FUNDAMENTAL ══
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   const modal = document.getElementById('fund-modal');
+  if (!modal) return;
+  
   let isDragging = false;
   let startX, startY, startLeft, startTop;
 
@@ -635,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
       handle.style.cursor = 'grab';
     }
   });
-})();
+});
 </script>
 
 <script>
@@ -677,35 +919,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ══ MODAL DEFINICIONES ANÁLISIS FUNDAMENTAL ══ -->
 <div id="modalDefFund" style="
-    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.7); z-index:9999; overflow-y:auto; padding:20px;
+    display:none; 
+    position:fixed; 
+    top:0; 
+    left:0; 
+    width:100%; 
+    height:100%;
+    background:rgba(0,0,0,0.25); 
+    z-index:9999; 
+    overflow-y:auto; 
+    padding:0;
     box-sizing:border-box;">
-  <div style="max-width:780px; margin:30px auto; background:#fff; border-radius:12px;
-      box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;">
+  <div style="
+    max-width:780px; 
+    width:90%;
+    max-height:calc(100vh - 40px); 
+    margin:20px auto; 
+    background:#fff; 
+    border-radius:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3); 
+    display:flex; 
+    flex-direction:column;
+    overflow:hidden;
+    transition:box-shadow 0.2s;">
 
-    <!-- Cabecera -->
-    <div style="display:flex;align-items:center;justify-content:space-between;
-        padding:18px 24px; background:linear-gradient(135deg,#1e293b,#334155);
-        color:white;">
+    <!-- Cabecera DRAGGABLE -->
+    <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:18px 24px; 
+        background:linear-gradient(135deg,#1e293b,#334155);
+        color:white; 
+        flex-shrink:0;
+        user-select:none;">
       <div>
         <div style="font-size:1.1em;font-weight:700;">📖 Glosario — Análisis Fundamental</div>
         <div style="font-size:0.78em;color:#94a3b8;margin-top:2px;">
-          Ratios e indicadores del análisis financiero
+          ⬅️ Arrastra para mover • Ratios e indicadores del análisis financiero
         </div>
       </div>
       <button onclick="cerrarDefFund()" style="
-          background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
-          color:white;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.9em;">
+          background:rgba(255,255,255,0.1);
+          border:1px solid rgba(255,255,255,0.2);
+          color:white;
+          border-radius:8px;
+          padding:6px 14px;
+          cursor:pointer;
+          font-size:0.9em;">
         ✕ Cerrar
       </button>
     </div>
 
-    <!-- Contenido -->
-    <div id="defFundContent" style="padding:20px 24px;"></div>
+    <!-- Contenido SCROLLEABLE -->
+    <div id="defFundContent" style="
+        padding:20px 24px; 
+        overflow-y:auto; 
+        flex:1;
+        min-height:0;">
+    </div>
 
     <!-- Pie -->
-    <div style="padding:12px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;
-        font-size:0.75em;color:#94a3b8;text-align:center;">
+    <div style="
+        padding:12px 24px;
+        background:#f8fafc;
+        border-top:1px solid #e2e8f0;
+        font-size:0.75em;
+        color:#94a3b8;
+        text-align:center; 
+        flex-shrink:0;">
       Fuente: Datos financieros anuales · yfinance / FMP · Actualizado al cargar
     </div>
   </div>
@@ -845,6 +1127,154 @@ function abrirDefFund() {
 
 function cerrarDefFund() {
     document.getElementById('modalDefFund').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
+// DRAG & DROP MODAL DEFINICIONES
+// ═══════════════════════════════════════════════
+(function initDragDefFund() {
+    let isDragging = false;
+    let currentX, currentY, initialX, initialY;
+    let modal = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        modal = document.querySelector('#modalDefFund > div'); // El div interior
+        const header = modal?.querySelector('div:first-child'); // La cabecera
+        
+        if (!header || !modal) return;
+        
+        // Hacer cursor de arrastre visible
+        header.style.cursor = 'move';
+        
+        header.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        
+        function dragStart(e) {
+            if (e.target.tagName === 'BUTTON') return; // No arrastrar si es el botón cerrar
+            
+            isDragging = true;
+            initialX = e.clientX - (modal.offsetLeft || 0);
+            initialY = e.clientY - (modal.offsetTop || 0);
+            
+            // Cambiar de margin auto a position absolute
+            modal.style.margin = '0';
+            modal.style.position = 'absolute';
+            modal.style.left = modal.offsetLeft + 'px';
+            modal.style.top = modal.offsetTop + 'px';
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            
+            // Limitar a los bordes de la ventana
+            const maxX = window.innerWidth - modal.offsetWidth;
+            const maxY = window.innerHeight - modal.offsetHeight;
+            
+            currentX = Math.max(0, Math.min(currentX, maxX));
+            currentY = Math.max(0, Math.min(currentY, maxY));
+            
+            modal.style.left = currentX + 'px';
+            modal.style.top = currentY + 'px';
+        }
+        
+        function dragEnd() {
+            isDragging = false;
+        }
+    });
+})();
+
+// ═══════════════════════════════════════════════
+// CURVA DE EQUITY
+// ═══════════════════════════════════════════════
+let equityChartInstance = null;
+
+function renderEquityChart(curvaEquity) {
+    const canvas = document.getElementById('equity-chart');
+    if (!canvas) return;
+    
+    // Destruir gráfico anterior si existe
+    if (equityChartInstance) {
+        equityChartInstance.destroy();
+    }
+    
+    if (!curvaEquity || curvaEquity.length === 0) {
+        canvas.style.display = 'none';
+        return;
+    }
+    
+    canvas.style.display = 'block';
+    
+    // Extraer datos
+    const labels = curvaEquity.map((d, i) => i + 1); // Número de trade
+    const data = curvaEquity.map(d => d.r_acum);
+    
+    // Color según resultado final
+    const finalR = data[data.length - 1];
+    const lineColor = finalR >= 0 ? '#22c55e' : '#ef4444';
+    const fillColor = finalR >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    
+    equityChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'R Acumulado',
+                data: data,
+                borderColor: lineColor,
+                backgroundColor: fillColor,
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 3,
+                pointBackgroundColor: lineColor
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => `Trade #${items[0].label}`,
+                        label: (item) => `R Acumulado: ${item.formattedValue}R`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#64748b',
+                        callback: (value) => value + 'R'
+                    },
+                    grid: {
+                        color: '#e2e8f0'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Número de Trade',
+                        color: '#64748b'
+                    },
+                    ticks: {
+                        color: '#64748b'
+                    },
+                    grid: {
+                        color: '#e2e8f0'
+                    }
+                }
+            }
+        }
+    });
 }
 
 document.addEventListener('keydown', e => {

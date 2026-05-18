@@ -12,11 +12,11 @@ Componentes (sin indicadores técnicos):
   6. Sentimiento prensa  — tono RSS últimos titulares
 """
 
-import time
 import re
-import requests
+
 import feedparser
-from datetime import datetime
+import requests
+
 
 # ─────────────────────────────────────────────────────────────
 # 1. DATOS DE MERCADO (yfinance via data_provider)
@@ -274,7 +274,7 @@ def _comp_noticias(ticker: str) -> dict:
     try:
         nombre_largo = get_nombre(ticker).lower()
         palabras_clave = {nombre_base.lower(), nombre_largo.split()[0].lower()}
-    except:
+    except (AttributeError, IndexError, KeyError):
         palabras_clave = {nombre_base.lower()}
 
     noticias = []
@@ -296,7 +296,7 @@ def _comp_noticias(ticker: str) -> dict:
                         "fuente": fuente,
                         "url": e.get('link', '')
                     })
-        except:
+        except (requests.RequestException, AttributeError, KeyError):
             continue
 
     if not noticias:

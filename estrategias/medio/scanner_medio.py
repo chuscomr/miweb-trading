@@ -14,9 +14,12 @@ Uso:
 """
 
 import logging
-from core.universos import IBEX35, CONTINUO, TODOS
+
 from core.contexto_mercado import evaluar_contexto_ibex
+from core.universos import TODOS
+
 from .logica_medio import MedioPlazo
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +59,7 @@ class ScannerMedio:
             dict con 'señales', 'contexto', 'total', 'multiplicador'
         """
         from core.contexto_mercado import multiplicador_score_mercado
-        
+
         contexto = evaluar_contexto_ibex(cache)
         multiplicador = multiplicador_score_mercado(cache)
 

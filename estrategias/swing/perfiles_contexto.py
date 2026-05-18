@@ -89,106 +89,106 @@ PERFILES_V2 = {
         # Preferencias de estrategia (para ranking)
         "prioridad_breakout": 1.2,   # Breakouts favorecidos
         "prioridad_pullback": 1.0,   # Pullbacks normales
-        
+
         # Gestión de tamaño
         "factor_tamaño_breakout": 1.0,  # Tamaño normal
         "factor_tamaño_pullback": 1.0,  # Tamaño normal
-        
+
         # Gestión de riesgo
         "riesgo_por_trade_pct": 2.0,
         "max_posiciones_abiertas": 5,
         "max_exposicion_total_pct": 10.0,
-        
+
         # Confirmaciones extra
         "requiere_confirmacion_breakout": False,
         "requiere_confirmacion_pullback": False,
-        
+
         # Trailing y objetivos
         "trailing_desde_r": 2.0,
         "objetivo_parcial_r": 3.0,
         "venta_parcial_pct": 50,
-        
+
         "descripcion": "Alcista: Favorece breakouts, tamaño completo",
         "contexto": "ALCISTA"
     },
-    
+
     "LATERAL": {
         # Preferencias de estrategia (para ranking)
         "prioridad_breakout": 0.8,   # Breakouts menos priorizados
         "prioridad_pullback": 1.3,   # Pullbacks MÁS priorizados
-        
+
         # Gestión de tamaño
         "factor_tamaño_breakout": 0.6,  # Breakouts con 60% tamaño
         "factor_tamaño_pullback": 1.0,  # Pullbacks tamaño completo
-        
+
         # Gestión de riesgo
         "riesgo_por_trade_pct": 1.5,
         "max_posiciones_abiertas": 3,
         "max_exposicion_total_pct": 6.0,
-        
+
         # Confirmaciones extra
         "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
         "requiere_confirmacion_pullback": False,  # Pullbacks sin confirmación extra
-        
+
         # Trailing y objetivos
         "trailing_desde_r": 1.5,
         "objetivo_parcial_r": 2.0,
         "venta_parcial_pct": 50,
-        
+
         "descripcion": "Lateral: Pullbacks priorizados, breakouts con menor tamaño",
         "contexto": "LATERAL"
     },
-    
+
     "BAJISTA": {
         # Preferencias de estrategia (para ranking)
         "prioridad_breakout": 0.5,   # Breakouts muy poco priorizados
         "prioridad_pullback": 0.9,   # Pullbacks algo priorizados
-        
+
         # Gestión de tamaño
         "factor_tamaño_breakout": 0.4,  # Breakouts con 40% tamaño (muy conservador)
         "factor_tamaño_pullback": 0.7,  # Pullbacks con 70% tamaño
-        
+
         # Gestión de riesgo
         "riesgo_por_trade_pct": 1.0,
         "max_posiciones_abiertas": 2,
         "max_exposicion_total_pct": 3.0,
-        
+
         # Confirmaciones extra
         "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
         "requiere_confirmacion_pullback": True,   # Pullbacks también
-        
+
         # Trailing y objetivos
         "trailing_desde_r": 1.0,
         "objetivo_parcial_r": 1.5,
         "venta_parcial_pct": 75,
-        
+
         "descripcion": "Bajista: Muy conservador, ambos con tamaño reducido",
         "contexto": "BAJISTA"
     },
-    
+
     "TRANSICION": {
         # Preferencias de estrategia (para ranking)
         "prioridad_breakout": 0.7,   # Breakouts poco priorizados
         "prioridad_pullback": 1.1,   # Pullbacks ligeramente favorecidos
-        
+
         # Gestión de tamaño (CONSERVADOR)
         "factor_tamaño_breakout": 0.5,  # Breakouts con 50% tamaño
         "factor_tamaño_pullback": 0.8,  # Pullbacks con 80% tamaño
-        
+
         # Gestión de riesgo (MUY CONSERVADOR)
         "riesgo_por_trade_pct": 1.2,
         "max_posiciones_abiertas": 2,   # Máximo 2 posiciones
         "max_exposicion_total_pct": 4.0,
-        
+
         # Confirmaciones extra
         "requiere_confirmacion_breakout": True,   # Breakouts necesitan confirmación
         "requiere_confirmacion_pullback": True,   # Pullbacks también (mercado confuso)
-        
+
         # Trailing y objetivos
         "trailing_desde_r": 1.2,
         "objetivo_parcial_r": 1.8,
         "venta_parcial_pct": 60,
-        
+
         "descripcion": "Transición: Muy conservador, ambos requieren confirmación",
         "contexto": "TRANSICION"
     }
@@ -230,12 +230,11 @@ def clasificar_calidad_setup(score):
     """
     if score >= CLASIFICACION_CALIDAD["excelente"]:
         return "excelente"
-    elif score >= CLASIFICACION_CALIDAD["bueno"]:
+    if score >= CLASIFICACION_CALIDAD["bueno"]:
         return "bueno"
-    elif score >= CLASIFICACION_CALIDAD["mediocre"]:
+    if score >= CLASIFICACION_CALIDAD["mediocre"]:
         return "mediocre"
-    else:
-        return "invalido"
+    return "invalido"
 
 
 def calcular_score_ranking(score_base, tipo_estrategia, contexto_mercado):
@@ -253,16 +252,16 @@ def calcular_score_ranking(score_base, tipo_estrategia, contexto_mercado):
         float - Score de ranking (para ordenar, NO filtrar)
     """
     perfil = obtener_perfil_trading(contexto_mercado)
-    
+
     # Aplicar prioridad según estrategia
     if tipo_estrategia == "breakout":
         prioridad = perfil["prioridad_breakout"]
     else:  # pullback
         prioridad = perfil["prioridad_pullback"]
-    
+
     # Score de ranking = score base * prioridad
     score_ranking = score_base * prioridad
-    
+
     return score_ranking
 
 
@@ -285,11 +284,11 @@ def obtener_factor_tamaño(tipo_estrategia, contexto_mercado):
         Tamaño real = 1000 * 0.6 = 600€
     """
     perfil = obtener_perfil_v2(contexto_mercado)
-    
+
     if tipo_estrategia == "breakout":
         return perfil["factor_tamaño_breakout"]
-    else:  # pullback
-        return perfil["factor_tamaño_pullback"]
+    # pullback
+    return perfil["factor_tamaño_pullback"]
 
 
 def requiere_confirmacion_extra(tipo_estrategia, contexto_mercado):
@@ -308,11 +307,11 @@ def requiere_confirmacion_extra(tipo_estrategia, contexto_mercado):
         Pullback en ALCISTA → sin confirmación extra
     """
     perfil = obtener_perfil_v2(contexto_mercado)
-    
+
     if tipo_estrategia == "breakout":
         return perfil["requiere_confirmacion_breakout"]
-    else:  # pullback
-        return perfil["requiere_confirmacion_pullback"]
+    # pullback
+    return perfil["requiere_confirmacion_pullback"]
 
 
 def obtener_perfil_v2(contexto_mercado):
@@ -326,11 +325,11 @@ def obtener_perfil_v2(contexto_mercado):
         dict - Perfil de trading con parámetros de ejecución
     """
     contexto = contexto_mercado.upper()
-    
+
     if contexto not in PERFILES_V2:
         # Fallback a LATERAL si contexto desconocido
         contexto = "LATERAL"
-    
+
     return PERFILES_V2[contexto]
 
 
@@ -353,11 +352,11 @@ def setup_pasa_filtro(score_base, tipo_estrategia, contexto_mercado):
     """
     pasa = setup_es_valido(score_base, contexto_mercado)
     score_ranking = calcular_score_ranking(score_base, tipo_estrategia, contexto_mercado)
-    
+
     # Obtener umbral usado para este contexto
     contexto = contexto_mercado.upper()
     umbral_usado = UMBRALES_CONTEXTO.get(contexto, SCORE_MINIMO_ABSOLUTO)
-    
+
     return pasa, score_ranking, umbral_usado
 
 
