@@ -101,7 +101,7 @@ def nueva_guardar():
                 precio_entrada=precio_entrada,
                 stop=stop_inicial or 0,
                 contexto_mercado=estado,
-                score_fundamental=None,
+                rating_fundamental=None,
                 notas=notas
             )
             logger.info(f"✅ Analytics: trade_id={analytics_id} para {ticker}")
@@ -236,8 +236,7 @@ def cerrar_guardar(pid):
                 precio_salida=precio_cierre,
                 precio_entrada=entrada,
                 stop=stop_ini,
-                tipo_salida=motivo_cierre,
-                r_multiple=r_final
+                tipo_salida=motivo_cierre
             )
             logger.info(f"✅ Analytics actualizado: trade_id={analytics_id}, R={r_final}")
         except Exception as e:
