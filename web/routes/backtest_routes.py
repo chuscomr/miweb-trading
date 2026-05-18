@@ -4,12 +4,10 @@
 # Solo lógica HTTP — sin cálculos, sin yfinance.
 # ══════════════════════════════════════════════════════════════
 
-from flask import Blueprint, current_app, jsonify, render_template, request
-
+from flask import Blueprint, request, render_template, current_app, jsonify
+from core.universos import normalizar_ticker, get_nombre, IBEX35, CONTINUO
 from backtest.config_backtest import ConfigBacktest
 from backtest.run_backtest import ejecutar_backtest, ejecutar_backtest_multiticker
-from core.universos import CONTINUO, IBEX35, get_nombre, normalizar_ticker
-
 
 backtest_bp = Blueprint("backtest", __name__, url_prefix="/backtest")
 
@@ -145,19 +143,17 @@ def api_ejecutar_sistema():
     PERIODO          = "5y"
 
     try:
-        from backtest.datos import MarketData
-        from backtest.engine_legacy import BacktestEngineLegacy
-        from backtest.execution import ExecutionModel
-        from backtest.metrics import calcular_metricas
+        from core.data_provider       import get_df
+        from backtest.datos           import MarketData
+        from backtest.strategy        import StrategyLogic
+        from backtest.execution       import ExecutionModel
+        from backtest.risk            import RiskManager
         from backtest.portfolio_legacy import Portfolio
-        from backtest.risk import RiskManager
-        from backtest.strategy import StrategyLogic
-        from core.data_provider import get_df
-
-        cache = _get_cache()
+        from backtest.engine_legacy   import BacktestEngineLegacy, calcular_atr
+        from backtest.metrics         import calcular_metricas
 
         # ── Filtro de mercado: cargar IBEX una vez ────────────
-        from backtest.backtest_f1 import _cargar_ibex_mm200
+        from backtest.backtest_f1 import _cargar_ibex_mm200, _estado_mercado
         filtro_ibex = _cargar_ibex_mm200(periodo=PERIODO)
         print(f"Filtro IBEX: {len(filtro_ibex)} barras cargadas" if filtro_ibex else "Filtro IBEX: no disponible")
 
@@ -341,12 +337,11 @@ def api_sistema_estrategia():
         estrategia   = breakout | pullback | ambos
         entrada_modo = zona | trigger  (solo afecta a pullback)
     """
-    import numpy as np
-    import pandas as pd
-
+    from core.data_provider  import get_df
+    from core.universos      import get_nombre, IBEX35, CONTINUO
     from backtest.backtest_f1 import _cargar_ibex_mm200, _estado_mercado
-    from core.data_provider import get_df
-    from core.universos import CONTINUO, IBEX35, get_nombre
+    import pandas as pd
+    import numpy as np
 
     universo_param  = request.args.get("universo", "ibex")
     estrategia_param = request.args.get("estrategia", "breakout")

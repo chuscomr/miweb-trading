@@ -5,11 +5,7 @@ from core.universos import normalizar_ticker, get_nombre, IBEX35, CONTINUO
 from cartera.cartera_db import CarteraDB
 from cartera.cartera_logica import CarteraLogica
 from core.contexto_mercado import evaluar_contexto_ibex
-from analytics.integrador import registrar_apertura, registrar_cierre
-import logging
 
-
-logger = logging.getLogger(__name__)
 cartera_bp = Blueprint("cartera", __name__, url_prefix="/cartera")
 _db     = CarteraDB()
 _logica = CarteraLogica()
@@ -86,31 +82,11 @@ def nueva_guardar():
         if not ticker or precio_entrada <= 0 or acciones <= 0:
             raise ValueError("Datos incompletos")
 
-        cfg      = _db.get_config()
         cache    = _get_cache()
         contexto = evaluar_contexto_ibex(cache)
         estado   = contexto.get("estado", "TRANSICION") if contexto else "TRANSICION"
 
-        # 1. Registrar en Analytics PRIMERO
-        analytics_id = None
-        try:
-            analytics_id = registrar_apertura(
-                ticker=ticker,
-                sistema=sistema,
-                tipo_setup=score_nivel or "MANUAL",
-                precio_entrada=precio_entrada,
-                stop=stop_inicial or 0,
-                contexto_mercado=estado,
-                rating_fundamental=None,
-                notas=notas
-            )
-            logger.info(f"✅ Analytics: trade_id={analytics_id} para {ticker}")
-        except Exception as e:
-            logger.warning(f"⚠️ Analytics falló (continuando): {e}")
-            # Continuar sin analytics_id
-
-        # 2. Crear posición en cartera
-        pid = _db.agregar_posicion(
+        _db.agregar_posicion(
             ticker        = ticker,
             nombre        = f.get("nombre") or get_nombre(ticker) or ticker.replace(".MC",""),
             sistema       = sistema,
@@ -123,13 +99,9 @@ def nueva_guardar():
             contexto_ibex = estado,
             es_excepcion  = es_excepcion,
             notas         = notas,
-            analytics_id  = analytics_id,
         )
-        logger.info(f"✅ Posición creada: pid={pid}, analytics_id={analytics_id}")
-        
         return redirect(url_for("cartera.ver_cartera"))
-    except Exception as e:
-        logger.error(f"❌ Error creando posición: {e}", exc_info=True)
+    except Exception:
         return redirect(url_for("cartera.nueva_form"))
 
 
@@ -212,38 +184,15 @@ def cerrar_guardar(pid):
     motivo_cierre = f.get("motivo_cierre", "Manual")
 
     pos = _db.obtener_posicion_por_id(pid)
-    if not pos:
-        logger.error(f"❌ Posición {pid} no encontrada")
-        return redirect(url_for("cartera.ver_cartera"))
-
-    # Calcular R
     r_final = None
-    entrada  = float(pos.get("precio_entrada", 0))
-    stop_ini = float(pos.get("stop_inicial") or pos.get("stop_actual") or entrada)
-    R_unit   = entrada - stop_ini
-    if R_unit > 0:
-        r_final = round((precio_cierre - entrada) / R_unit, 2)
+    if pos:
+        entrada  = float(pos.get("precio_entrada", 0))
+        stop_ini = float(pos.get("stop_inicial") or pos.get("stop_actual") or entrada)
+        R_unit   = entrada - stop_ini
+        if R_unit > 0:
+            r_final = round((precio_cierre - entrada) / R_unit, 2)
 
-    # 1. Cerrar en BD cartera
     _db.cerrar_posicion(pid, fecha_cierre, precio_cierre, motivo_cierre, r_final)
-    
-    # 2. Actualizar Analytics si existe analytics_id
-    analytics_id = pos.get("analytics_id")
-    if analytics_id:
-        try:
-            registrar_cierre(
-                trade_id=analytics_id,
-                precio_salida=precio_cierre,
-                precio_entrada=entrada,
-                stop=stop_ini,
-                tipo_salida=motivo_cierre
-            )
-            logger.info(f"✅ Analytics actualizado: trade_id={analytics_id}, R={r_final}")
-        except Exception as e:
-            logger.warning(f"⚠️ Error actualizando Analytics: {e}")
-    else:
-        logger.info(f"ℹ️ Posición {pid} sin analytics_id (posición antigua, OK)")
-    
     return redirect(url_for("cartera.ver_cartera"))
 
 
