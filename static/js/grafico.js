@@ -159,15 +159,10 @@ class GraficoIndicadores {
      * Obtener indicadores seleccionados
      */
     obtenerIndicadoresSeleccionados() {
-        // Usar el nuevo selector de indicadores si existe, sino checkboxes legacy
-        let indicadores = [];
-        if (typeof window.getSelectedIndicadores === 'function') {
-            indicadores = window.getSelectedIndicadores();
-        } else {
-            document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
-                indicadores.push(cb.value);
-            });
-        }
+        const indicadores = [];
+        document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
+            indicadores.push(cb.value);
+        });
         return indicadores;
     }
 
@@ -721,7 +716,7 @@ class GraficoIndicadores {
         const tieneOBV = indicadores.includes('OBV');
         const tieneMFI = indicadores.includes('MFI');
         const tieneADX = indicadores.includes('ADX');
-        const tieneATR = indicadores.includes('ATR') || indicadores.includes('ATR_BARRAS');
+        const tieneATR = indicadores.includes('ATR');
 
         const GAP = 0.01;
         const pVolumen = tieneVolumen ? 0.16 : 0;
@@ -906,7 +901,7 @@ class GraficoIndicadores {
             
             traces.push({
                 x: fechas,
-                y: data.data.map(d => d.ATR_PCT || (d.ATR / d.Close * 100)),
+                y: data.data.map(d => d.ATR),
                 type: 'scatter',
                 mode: 'lines',
                 name: 'ATR',
@@ -917,29 +912,6 @@ class GraficoIndicadores {
             });
         }
 
-        
-        // ATR BARRAS (Histograma)
-        // ========================
-        console.log("🔍 Verificando ATR_BARRAS:", indicadores.includes('ATR_BARRAS'), "ATR existe:", data.data[0]?.ATR);
-        if (indicadores.includes('ATR_BARRAS') && data.data[0].ATR !== undefined) {
-            console.log("🎨 Dibujando ATR BARRAS");
-            let yaxisName = 'y7';  // Usa el mismo panel que ATR línea si ambos activos
-            
-            traces.push({
-                x: fechas,
-                y: data.data.map(d => d.ATR_PCT || (d.ATR / d.Close * 100)),
-                type: 'bar',
-                name: 'ATR Barras',
-                marker: { 
-                    color: '#a78bfa',
-                    opacity: 0.6,
-                    line: { width: 0 }
-                },
-                xaxis: 'x',
-                yaxis: yaxisName,
-                hovertemplate: '<b>ATR Barras</b><br>%{y:.2f}%<extra></extra>'
-            });
-        }
         // VOLUMEN
         if (indicadores.includes('VOLUMEN')) {
             // Calcular media de volumen para clipping
@@ -1244,6 +1216,113 @@ class GraficoIndicadores {
 
             window._nShapesAntes = (gdEl.layout && gdEl.layout.shapes)
                 ? gdEl.layout.shapes.length : 0;
+
+            // ── ETIQUETA PRECIO EN CROSSHAIR (v85.27) ───────────────
+            // Muestra el precio exacto a la izquierda del gráfico,
+            // siguiendo el cursor vertical. Pegada al eje Y, fuera del
+            // SVG (esquiva clipPath, sin flicker, sin Plotly.relayout).
+            if (!window._crosshairOverlayRegistrado) {
+                window._crosshairOverlayRegistrado = true;
+
+                const parent = gdEl.parentElement;
+                // Garantizar contenedor posicionado para el overlay absoluto
+                if (parent && getComputedStyle(parent).position === 'static') {
+                    parent.style.position = 'relative';
+                }
+
+                // Crear etiqueta una sola vez
+                let etiqueta = document.getElementById('precio-cursor-overlay');
+                if (!etiqueta && parent) {
+                    etiqueta = document.createElement('div');
+                    etiqueta.id = 'precio-cursor-overlay';
+                    etiqueta.style.cssText = [
+                        'position:absolute',
+                        'left:0', 'top:0',
+                        'background:#3b82f6',
+                        'color:#fff',
+                        'padding:2px 6px',
+                        'border-radius:3px',
+                        'font-size:10px',
+                        'font-weight:600',
+                        'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+                        'pointer-events:none',
+                        'z-index:10',
+                        'display:none',
+                        'white-space:nowrap',
+                        'box-shadow:0 1px 3px rgba(0,0,0,0.2)'
+                    ].join(';');
+                    parent.appendChild(etiqueta);
+                }
+
+                // Convierte pixel Y (relativo a #grafico) a precio
+                function pixelToPrice(pixelY) {
+                    const fl = gdEl._fullLayout;
+                    if (!fl || !fl.yaxis) return null;
+                    const ya = fl.yaxis;
+                    const pxRelEje = pixelY - ya._offset;
+                    if (pxRelEje < 0 || pxRelEje > ya._length) return null;
+                    // Plotly expone p2c que maneja lineal y log correctamente
+                    if (typeof ya.p2c === 'function') {
+                        try { return ya.p2c(pxRelEje); } catch (e) { /* fallback */ }
+                    }
+                    // Fallback manual (sólo lineal)
+                    if (Array.isArray(ya.range) && ya.range.length === 2) {
+                        const [rmin, rmax] = ya.range;
+                        return rmax - (pxRelEje / ya._length) * (rmax - rmin);
+                    }
+                    return null;
+                }
+
+                // ¿El cursor está dentro del área de plot del panel de precio?
+                function dentroPlotArea(px, py) {
+                    const fl = gdEl._fullLayout;
+                    if (!fl) return false;
+                    const xa = fl.xaxis, ya = fl.yaxis;
+                    return px >= xa._offset && px <= (xa._offset + xa._length) &&
+                           py >= ya._offset && py <= (ya._offset + ya._length);
+                }
+
+                // Throttling con requestAnimationFrame → GPU-friendly, sin flicker
+                let pendingY = null, rafId = null;
+                function actualizarEtiqueta() {
+                    rafId = null;
+                    if (pendingY === null || !etiqueta) return;
+                    const y = pendingY;
+                    pendingY = null;
+                    const fl = gdEl._fullLayout;
+                    if (!fl || !fl.yaxis) { etiqueta.style.display = 'none'; return; }
+                    const precio = pixelToPrice(y);
+                    if (precio === null || isNaN(precio)) {
+                        etiqueta.style.display = 'none';
+                        return;
+                    }
+                    const ya = fl.yaxis;
+                    // Dentro del plot area, pegada al eje Y (estilo TradingView)
+                    etiqueta.style.left = (ya._offset + 4) + 'px';
+                    etiqueta.style.top = y + 'px';
+                    etiqueta.style.transform = 'translate(0, -50%)';
+                    etiqueta.textContent = precio.toFixed(2) + ' €';
+                    etiqueta.style.display = 'block';
+                }
+
+                gdEl.addEventListener('mousemove', (ev) => {
+                    if (!etiqueta) return;
+                    const rect = gdEl.getBoundingClientRect();
+                    const x = ev.clientX - rect.left;
+                    const y = ev.clientY - rect.top;
+                    if (!dentroPlotArea(x, y)) {
+                        etiqueta.style.display = 'none';
+                        return;
+                    }
+                    pendingY = y;
+                    if (rafId === null) rafId = requestAnimationFrame(actualizarEtiqueta);
+                });
+
+                gdEl.addEventListener('mouseleave', () => {
+                    if (etiqueta) etiqueta.style.display = 'none';
+                });
+            }
+            // ────────────────────────────────────────────────────────
 
             // ── MOVER MODEBAR ARRIBA EN HORIZONTAL ──────────────────
             try {
