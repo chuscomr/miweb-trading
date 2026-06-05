@@ -1,7 +1,15 @@
-
-# Archivos de backup
-*.bak
-*.tmp
-*.pyc
-__pycache__/
-data/insiders.db
+# Python 
+*.pyc 
+__pycache__/ 
+*.bak 
+*.tmp 
+ 
+# Secretos 
+.env 
+ 
+# Bases de datos 
+*.db 
+ 
+# Cache 
+data_cache/ 
+/tmp/ 
