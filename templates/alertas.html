@@ -78,6 +78,47 @@
 
 <!-- Estadísticas -->
 {% set n_activas = activas|length %}
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ALERTAS DE CARTERA (v89.2) -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+{% if alertas_cartera %}
+<div class="section">
+  <h2 class="section-title">⚠️ Alertas de Cartera ({{ alertas_cartera|length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Tipo</th>
+        <th>Mensaje</th>
+        <th>Acción Sugerida</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for alerta in alertas_cartera %}
+      <tr style="{% if alerta.prioridad == 'CRITICA' %}border-left: 3px solid var(--red);
+                {% elif alerta.prioridad == 'ALTA' %}border-left: 3px solid var(--yellow);
+                {% else %}border-left: 3px solid var(--blue);{% endif %}">
+        <td>
+          <span class="ticker">{{ alerta.ticker|replace('.MC', '') }}</span>
+          <div style="margin-top:4px;">
+            <span class="badge {% if alerta.prioridad == 'CRITICA' %}badge-alta
+                               {% elif alerta.prioridad == 'ALTA' %}badge-media
+                               {% else %}badge-baja{% endif %}">
+              {{ alerta.prioridad }}
+            </span>
+          </div>
+        </td>
+        <td style="font-size:0.8rem;color:var(--muted);">{{ alerta.tipo }}</td>
+        <td>{{ alerta.mensaje }}</td>
+        <td style="font-style:italic;color:var(--muted);">{{ alerta.accion }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<!-- ═══════════════════════════════════════════════════════════ -->
 {% set n_alta    = activas|selectattr('tipo','equalto','PRECIO_SOBRE')|list|length %}
 <div class="stats-row">
   <div class="stat-card">

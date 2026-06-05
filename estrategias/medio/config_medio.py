@@ -17,8 +17,8 @@ ATR_PERIODO = 14
 
 # Pullback — validado con backtest comparativo v2 (con fix tendencia)
 # Variante A (3-8%) ganadora: WR 41.5%, exp +1.16R, MaxDD 3.6%
-PULLBACK_MIN_PCT    = 3.0   # mínimo 3% — zona baja válida
-PULLBACK_MAX_PCT    = 8.0   # máximo 8% — evita correcciones profundas
+PULLBACK_MIN_PCT    = 2.0   # mínimo 2% — menos = precio extendido
+PULLBACK_MAX_PCT    = 25.0  # máximo 25% — más = deterioro real (óptimo 5-15%)
 LOOKBACK_MAXIMO     = 10    # máximo reciente 10 semanas
 
 # Volatilidad
@@ -52,6 +52,13 @@ TIER_2_UNIVERSO = "CONTINUO"
 
 TIER_1_RIESGO_PCT = 1.0    # riesgo completo
 TIER_2_RIESGO_PCT = 0.5    # riesgo reducido
+
+# RSI — Umbrales para pullback
+RSI_MIN_PULLBACK = 30      # RSI mínimo para pullback sano
+RSI_MAX_PULLBACK = 60      # RSI máximo para pullback (no sobrecomprado)
+
+# Timing — Penalizaciones adicionales
+TIMING_PULLBACK_PROFUNDO_PENALIZACION = -1.0  # Penalización pullback muy profundo
 
 # Backtest
 CAPITAL_INICIAL       = 50_000

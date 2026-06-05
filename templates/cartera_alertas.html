@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alertas Inteligentes — Cartera</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+     background:linear-gradient(135deg,#dde4f0 0%,#c8d4e8 50%,#b8c8de 100%);
+     min-height:100vh;padding:20px;color:#1e293b}
+.container{max-width:1200px;margin:0 auto}
+.back{display:inline-block;color:#334155;text-decoration:none;font-size:0.85em;
+      margin-bottom:16px;background:rgba(255,255,255,0.7);padding:5px 14px;
+      border-radius:8px;border:1px solid rgba(0,0,0,0.1);}
+.back:hover{background:rgba(255,255,255,0.95);}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.header h1{font-size:1.6em;font-weight:700;color:#0f172a;}
+.card{background:white;border-radius:16px;padding:24px;margin-bottom:20px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.card-header{font-size:1.1em;font-weight:700;color:#0f172a;margin-bottom:16px;
+             padding-bottom:12px;border-bottom:2px solid #e2e8f0;}
+.resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-box{background:#f8fafc;border-radius:12px;padding:16px;text-align:center;border:2px solid #e2e8f0;}
+.stat-box .numero{font-size:2em;font-weight:700;color:#0f172a;}
+.stat-box .label{font-size:0.85em;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;}
+.alerta{background:white;border-left:4px solid;border-radius:12px;padding:16px;margin-bottom:12px;
+        box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.alerta-critica{border-color:#ef4444;background:#fef2f2;}
+.alerta-alta{border-color:#f59e0b;background:#fffbeb;}
+.alerta-media{border-color:#eab308;background:#fefce8;}
+.alerta-info{border-color:#3b82f6;background:#eff6ff;}
+.alerta-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.alerta-ticker{font-size:1.1em;font-weight:700;color:#0f172a;}
+.alerta-prioridad{padding:4px 12px;border-radius:6px;font-size:0.75em;font-weight:700;text-transform:uppercase;}
+.badge-critica{background:#ef4444;color:white;}
+.badge-alta{background:#f59e0b;color:white;}
+.badge-media{background:#eab308;color:white;}
+.badge-info{background:#3b82f6;color:white;}
+.alerta-mensaje{font-size:0.95em;color:#334155;margin-bottom:8px;line-height:1.5;}
+.alerta-accion{font-size:0.9em;color:#64748b;font-style:italic;}
+.alerta-accion::before{content:'→ ';color:#3b82f6;font-weight:700;}
+.empty{text-align:center;padding:40px;color:#94a3b8;}
+.empty-icon{font-size:3em;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="/cartera" class="back">← Volver a Cartera</a>
+
+<div class="header">
+    <h1>🔔 Alertas Inteligentes</h1>
+</div>
+
+<!-- RESUMEN -->
+<div class="resumen-grid">
+    <div class="stat-box">
+        <div class="numero">{{ resumen.total }}</div>
+        <div class="label">Total Alertas</div>
+    </div>
+    <div class="stat-box" style="border-color:#ef4444;">
+        <div class="numero" style="color:#ef4444;">{{ resumen.por_prioridad.CRITICA or 0 }}</div>
+        <div class="label">Críticas</div>
+    </div>
+    <div class="stat-box" style="border-color:#f59e0b;">
+        <div class="numero" style="color:#f59e0b;">{{ resumen.por_prioridad.ALTA or 0 }}</div>
+        <div class="label">Alta Prioridad</div>
+    </div>
+    <div class="stat-box" style="border-color:#eab308;">
+        <div class="numero" style="color:#eab308;">{{ resumen.por_prioridad.MEDIA or 0 }}</div>
+        <div class="label">Media Prioridad</div>
+    </div>
+</div>
+
+<!-- ALERTAS -->
+<div class="card">
+    <div class="card-header">📋 Alertas Activas</div>
+    
+    {% if alertas %}
+        {% for alerta in alertas %}
+        <div class="alerta alerta-{{ alerta.prioridad|lower }}">
+            <div class="alerta-header">
+                <span class="alerta-ticker">{{ alerta.ticker|replace('.MC', '') }}</span>
+                <span class="alerta-prioridad badge-{{ alerta.prioridad|lower }}">{{ alerta.prioridad }}</span>
+            </div>
+            <div class="alerta-mensaje">{{ alerta.mensaje }}</div>
+            <div class="alerta-accion">{{ alerta.accion_sugerida }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty">
+        <div class="empty-icon">✅</div>
+        <div style="font-size:1.1em;font-weight:600;color:#64748b;">No hay alertas activas</div>
+        <div style="margin-top:8px;color:#94a3b8;">Todas las posiciones están bajo control</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- LEYENDA -->
+<div class="card" style="background:#f8fafc;">
+    <div class="card-header">ℹ️ Tipos de Alertas</div>
+    <div style="display:grid;gap:12px;">
+        <div style="display:flex;gap:12px;align-items:start;">
+            <span style="background:#ef4444;color:white;padding:4px 12px;border-radius:6px;font-size:0.75em;font-weight:700;white-space:nowrap;">CRÍTICA</span>
+            <div style="font-size:0.9em;color:#475569;">
+                <strong>Stop en peligro:</strong> Precio a menos de 2% del stop. Decisión inmediata requerida.
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:start;">
+            <span style="background:#f59e0b;color:white;padding:4px 12px;border-radius:6px;font-size:0.75em;font-weight:700;white-space:nowrap;">ALTA</span>
+            <div style="font-size:0.9em;color:#475569;">
+                <strong>Objetivo cerca:</strong> A menos de 5% del objetivo. Preparar salida.<br>
+                <strong>Trailing disponible (+3R):</strong> Puedes asegurar +2R con trailing automático.
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:start;">
+            <span style="background:#eab308;color:white;padding:4px 12px;border-radius:6px;font-size:0.75em;font-weight:700;white-space:nowrap;">MEDIA</span>
+            <div style="font-size:0.9em;color:#475569;">
+                <strong>Setup degradado:</strong> Posición estancada o perdiendo sin saltar stop.<br>
+                <strong>Trailing disponible (+1R):</strong> Puedes proteger capital con breakeven.
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</body>
+</html>

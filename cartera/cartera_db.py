@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 logger  = logging.getLogger(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "cartera.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "cartera.db")
 
 
 class CarteraDB:
@@ -203,6 +203,19 @@ class CarteraDB:
             vals.append(1 if es_excepcion else 0)
             vals.append(pid)
             n = con.execute(f"UPDATE posiciones SET {sets} WHERE id=?", vals).rowcount
+        return n > 0
+
+    def actualizar_posicion_cerrada(self, pid: int, fecha_cierre: str,
+                                     precio_cierre: float, motivo_cierre: str,
+                                     r_final: Optional[float], notas: Optional[str]) -> bool:
+        """Corrige los datos de un trade ya cerrado."""
+        with self._conexion() as con:
+            n = con.execute(
+                """UPDATE posiciones
+                      SET fecha_cierre=?, precio_cierre=?, motivo_cierre=?, r_final=?, notas=?
+                    WHERE id=? AND estado='CERRADA'""",
+                (fecha_cierre, precio_cierre, motivo_cierre, r_final, notas, pid)
+            ).rowcount
         return n > 0
 
     def eliminar_posicion(self, pid: int) -> bool:

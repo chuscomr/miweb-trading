@@ -135,4 +135,57 @@ def analytics_eliminar_trade(trade_id):
     return jsonify({'mensaje': 'Trade eliminado'})
 
 
+# ============================================================
+# CALENDARIO DE DIVIDENDOS (v86.1)
+# ============================================================
+
+@contexto_bp.route('/dividendos', methods=['GET'])
+def obtener_dividendos():
+    """
+    Obtiene dividendos próximos de todos los tickers (IBEX35 + Continuo).
+    
+    Returns:
+        JSON con lista de dividendos ordenada por fecha
+    """
+    from core.universos import IBEX35, CONTINUO
+    from core.calendario_eventos import get_calendario
+    from datetime import datetime
+    
+    try:
+        calendario = get_calendario()
+        todos_tickers = list(set(IBEX35 + CONTINUO))  # Eliminar duplicados
+        
+        dividendos = []
+        
+        for ticker in todos_tickers:
+            eventos = calendario.eventos_proximos(ticker, dias_adelante=30)
+            
+            if eventos['dividendo'] and eventos['dividendo']['tiene_dividendo']:
+                div = eventos['dividendo']
+                
+                # Obtener nombre de empresa (simplificar ticker)
+                nombre = ticker.replace('.MC', '')
+                
+                dividendos.append({
+                    'ticker': ticker,
+                    'nombre': nombre,
+                    'fecha_ex': div['fecha_ex'].strftime('%d/%m/%Y') if div['fecha_ex'] else None,
+                    'dias_hasta': div['dias_hasta'],
+                    'importe': div['importe'],
+                    'yield_aprox': div['yield_aprox'],
+                    'advertir': div['advertir_entrada']
+                })
+        
+        # Ordenar por días hasta dividendo (más cercanos primero)
+        dividendos.sort(key=lambda x: x['dias_hasta'] if x['dias_hasta'] is not None else 999)
+        
+        return jsonify({
+            'dividendos': dividendos,
+            'total': len(dividendos)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 print("✅ Blueprint contexto_bp cargado")

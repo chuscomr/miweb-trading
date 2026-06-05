@@ -1,0 +1,177 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: ACS.MC
+Fecha: 2026-06-01
+Hora: 19:12:11
+
+# Análisis Técnico ACS.MC - Zona 30.01.26 a 01.06.26
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Patrón Principal: Canal Alcista Acelerado**
+- **Tipo**: Canal alcista en ángulo pronunciado (~65°) - **Calidad: Claro**
+- **Coordenadas**: 
+  * Línea inferior: desde 84.33€ (30.01.26) hasta 118€ (01.06.26)
+  * Línea superior: desde 98€ (10.02.26) hasta 144.33€ (pico máximo)
+- **Estado**: Completado con ruptura bajista
+- **Implicaciones**: La ruptura del soporte del canal sugiere corrección significativa
+
+### **Patrón Secundario: Doble Techo**
+- **Tipo**: Doble techo - **Calidad: Débil a Moderada**
+- **Coordenadas**: 
+  * Primer techo: ~142€ (25.04.26)
+  * Segundo techo: **144.33€** (07.05.26)
+  * Línea de cuello: **118-120€**
+- **Estado**: En desarrollo, pendiente de confirmar ruptura de cuello
+- **Implicaciones**: Objetivo bajista en **100-105€** si se confirma
+
+### **Patrón de Corrección: Bandera Bajista**
+- **Tipo**: Bandera correctiva tras impulso alcista - **Calidad: Clara**
+- **Coordenadas**: Desde máximos 144.33€ hasta zona actual **123-125€**
+- **Estado**: En formación
+- **Implicaciones**: Podría ser pausa antes de continuación alcista o inicio de corrección mayor
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global:**
+- **Dirección**: Alcista primaria con corrección en curso - **Fuerza: Moderada a Fuerte**
+- **Estructura**: Máximos y mínimos crecientes hasta 144.33€, ahora en fase correctiva
+- **Fase del ciclo**: Transición de Markup a posible Distribución
+
+### **Momentum y Fuerza:**
+- **RSI**: ~45-50 (estimado), saliendo de sobrecompra
+- **Divergencia Detectada**: RSI no confirmó nuevos máximos en 144.33€ vs primer techo (**divergencia bajista**)
+- **Velocidad**: Desaceleración evidente tras ruptura del canal alcista
+
+### **Zonas Críticas:**
+
+**Resistencias (menor a mayor):**
+- **125.50€** - Máximo local reciente - **Calidad: Media**
+- **130.00€** - Resistencia psicológica - **Calidad: Media**
+- **135.00€** - Zona de distribución previa - **Calidad: Fuerte**
+- **144.33€** - Máximo histórico absoluto - **Calidad: Muy Fuerte**
+
+**Soportes (mayor a menor):**
+- **120.00€** - Línea de cuello doble techo + MM20 - **Calidad: Fuerte**
+- **115.00€** - Soporte canal roto + zona de valor - **Calidad: Muy Fuerte**
+- **100.00€** - MM50 + soporte psicológico - **Calidad: Muy Fuerte**
+- **95.00€** - Zona de consolidación previa - **Calidad: Media**
+
+### **Volumen:**
+- **Comportamiento**: Picos significativos en máximos (distribución)
+- **Divergencia**: Volumen decreciente en últimas subidas (**señal de debilidad**)
+- **Confirmación**: Aumento de volumen en caídas recientes confirma presión vendedora
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles:**
+- **MM20** (naranja): Actuando como resistencia dinámica en **~122€**
+- **MM50** (violeta): Soporte clave en **~102€**
+- **MM200** (azul): Muy por debajo en **~92€**, confirmando tendencia alcista de largo plazo
+- **Cruce Inminente**: MM20 puede cruzar bajista a MM50 si continúa corrección
+
+### **Confluencias Críticas:**
+- **120.00€** = Línea cuello doble techo + MM20 + Fibonacci 38.2% → **ZONA DECISIVA**
+- **115.00€** = Canal roto + Fibonacci 50% + zona valor → **SOPORTE CRÍTICO**
+- **100.00€** = MM50 + Fibonacci 61.8% + soporte psicológico → **SOPORTE MAYOR**
+
+### **Indicadores Complementarios:**
+- **MACD**: Cruce bajista visible, histograma decreciente
+- **ADX**: Tendencia aún fuerte (>25) pero debilitándose
+- **Bollinger**: Precio tocó banda superior en máximos, ahora hacia media
+
+### **Divergencias Confirmadas:**
+- **RSI vs Precio**: Divergencia bajista clara en máximos (**BAJISTA**)
+- **Volumen vs Precio**: Subidas sin volumen en últimas sesiones (**BAJISTA**)
+
+## 4. **Escenarios Probables**
+
+### **Escenario Bajista (Probabilidad: 65%)**
+**Desarrollo esperado:**
+1. Ruptura de **120.00€** (línea de cuello)
+2. Retesteo fallido de **120-122€** como resistencia
+3. Caída acelerada hacia **115.00€**
+4. Rebote técnico y nueva caída hacia **100-105€**
+
+**Objetivos bajistas:**
+- **Objetivo 1**: **115.00€** (R:R 1:2)
+- **Objetivo 2**: **105.00€** (R:R 1:3.5)
+- **Objetivo 3**: **100.00€** (R:R 1:4.5)
+
+**Activación**: Cierre diario por debajo de **119.50€**
+**Invalidación**: Recuperación y cierre por encima de **130.00€**
+
+### **Escenario Alcista (Probabilidad: 35%)**
+**Desarrollo esperado:**
+1. Defensa exitosa de **120.00€**
+2. Ruptura de **125.50€** con volumen
+3. Superación de **130.00€**
+4. Retesteo de máximos **144.33€**
+
+**Objetivos alcistas:**
+- **Objetivo 1**: **135.00€**
+- **Objetivo 2**: **144.33€**
+- **Objetivo 3**: **155.00€** (extensión)
+
+**Activación**: Cierre por encima de **126.00€** con volumen
+**Invalidación**: Ruptura de **115.00€**
+
+### **Niveles Decisivos:**
+1. **120.00€** - Línea de vida del escenario alcista
+2. **115.00€** - Último bastión antes de corrección mayor
+3. **125.50€** - Clave para recuperación alcista
+4. **100.00€** - Soporte estructural principal
+5. **144.33€** - Máximo a superar para nuevos objetivos
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+### **Setup Bajista (Preferido - 65% probabilidad)**
+- **Entrada**: **119.00€** al cierre por debajo + confirmación volumen
+- **Stop Loss**: **126.50€** (pérdida máxima 6.3%)
+- **Take Profit 1**: **115.00€** (R:R 1:1.9) - *Soporte técnico fuerte*
+- **Take Profit 2**: **105.00€** (R:R 1:3.7) - *Objetivo doble techo*
+- **Take Profit 3**: **100.00€** (R:R 1:4.7) - *MM50 + zona valor*
+- **Tamaño posición**: **1.5%** del capital (riesgo ajustado)
+- **Confirmaciones necesarias**: 
+  * Cierre por debajo 119.50€
+  * Volumen superior a media 20 días
+  * RSI por debajo de 45
+
+### **Setup Alcista (Contrarian - 35% probabilidad)**
+- **Entrada**: **121.50€** solo con hammer/doji en **120.00€**
+- **Stop Loss**: **115.00€** (pérdida máxima 5.3%)
+- **Take Profit 1**: **130.00€** (R:R 1:2.6)
+- **Take Profit 2**: **135.00€** (R:R 1:3.4)
+- **Condición CRÍTICA**: Solo entrar con **reversión confirmada en 120.00€**
+- **Confirmaciones necesarias**: 
+  * Patrón de reversión (martillo/doji)
+  * Divergencia alcista RSI
+  * Aumento súbito de volumen comprador
+
+### **Gestión de Riesgo:**
+- **Tamaño máximo**: 2% capital total en ACS
+- **Tipo de stop**: Stop fijo inicial, trailing después del primer TP
+- **Gestión multinivel**: Cerrar 50% en TP1, 30% en TP2, 20% trailing
+- **Plan B**: Si rompe 115.00€, esperar rebote a 117-118€ para nuevo corto
+
+---
+
+## **⚠️ ADVERTENCIA CRÍTICA**
+
+**TRAMPA POTENCIAL DETECTADA**: La zona **120-125€** podría ser una **trampa alcista**. Los rebotes en soportes importantes suelen atraer compradores antes de continuar la corrección. 
+
+**NO** entrar largo sin confirmación clara de reversión con volumen significativo.
+
+**PREFERENCIA**: **Setup bajista** con mejor relación riesgo/beneficio y mayor probabilidad según el contexto técnico actual.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

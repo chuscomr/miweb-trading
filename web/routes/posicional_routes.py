@@ -3,34 +3,26 @@
 # Blueprint sistema posicional — adaptado a nueva arquitectura
 # ==========================================================
 
-import json
-import logging
-import os
-from datetime import datetime
-
-from flask import Blueprint, current_app, jsonify, render_template, request
-
 from analisis.fundamental.proveedor import obtener_datos_fundamentales
-from analisis.fundamental.rating import calcular_rating_fundamental
-from core.sizing import calcular_sizing_recomendado
+from analisis.fundamental.rating   import calcular_rating_fundamental
+from core.sizing                    import calcular_sizing_recomendado
+from flask import Blueprint, render_template, request, jsonify, current_app
+from datetime import datetime
+import json
+import os
 
-
-logger = logging.getLogger(__name__)
-
+from core.universos import IBEX35, CONTINUO
 from core.contexto_mercado import evaluar_contexto_ibex
-from core.universos import CONTINUO, IBEX35
-from estrategias.posicional.backtest_posicional import ejecutar_backtest_posicional
+from estrategias.posicional.datos_posicional import obtener_datos_semanales, filtrar_universo_posicional
+from estrategias.posicional.sistema_trading_posicional import evaluar_entrada_posicional, evaluar_con_scoring
 from estrategias.posicional.backtest_sistema_posicional import ejecutar_backtest_sistema_completo
-from estrategias.posicional.datos_posicional import obtener_datos_semanales
-from estrategias.posicional.sistema_trading_posicional import evaluar_con_scoring, evaluar_entrada_posicional
-
+from estrategias.posicional.backtest_posicional import ejecutar_backtest_posicional
 
 RESULTADOS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data_cache", "posicional")
 os.makedirs(RESULTADOS_DIR, exist_ok=True)
 
 
 import math
-
 
 def _serializar_analisis(resultado):
     """Convierte todos los valores del resultado a tipos JSON-serializables."""
@@ -77,12 +69,7 @@ posicional_bp = Blueprint("posicional", __name__, url_prefix="/posicional")
 
 @posicional_bp.route("/")
 def index():
-    from estrategias.posicional.config_posicional import (
-        MIN_CAPITALIZACION,
-        MIN_VOLATILIDAD_PCT,
-        MIN_VOLUMEN_MEDIO_DIARIO,
-        RIESGO_POR_TRADE_PCT,
-    )
+    from estrategias.posicional.config_posicional import MIN_VOLATILIDAD_PCT, MIN_VOLUMEN_MEDIO_DIARIO, MIN_CAPITALIZACION, RIESGO_POR_TRADE_PCT
     contexto = {
         "sistema": "posicional",
         "titulo": "Sistema Posicional",
@@ -112,11 +99,17 @@ def analizar():
                            sistema="posicional")
 
 
-@posicional_bp.route("/api/analizar/<ticker>")
+@posicional_bp.route("/api/analizar/<path:ticker>")
 def api_analizar(ticker):
     try:
-        if ticker not in IBEX35 and ticker not in CONTINUO:
-            return jsonify({"success": False, "error": f"{ticker} no está en IBEX 35 ni Mercado Continuo"})
+        # Normalizar: añadir .MC si falta (permite llamar con o sin sufijo)
+        ticker = ticker.strip().upper()
+        if "." not in ticker:
+            ticker += ".MC"
+        from estrategias.posicional.config_posicional import UNIVERSO_POSICIONAL_AMPLIADO
+        universo_valido = list(dict.fromkeys(IBEX35 + CONTINUO + UNIVERSO_POSICIONAL_AMPLIADO))
+        if ticker not in universo_valido:
+            return jsonify({"success": False, "error": f"{ticker} no está en el universo posicional"})
         df, validacion = obtener_datos_semanales(ticker, periodo_años=10, validar=True)
         if df is None:
             return jsonify({"success": False, "error": "No se pudieron obtener datos", "validacion": validacion})
@@ -284,35 +277,19 @@ def historial():
 @posicional_bp.route("/backtest", methods=["GET", "POST"])
 def backtest_sistema():
     if request.method == "POST":
-        from estrategias.posicional.config_posicional import (
-            CONTINUO_GRUPO_1,
-            CONTINUO_GRUPO_2,
-            CONTINUO_GRUPO_3,
-            IBEX_GRUPO_1,
-            IBEX_GRUPO_2,
-            IBEX_GRUPO_3,
-        )
+        from estrategias.posicional.config_posicional import (IBEX_GRUPO_1, IBEX_GRUPO_2, IBEX_GRUPO_3,
+                                     CONTINUO_GRUPO_1, CONTINUO_GRUPO_2, CONTINUO_GRUPO_3)
         grupo   = request.form.get("grupo", "todos")
         mercado = request.form.get("mercado", "ibex")
-
         universos = {
             "ibex":     {"grupo1": IBEX_GRUPO_1, "grupo2": IBEX_GRUPO_2, "grupo3": IBEX_GRUPO_3, "todos": IBEX35},
             "continuo": {"grupo1": CONTINUO_GRUPO_1, "grupo2": CONTINUO_GRUPO_2,
                          "grupo3": CONTINUO_GRUPO_3, "todos": CONTINUO}
         }
         universo  = universos.get(mercado, {}).get(grupo, IBEX35)
-
-        # Log para debug
-        logger.info(f"🎯 Backtest posicional: mercado={mercado}, grupo={grupo}, universo={len(universo)} tickers")
-        logger.info(f"   Tickers: {universo}")
-
-        resultado = ejecutar_backtest_sistema_completo(universo=universo, verbose=True)
+        resultado = ejecutar_backtest_sistema_completo(universo=universo)
         resultado["grupo"]   = grupo
         resultado["mercado"] = mercado
-
-        # Log resultado
-        logger.info(f"✅ Backtest completado: {resultado.get('total_trades', 0)} trades")
-
         return jsonify(resultado)
     return render_template("backtest_posicional.html", resultado=None)
 
@@ -343,25 +320,15 @@ def api_ultimo_backtest():
 @posicional_bp.route("/config")
 def config():
     from estrategias.posicional.config_posicional import (
+        MIN_VOLATILIDAD_PCT, MAX_VOLATILIDAD_PCT,
+        MIN_VOLUMEN_MEDIO_DIARIO, MIN_CAPITALIZACION,
+        RIESGO_POR_TRADE_PCT, RIESGO_MIN_PCT, RIESGO_MAX_PCT,
+        CONSOLIDACION_MIN_SEMANAS, CONSOLIDACION_MAX_SEMANAS, CONSOLIDACION_MAX_RANGO_PCT,
         BREAKOUT_VOLUMEN_MIN_RATIO,
-        CONSOLIDACION_MAX_RANGO_PCT,
-        CONSOLIDACION_MAX_SEMANAS,
-        CONSOLIDACION_MIN_SEMANAS,
-        DISTANCIA_MAX_MM50_PCT,
-        DISTANCIA_MIN_MM50_PCT,
+        DISTANCIA_MIN_MM50_PCT, DISTANCIA_MAX_MM50_PCT,
+        R_PARA_PROTEGER, R_PARA_TRAILING, TRAILING_R_MINIMO,
+        TRAILING_LOOKBACK, TRAILING_LOOKBACK_FINAL,
         DURACION_MINIMA_SEMANAS,
-        MAX_VOLATILIDAD_PCT,
-        MIN_CAPITALIZACION,
-        MIN_VOLATILIDAD_PCT,
-        MIN_VOLUMEN_MEDIO_DIARIO,
-        R_PARA_PROTEGER,
-        R_PARA_TRAILING,
-        RIESGO_MAX_PCT,
-        RIESGO_MIN_PCT,
-        RIESGO_POR_TRADE_PCT,
-        TRAILING_LOOKBACK,
-        TRAILING_LOOKBACK_FINAL,
-        TRAILING_R_MINIMO,
     )
     return render_template("config_posicional.html", titulo="Configuración Sistema Posicional",
                            sistema="posicional", parametros={
@@ -387,41 +354,92 @@ def config():
                            })
 
 
-def _escanear(universo, titulo, nombre_universo):
-    resultados = []
-    for ticker in universo:
-        try:
-            df, _ = obtener_datos_semanales(ticker, periodo_años=10, validar=False)
-            if df is None or len(df) < 50:
-                continue
-            precios   = df["Close"].tolist()
-            volumenes = df["Volume"].tolist() if "Volume" in df.columns else None
-            analisis  = evaluar_entrada_posicional(precios, volumenes, df=df)
-            resultados.append({
-                "ticker": ticker, "nombre": ticker.replace(".MC", ""),
-                "precio": float(df["Close"].iloc[-1]),
-                "decision": analisis.get("decision", "ESPERAR"),
-                "motivo":   ", ".join(analisis.get("motivos", [])),
-                "entrada":  analisis.get("entrada", 0), "stop": analisis.get("stop", 0),
-                "riesgo_pct": analisis.get("riesgo_pct", 0)
+def _escanear(universo, titulo, nombre_universo, con_auditoria=False):
+    """
+    Función interna de escaneo posicional.
+    con_auditoria=True → añade sección de motivos de rechazo al resultado.
+    """
+    from estrategias.posicional.scanner_posicional import ScannerPosicional
+    scanner = ScannerPosicional()
+
+    resultado = scanner.escanear(
+        tickers   = universo,
+        auditoria = con_auditoria,
+    )
+
+    if con_auditoria and isinstance(resultado, dict):
+        señales    = resultado["señales"]
+        watchlist  = resultado.get("watchlist", [])
+        auditoria  = resultado["auditoria"]
+    else:
+        señales    = resultado if isinstance(resultado, list) else resultado.get("señales", [])
+        watchlist  = resultado.get("watchlist", []) if isinstance(resultado, dict) else []
+        auditoria  = None
+
+    # Enriquecer con score para el template (usa evaluar_con_scoring si falta)
+    compras = []
+    for r in señales:
+        compras.append({
+            "ticker":          r["ticker"],
+            "nombre":          r.get("nombre", r["ticker"].replace(".MC", "")),
+            "mercado":         r.get("mercado", "IBEX35"),
+            "precio":          r.get("precio", 0),
+            "decision":        "COMPRA",
+            "motivo":          r.get("motivo", ""),
+            "entrada":         r.get("entrada", 0),
+            "stop":            r.get("stop", 0),
+            "riesgo_pct":      r.get("riesgo_pct", 0),
+            "score":           r.get("score", 0),
+            "fuerza_relativa": r.get("fuerza_relativa", ""),
+            "fr_diferencial":  r.get("fr_diferencial", 0),
+        })
+
+    # Para "en espera" usamos los rechazos del detalle de auditoría (si existe)
+    esperas = []
+    if auditoria and auditoria.get("detalle_rechazos"):
+        for r in auditoria["detalle_rechazos"][:10]:
+            esperas.append({
+                "nombre":  r["ticker"].replace(".MC", ""),
+                "precio":  0,
+                "decision": "NO_OPERAR",
+                "motivo":  " · ".join(r.get("motivos", [])),
             })
-        except Exception as e:
-            print(f"⚠️ Error en {ticker}: {e}")
-    compras = [r for r in resultados if r["decision"] == "COMPRA"]
-    esperas = [r for r in resultados if r["decision"] != "COMPRA"]
-    return render_template("escanear_posicional.html", titulo=titulo, universo=nombre_universo,
-                           total=len(universo), analizados=len(resultados),
-                           compras=compras, esperas=esperas, sistema="posicional")
+
+    return render_template(
+        "escanear_posicional.html",
+        titulo          = titulo,
+        universo        = nombre_universo,
+        total           = len(universo),
+        analizados      = len(universo),
+        compras         = compras,
+        esperas         = esperas,
+        watchlist       = watchlist,
+        auditoria       = auditoria,
+        sistema         = "posicional",
+    )
 
 
 @posicional_bp.route("/escanear/ibex")
 def escanear_ibex():
-    return _escanear(IBEX35, "Escáner IBEX 35", "IBEX 35")
+    return _escanear(IBEX35, "Escáner IBEX 35", "IBEX 35", con_auditoria=True)
 
 
 @posicional_bp.route("/escanear/continuo")
 def escanear_continuo():
-    return _escanear(CONTINUO, "Escáner Mercado Continuo", "Mercado Continuo")
+    from estrategias.posicional.config_posicional import CONTINUO_LIQUIDO
+    return _escanear(CONTINUO_LIQUIDO, "Escáner Continuo Líquido", "Continuo Líquido", con_auditoria=True)
+
+
+@posicional_bp.route("/escanear/ampliado")
+def escanear_ampliado():
+    """Escáner sobre IBEX35 + Continuo Líquido — universo ampliado posicional."""
+    from estrategias.posicional.config_posicional import UNIVERSO_POSICIONAL_AMPLIADO
+    return _escanear(
+        UNIVERSO_POSICIONAL_AMPLIADO,
+        "Escáner Universo Ampliado (IBEX + Continuo Líquido)",
+        "IBEX35 + Continuo Líquido",
+        con_auditoria=True,
+    )
 
 
 def _adaptar_resultado_backtest(resultado_raw):

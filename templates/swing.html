@@ -1739,7 +1739,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     imagen: imagen,
-                    ticker: "{{ ticker }}"
+                    ticker: "{{ ticker }}_SWING"
                 })
             })
             .then(r => r.json())

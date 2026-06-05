@@ -629,7 +629,7 @@
             fetch('/guardar_pantallazo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagen: imagen, ticker: ticker })
+                body: JSON.stringify({ imagen: imagen, ticker: ticker + '_POSICIONAL' })
             })
             .then(r => r.json())
             .then(data => {

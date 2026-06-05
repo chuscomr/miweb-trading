@@ -78,6 +78,15 @@ def obtener_noticias_del_dia() -> list:
     for n in noticias:
         n.pop("ts", None)
 
+    # ─────────────────────────────────────────────────────────
+    # v87.1 — Enriquecer con clasificación de eventos
+    # ─────────────────────────────────────────────────────────
+    try:
+        from .clasificador_eventos import enriquecer_noticias
+        noticias = enriquecer_noticias(noticias)
+    except Exception as e:
+        print(f"[noticias] Error en clasificación: {e}")
+
     print(f"[noticias] Total tras filtro hoy/ayer: {len(noticias)}")
     return noticias
 

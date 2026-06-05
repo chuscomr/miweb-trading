@@ -1,0 +1,103 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: FER.MC
+Fecha: 2026-05-12
+Hora: 15:03:03
+
+## Análisis Técnico Detallado de FER.MC
+
+### 1. **Patrones Chartistas Detectados**
+
+**Patrón Principal: Canal Alcista Amplio**
+- **Formación**: Desde agosto 2025 hasta mayo 2026, el precio se desarrolla dentro de un canal alcista bien definido
+- **Soporte dinámico**: Línea ascendente desde los ~46€ (agosto) hasta ~54€ (mayo)
+- **Resistencia dinámica**: Línea superior desde ~47.5€ hasta ~63.5€
+- **Características**: Canal con pendiente pronunciada (~30°), indicando tendencia alcista fuerte
+
+**Patrón Secundario: Triángulo Ascendente (Marzo-Abril 2026)**
+- **Formación**: Entre ~55€-58€, con resistencia horizontal en ~58€ y soporte ascendente
+- **Resolución**: Ruptura alcista hacia los máximos de ~63.5€
+- **Volumen**: Aparente incremento en la ruptura (visible en las velas)
+
+**Formación de Doble Techo (Abril-Mayo 2026)**
+- **Picos**: Primer máximo ~63.5€ (abril), segundo máximo ~63.2€ (mayo)
+- **Valle intermedio**: ~59€
+- **Estado**: Patrón en formación, pendiente de confirmación con ruptura del soporte en ~59€
+
+### 2. **Análisis de Contexto**
+
+**Tendencia General**: **Alcista Fuerte**
+- Movimiento desde ~46€ hasta ~63.5€ (+38% aproximadamente)
+- Estructura de máximos y mínimos ascendentes bien definida
+- Tres impulsos alcistas principales claramente identificables
+
+**Momentum**: 
+- **Fuerte** en la primera fase (agosto-octubre 2025)
+- **Moderado** en fase de consolidación (octubre 2025-febrero 2026)
+- **Renovado** en el impulso final (marzo-abril 2026)
+- **Debilitándose** en la zona actual (mayo 2026)
+
+**Zonas Clave**:
+- **Resistencia Principal**: 63.00-63.50€ (zona de doble techo)
+- **Soporte Crítico**: 59.00€ (valle del doble techo)
+- **Soporte Fuerte**: 55.00-55.50€ (zona de consolidación previa)
+- **Soporte del Canal**: ~54€ (línea de tendencia alcista)
+
+### 3. **Señales Técnicas**
+
+**Observaciones Técnicas**:
+- **Velas**: Presencia de velas con sombras largas superiores en los máximos, indicando rechazo
+- **Patrón de Velas**: Formación de doji y velas indecisas en la zona de resistencia
+- **Estructura**: Pérdida progresiva de momentum en cada test de resistencia
+
+**Confluencias Importantes**:
+- **63.00-63.50€**: Confluencia de resistencia psicológica, máximos históricos del período y techo del canal
+- **59.00€**: Confluencia de soporte horizontal y zona de retroceso del 38.2% Fibonacci
+
+### 4. **Escenarios Probables**
+
+**Escenario Bajista (60% probabilidad)**:
+- **Trigger**: Ruptura confirmada bajo 59.00€ con volumen
+- **Objetivo 1**: 55.00-55.50€ (soporte horizontal previo)
+- **Objetivo 2**: 52.00€ (soporte del canal alcista)
+- **Contexto**: Confirmación del doble techo y corrección dentro del canal alcista
+
+**Escenario Alcista (40% probabilidad)**:
+- **Trigger**: Ruptura decisiva sobre 63.50€ con volumen elevado
+- **Objetivo 1**: 66.00€ (proyección del canal)
+- **Objetivo 2**: 68.00€ (extensión 1.618 Fibonacci)
+- **Contexto**: Continuación de la tendencia alcista principal
+
+### 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**Recomendacionesde Trading**
+
+**Setup Bajista (Preferido)**:
+- **Entrada**: Venta en ruptura bajo 58.80€ con confirmación
+- **Stop Loss**: 60.50€ (por encima del valle del doble techo)
+- **Take Profit 1**: 55.50€ (R:R 1:2)
+- **Take Profit 2**: 52.00€ (R:R 1:4)
+
+**Setup Alcista (Alternativo)**:
+- **Entrada**: Compra en ruptura sobre 63.60€
+- **Stop Loss**: 61.50€ (bajo el segundo máximo del doble techo)
+- **Take Profit 1**: 66.50€ (R:R 1:1.4)
+- **Take Profit 2**: 69.00€ (R:R 1:2.6)
+
+**Gestión de Riesgo**:
+- **Posición máxima**: 2% del capital por operación
+- **Confirmación**: Esperar cierre de vela diaria para confirmar rupturas
+- **Trailing Stop**: Activar tras alcanzar el primer objetivo
+- **Invalidación**: Revisar análisis si el precio rompe el canal alcista por abajo de 51€
+
+**Zona de Espera**: Entre 59€-63€ el riesgo/beneficio no es favorable. Recomiendo esperar definición clara de la estructura.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

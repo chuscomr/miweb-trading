@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: IAG.MC
+Fecha: 2026-05-20
+Hora: 18:37:59
+
+# Análisis Técnico Completo - IAG.MC
+**Período:** 14.05.25 - 20.05.26 | **Rango:** 3.41€ - 5.37€
+
+---
+
+## 1. **Patrones Chartistas Detectados**
+
+**Patrón Principal: Canal Alcista Amplio**
+- **Tipo:** Canal ascendente de largo plazo (continuación alcista)
+- **Calidad:** Claro/Fuerte
+- **Coordenadas:** 
+  - Soporte inferior: desde 3.45€ (mayo 2025) hasta 3.85€ (abril 2026)
+  - Resistencia superior: desde 4.75€ (octubre 2025) hasta 5.35€ (febrero 2026)
+- **Estado:** Completado y actualmente en proceso de ruptura bajista
+- **Implicaciones:** La pérdida del soporte del canal señala debilidad estructural importante
+
+**Patrón Secundario: Doble Techo**
+- **Tipo:** Formación de reversión bajista
+- **Calidad:** Claro
+- **Coordenadas:** 
+  - Primer techo: **5.37€** (febrero 2026)
+  - Segundo techo: **5.32€** (abril 2026)
+  - Línea de cuello: **4.75€**
+- **Estado:** Activado tras ruptura de línea de cuello
+- **Implicaciones:** Objetivo técnico en **4.13€** (proyección de altura del patrón)
+
+**Patrón Emergente: Bandera Bajista**
+- **Tipo:** Continuación bajista (en formación)
+- **Calidad:** Débil/En desarrollo
+- **Coordenadas:** Desde máximos de abril 2026 (**5.32€**) hasta niveles actuales
+- **Estado:** En formación
+- **Implicaciones:** Si se confirma, aceleraría la caída hacia **3.80€**
+
+---
+
+## 2. **Análisis de Contexto**
+
+**Tendencia Global:**
+- **Dirección:** Bajista de corto plazo dentro de tendencia alcista de largo plazo (ROTA)
+- **Fuerza:** Moderada a fuerte (ruptura limpia del canal)
+- **Estructura:** Máximos decrecientes desde febrero 2026, mínimos aún por confirmar
+- **Fase del ciclo:** Transición de distribución a markdown inicial
+
+**Momentum y Fuerza:**
+- **RSI:** ~45 (zona neutral, descendiendo desde sobrecompra)
+- **Divergencia crítica:** RSI mostró divergencia bajista en abril 2026 (precio hizo máximo similar pero RSI más bajo)
+- **Velocidad:** Movimiento acelerado a la baja tras ruptura, ahora consolidando
+
+**Zonas Críticas:**
+
+**Soportes (de menor a mayor):**
+1. **4.20€** - Fuerte (soporte horizontal histórico con múltiples toques)
+2. **4.35€** - Medio (zona de consolidación previa)
+3. **4.50€** - Débil (nivel psicológico, poco historial)
+
+**Resistencias (de menor a mayor):**
+1. **4.75€** - Fuerte (ex-soporte del canal + línea de cuello del doble techo)
+2. **5.00€** - Medio (nivel psicológico + MM50 aproximada)
+3. **5.20€** - Fuerte (zona de congestión previa)
+4. **5.37€** - Muy fuerte (máximo histórico del período)
+
+**Volumen:**
+- **Comportamiento:** Picos significativos en rupturas bajistas (confirma validez)
+- **Distribución:** Alto volumen en **5.30€-5.35€** (febrero-abril 2026) = distribución institucional
+- **Divergencia:** Últimos rebotes con volumen decreciente = debilidad compradora
+
+---
+
+## 3. **Señales Técnicas Avanzadas**
+
+**Medias Móviles:**
+- **MM20:** Actuando como resistencia dinámica en **4.65€**
+- **MM50:** Resistencia fuerte en **4.90€** 
+- **MM200:** Soporte crítico de largo plazo en **4.10€**
+- **Relación actual:** Precio por debajo de MM20 y MM50 (configuración bajista)
+
+**Confluencias Críticas:**
+- **4.20€** = MM200 + soporte horizontal histórico + objetivo Fibonacci 61.8% → **ZONA MUY CRÍTICA**
+- **4.75€** = MM50 + línea de cuello doble techo + soporte roto del canal → **RESISTENCIA CLAVE**
+- **4.00€** = Soporte psicológico + extensión 100% Fibonacci → **Objetivo bajista extremo**
+
+**Indicadores Complementarios:**
+- **MACD:** Cruce bajista confirmado, histograma expandiéndose a la baja
+- **ADX:** ~28 (tendencia bajista definida pero no extrema)
+- **Bollinger Bands:** Precio rompió banda inferior, sugiere continuación bajista
+
+**Divergencias Confirmadas:**
+- **RSI vs Precio (abril 2026):** Precio en 5.32€ vs precio febrero en 5.37€, pero RSI abril < RSI febrero
+- **Volumen vs Precio:** Rebotes recientes sin convicción de volumen
+
+---
+
+## 4. **Escenarios Probables**
+
+**Escenario Bajista (Probabilidad: 70%):**
+- **Desarrollo:** Continuación hacia **4.20€** con pausas menores en **4.35€**
+- **Objetivos:**
+  - TP1: **4.35€** (soporte técnico intermedio)
+  - TP2: **4.20€** (confluencia crítica MM200)
+  - TP3: **4.00€** (extensión completa + soporte psicológico)
+- **Activación:** Pérdida sostenida de **4.50€**
+- **Invalidación:** Recuperación por encima de **4.75€** con volumen
+
+**Escenario Alcista (Probabilidad: 30%):**
+- **Desarrollo:** Rebote técnico desde **4.20€** hacia **4.75€-5.00€**
+- **Objetivos:**
+  - TP1: **4.75€** (test de resistencia clave)
+  - TP2: **5.00€** (nivel psicológico)
+- **Activación:** Rebote con volumen desde **4.20€-4.25€**
+- **Invalidación:** Pérdida de **4.00€**
+
+**Niveles Decisivos:**
+1. **4.50€** - Último soporte antes de aceleración bajista
+2. **4.20€** - Soporte crítico de largo plazo (make or break)
+3. **4.75€** - Resistencia clave para cualquier rebote
+4. **4.00€** - Soporte psicológico extremo
+5. **5.00€** - Confirmación de reversión alcista
+
+---
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+**Setup Bajista (PREFERIDO - 70% confianza):**
+- **Entrada:** **4.48€** en ruptura bajista con cierre por debajo
+- **Stop Loss:** **4.78€** (riesgo: 30 céntimos, 6.7%)
+- **Take Profit 1:** **4.20€** (R:R 1:1) - confluencia MM200
+- **Take Profit 2:** **4.00€** (R:R 1.6:1) - extensión completa
+- **Tamaño posición:** 2% del capital máximo
+- **Confirmaciones:** Cierre diario < 4.48€ + volumen > media 20 días
+
+**Setup Alcista (Contrarian - Solo en rebote):**
+- **Entrada:** **4.22€** EN REBOTE con martillo/doji + volumen
+- **Stop Loss:** **3.95€** (riesgo: 27 céntimos)
+- **Take Profit:** **4.70€** (R:R 1.8:1)
+- **Condición CRÍTICA:** Solo entrar con señal clara de reversión (martillo, divergencia alcista RSI)
+- **Confirmaciones:** Volumen 2x superior a media + cierre en máximos de sesión
+
+**⚠️ ALERTA BEAR TRAP POTENCIAL:**
+El nivel **4.20€** podría generar una ruptura falsa bajista antes de rebote. Vigilar reacción del volumen.
+
+**Gestión de Riesgo:**
+- **Posición máxima:** 2% capital (alta volatilidad esperada)
+- **Stop tipo:** Fijo inicial, luego trailing cada 10 céntimos de beneficio
+- **Gestión multi-nivel:** Reducir 50% posición en TP1, resto a breakeven
+- **Si va contra ti:** Respetar stop religiosamente - patrón bajista muy claro
+
+**CONCLUSIÓN:** La ruptura bajista del canal alcista y confirmación del doble techo presentan una oportunidad bajista de alta probabilidad hacia **4.20€**. El setup bajista es técnicamente superior y debe ser prioritario.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

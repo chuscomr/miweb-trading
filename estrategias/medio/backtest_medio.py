@@ -2,18 +2,17 @@
 # Motor de backtest semanal con gestión completa INICIAL → PROTEGIDO → TRAILING
 
 import numpy as np
+
 from estrategias.medio.config_medio import (
-    MIN_SEMANAS_HISTORICO, calcular_parametros_adaptativos,
-    VOL_MIN_PCT, REQUIERE_GIRO_SEMANAL,
+    MIN_SEMANAS_HISTORICO,
+    VOL_MIN_PCT,
 )
 from estrategias.medio.gestion_medio import PosicionMedioPlazo
 from estrategias.medio.logica_medio import (
-    detectar_tendencia_semanal,
-    detectar_pullback,
-    detectar_giro_semanal,
     calcular_stop_inicial,
     calcular_volatilidad,
-    validar_riesgo,
+    detectar_pullback,
+    detectar_tendencia_semanal,
 )
 
 
@@ -41,7 +40,6 @@ def _evaluar_entrada(df_hasta_ahora):
         return {"decision": "NO_OPERAR"}
 
     # 1. Tendencia macro: MM20↑ + MM50 > MM200
-    from estrategias.medio.logica_medio import detectar_tendencia_semanal
     tendencia = detectar_tendencia_semanal(precios)
     if tendencia.get("tendencia") != "ALCISTA":
         return {"decision": "NO_OPERAR"}
@@ -116,8 +114,8 @@ def _calcular_benchmark_ibex(df_semanal):
     Permite comparar el sistema contra el benchmark de referencia.
     """
     try:
-        import yfinance as yf
         import pandas as pd
+        import yfinance as yf
 
         fecha_ini = df_semanal.index[MIN_SEMANAS_HISTORICO]
         fecha_fin = df_semanal.index[-1]

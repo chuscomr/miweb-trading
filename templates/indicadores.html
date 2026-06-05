@@ -1694,7 +1694,8 @@
         const btnSelectAll = document.getElementById('btn-select-all');
         const btnDeselectAll = document.getElementById('btn-deselect-all');
         
-        let selectedIndicadores = [];
+        // Array global para que grafico.js pueda acceder
+        window.window.selectedIndicadores = [];
         
         // Toggle dropdown
         display.addEventListener('click', function(e) {
@@ -1721,11 +1722,11 @@
             option.addEventListener('click', function() {
                 const value = this.getAttribute('data-value');
                 
-                if (selectedIndicadores.includes(value)) {
-                    selectedIndicadores = selectedIndicadores.filter(v => v !== value);
+                if (window.selectedIndicadores.includes(value)) {
+                    window.selectedIndicadores = window.selectedIndicadores.filter(v => v !== value);
                     this.classList.remove('selected');
                 } else {
-                    selectedIndicadores.push(value);
+                    window.selectedIndicadores.push(value);
                     this.classList.add('selected');
                 }
                 
@@ -1736,10 +1737,10 @@
         
         // Seleccionar todos
         btnSelectAll.addEventListener('click', function() {
-            selectedIndicadores = [];
+            window.selectedIndicadores = [];
             options.forEach(option => {
                 const value = option.getAttribute('data-value');
-                selectedIndicadores.push(value);
+                window.selectedIndicadores.push(value);
                 option.classList.add('selected');
             });
             updateDisplay();
@@ -1748,7 +1749,7 @@
         
         // Deseleccionar todos
         btnDeselectAll.addEventListener('click', function() {
-            selectedIndicadores = [];
+            window.selectedIndicadores = [];
             options.forEach(option => {
                 option.classList.remove('selected');
             });
@@ -1760,10 +1761,10 @@
         function updateDisplay() {
             selectedContainer.innerHTML = '';
             
-            if (selectedIndicadores.length === 0) {
+            if (window.selectedIndicadores.length === 0) {
                 selectedContainer.innerHTML = '<span class="indicadores-placeholder">Seleccionar indicadores...</span>';
             } else {
-                selectedIndicadores.forEach(value => {
+                window.selectedIndicadores.forEach(value => {
                     const tag = document.createElement('span');
                     tag.className = 'indicador-tag';
                     tag.innerHTML = `${value} <span class="indicador-tag-remove" data-value="${value}">×</span>`;
@@ -1772,7 +1773,7 @@
                     tag.querySelector('.indicador-tag-remove').addEventListener('click', function(e) {
                         e.stopPropagation();
                         const val = this.getAttribute('data-value');
-                        selectedIndicadores = selectedIndicadores.filter(v => v !== val);
+                        window.selectedIndicadores = window.selectedIndicadores.filter(v => v !== val);
                         
                         options.forEach(opt => {
                             if (opt.getAttribute('data-value') === val) {
@@ -1786,7 +1787,7 @@
                 });
             }
             
-            countEl.textContent = `(${selectedIndicadores.length})`;
+            countEl.textContent = `(${window.selectedIndicadores.length})`;
         }
         
         // Actualizar gráfico (función que ya existe en tu código)
@@ -1798,7 +1799,7 @@
             checkboxes.forEach(cb => cb.checked = false);
             
             // Marcar solo los seleccionados
-            selectedIndicadores.forEach(value => {
+            window.selectedIndicadores.forEach(value => {
                 checkboxes.forEach(cb => {
                     if (cb.value === value) {
                         cb.checked = true;
@@ -1815,7 +1816,7 @@
         // Inicializar sin ningún indicador seleccionado por defecto
         const defaultIndicators = [];
         defaultIndicators.forEach(value => {
-            selectedIndicadores.push(value);
+            window.selectedIndicadores.push(value);
             options.forEach(opt => {
                 if (opt.getAttribute('data-value') === value) {
                     opt.classList.add('selected');
@@ -1826,7 +1827,7 @@
         
         // Hacer disponible globalmente para otras funciones
         window.getSelectedIndicadores = function() {
-            return selectedIndicadores;
+            return window.selectedIndicadores;
         };
     })();
     </script>

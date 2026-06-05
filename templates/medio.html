@@ -726,7 +726,7 @@ function guardarPantallazo() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 imagen: imagen,
-                ticker: document.querySelector('select[name="ticker"]')?.value || "medio"
+                ticker: ("{{ resultado.ticker if resultado else '' }}" || document.querySelector('select[name="ticker"]')?.value || "pantallazo") + "_MEDIO"
             })
         })
         .then(r => r.json())

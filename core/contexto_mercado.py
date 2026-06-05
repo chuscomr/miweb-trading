@@ -176,3 +176,24 @@ def multiplicador_score_mercado(cache=None) -> float:
         ESTADO_TRANSICION: 0.85,
         ESTADO_BAJISTA:    0.7,
     }.get(ctx["estado"], 0.85)
+
+
+# ─────────────────────────────────────────────────────────────
+# EVENTOS CORPORATIVOS (v86)
+# ─────────────────────────────────────────────────────────────
+
+def obtener_eventos_ticker(ticker: str, dias_adelante: int = 3) -> dict:
+    """
+    Obtiene eventos próximos del ticker (dividendos, earnings, etc).
+    
+    Args:
+        ticker: Ticker a consultar (ej: "TEF.MC")
+        dias_adelante: Ventana de días hacia adelante
+    
+    Returns:
+        dict con estructura de CalendarioEventos.eventos_proximos()
+    """
+    from .calendario_eventos import get_calendario
+    
+    calendario = get_calendario()
+    return calendario.eventos_proximos(ticker, dias_adelante=dias_adelante)

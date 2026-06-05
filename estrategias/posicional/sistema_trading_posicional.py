@@ -3,19 +3,19 @@
 # Evaluador completo de señales de entrada
 # ==========================================================
 
-import numpy as np
 import yfinance as yf
-
+import pandas as pd
+import numpy as np
 
 # Imports flexibles
 try:
+    from .logica_posicional import *
     from .config_posicional import *
     from .datos_posicional import obtener_precio_tiempo_real
-    from .logica_posicional import *
 except ImportError:
+    from logica_posicional import *
     from config_posicional import *
     from datos_posicional import obtener_precio_tiempo_real
-    from logica_posicional import *
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -44,24 +44,24 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
     """
     motivos_rechazo = []
     detalles = {}
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # VALIDACIONES PREVIAS
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     if precios is None or len(precios) < MIN_SEMANAS_HISTORICO:
         return {
             "decision": "NO_OPERAR",
             "motivos": [f"Histórico insuficiente (<{MIN_SEMANAS_HISTORICO} semanas)"],
             "detalles": {}
         }
-
+    
     precio_actual = precios[-1]
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 🚨 FILTRO CRÍTICO: MERCADO ALCISTA IBEX
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     if usar_filtro_mercado:
         try:
             import pandas as pd
@@ -101,13 +101,13 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
                     }
         except Exception as e:
             print(f"⚠️ Advertencia: No se pudo verificar mercado IBEX ({e}). Continuando análisis...")
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FILTRO 1: TENDENCIA ALCISTA FUERTE
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     analisis_tendencia = detectar_tendencia_largo_plazo(precios, df)
     cond_tend = analisis_tendencia.get("condiciones", {})
     detalles.update({
@@ -122,7 +122,7 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
         "pendiente_positiva":   cond_tend.get("pendiente_positiva", False),
         "no_sobreextendido":    cond_tend.get("no_sobreextendido", True),
     })
-
+    
     if not analisis_tendencia.get("cumple_criterios", False):
         if analisis_tendencia["tendencia"] != "ALCISTA":
             motivos_rechazo.append(f"Tendencia {analisis_tendencia['tendencia'].lower()}")
@@ -138,11 +138,11 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
         if not condiciones.get("no_sobreextendido"):
             dist = detalles.get("distancia_mm50_pct", 0)
             detalles["aviso_sobreextendido"] = f"Precio {dist:.1f}% sobre MM50 — entrada con precaución"
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FILTRO 2: CONSOLIDACIÓN PREVIA
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     # Buscar la MEJOR consolidación (no la primera)
     # Score interno: semanas largas + rango estrecho + posición alta en rango
     consolidacion_encontrada = False
@@ -162,7 +162,7 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
                 mejor_score_consol = s
                 mejor_consolidacion = analisis_consol
                 consolidacion_encontrada = True
-
+    
     if mejor_consolidacion:
         detalles.update({
             "consolidacion": True,
@@ -173,25 +173,25 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
     else:
         detalles["consolidacion"] = False
         # No es requisito estricto, pero resta puntos
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FILTRO 3: BREAKOUT DE MÁXIMOS
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     analisis_breakout = detectar_breakout(precios, volumenes, lookback=26)
     detalles.update({
         "breakout": analisis_breakout["hay_breakout"],
         "breakout_distancia_pct": round(analisis_breakout.get("distancia_breakout_pct", 0), 2),
         "breakout_volumen_ratio": round(analisis_breakout.get("ratio_volumen", 1), 2)
     })
-
+    
     if not analisis_breakout["hay_breakout"]:
         motivos_rechazo.append("Sin breakout de máximos")
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # FILTRO 4: VOLATILIDAD SUFICIENTE
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     volatilidad = calcular_volatilidad(precios, periodo=52)
     detalles["volatilidad_pct"] = round(volatilidad, 1) if volatilidad else None
 
@@ -199,18 +199,18 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
         motivos_rechazo.append(f"Volatilidad baja ({volatilidad:.1f}%)")
     if volatilidad and volatilidad > MAX_VOLATILIDAD_PCT:
         motivos_rechazo.append(f"Volatilidad excesiva ({volatilidad:.1f}% > {MAX_VOLATILIDAD_PCT}%)")
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # SI HAY RECHAZOS → NO OPERAR
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     if motivos_rechazo:
         return {
             "decision": "NO_OPERAR",
             "motivos": motivos_rechazo,
             "detalles": detalles
         }
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # CALCULAR TRIGGER DE ENTRADA Y STOP
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -231,36 +231,36 @@ def evaluar_entrada_posicional(precios, volumenes=None, fechas=None, df=None, us
     detalles["maximo_26"]  = round(maximo_26, 4)
 
     stop = calcular_stop_inicial(entrada, precios, df)
-
+    
     # Validar riesgo
     validacion_riesgo = validar_riesgo(entrada, stop)
     detalles.update({
         "riesgo_pct": round(validacion_riesgo["riesgo_pct"], 2)
     })
-
+    
     if not validacion_riesgo["riesgo_valido"]:
         return {
             "decision": "NO_OPERAR",
             "motivos": [validacion_riesgo["motivo"]],
             "detalles": detalles
         }
-
+    
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # ✅ SEÑAL DE COMPRA
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+    
     motivos_compra = [
         "Tendencia alcista fuerte",
         f"Breakout confirmado (+{detalles['breakout_distancia_pct']}%)",
         f"Trigger entrada: {trigger:.2f}€ (máx. 26sem {maximo_26:.2f}€ +0.1%)"
     ]
-
+    
     if mejor_consolidacion:
         motivos_compra.append(f"Consolidación previa ({mejor_consolidacion['semanas_consolidacion']} semanas)")
-
+    
     if analisis_breakout.get("volumen_confirma"):
         motivos_compra.append(f"Volumen confirmación ({detalles['breakout_volumen_ratio']:.1f}x)")
-
+    
     return {
         "decision": "COMPRA",
         "trigger":  round(trigger, 2),
@@ -287,64 +287,6 @@ def calcular_fuerza_relativa_pos(precios_ticker, precios_ibex, semanas=26):
     elif diff >= -5:  cat = "NEUTRAL"
     else:             cat = "DÉBIL"
     return diff, cat
-
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 🎯 CLASIFICACIÓN UNIFICADA (v82.3)
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-def clasificar_setup_posicional(score_0_100, valido_criticos=True):
-    """
-    Clasificación unificada del setup.
-    
-    MEJORA v82.3: Score es la única fuente de verdad para clasificación.
-    Elimina doble criterio (criticos + score umbral).
-    
-    Args:
-        score_0_100: Score calculado (0-100)
-        valido_criticos: ¿Pasó validaciones críticas? (tendencia, etc)
-    
-    Returns:
-        dict con decision, clasificacion, motivo
-    
-    LÓGICA UNIFICADA:
-    ├─ Score >= 80 (EXCELENTE): COMPRA fuerte
-    ├─ Score 65-79 (BUENO): COMPRA
-    ├─ Score 50-64 (MEDIOCRE): VIGILAR (si criticos ok)
-    ├─ Score < 50 (DÉBIL): NO_OPERAR
-    └─ Si criticos invalidan: SIEMPRE NO_OPERAR (antes score)
-    """
-    if not valido_criticos:
-        return {
-            "decision": "NO_OPERAR",
-            "clasificacion": "RECHAZADO",
-            "motivo": "Criterios técnicos no cumplidos",
-        }
-
-    # Clasificación por score
-    if score_0_100 >= 80:
-        clasificacion = "EXCELENTE"
-        decision = "COMPRA"
-        motivo = f"Setup excelente ({score_0_100}/100) — compra con confianza"
-    elif score_0_100 >= 65:
-        clasificacion = "BUENO"
-        decision = "COMPRA"
-        motivo = f"Setup bueno ({score_0_100}/100) — compra recomendada"
-    elif score_0_100 >= 50:
-        clasificacion = "MEDIOCRE"
-        decision = "VIGILAR"
-        motivo = f"Setup mediocre ({score_0_100}/100) — vigilar para mejores entradas"
-    else:
-        clasificacion = "DÉBIL"
-        decision = "NO_OPERAR"
-        motivo = f"Setup débil ({score_0_100}/100) — no cumple estándares mínimos"
-
-    return {
-        "decision": decision,
-        "clasificacion": clasificacion,
-        "motivo": motivo,
-        "score": score_0_100,
-    }
 
 
 def calcular_score_posicional(detalles, fr_diff=0, fr_cat="SIN_DATOS"):
@@ -479,10 +421,6 @@ def evaluar_con_scoring(precios, volumenes=None, fechas=None, df=None,
     """
     Evaluador con score 0-100 (nuevo sistema).
     Incluye fuerza relativa si se pasa precios_ibex semanal.
-    
-    MEJORA v82.3: Clasificación unificada
-    - Score es la ÚNICA fuente de verdad para decisión
-    - Elimina doble criterio (criticos + umbral)
     """
     resultado = evaluar_entrada_posicional(precios, volumenes, fechas, df)
     detalles  = resultado.get("detalles", {})
@@ -499,22 +437,16 @@ def evaluar_con_scoring(precios, volumenes=None, fechas=None, df=None,
 
     resultado["setup_score"]    = score
     resultado["setup_max"]      = max_score
+    resultado["clasificacion"]  = clasificacion
     resultado["score_desglose"] = desglose
 
-    # MEJORA v82.3: Clasificación unificada
-    # Score es la ÚNICA fuente de verdad, no doble criterio
-    valido_criticos = resultado.get("decision") == "COMPRA"
-    clasificacion_unif = clasificar_setup_posicional(score, valido_criticos)
-
-    # Actualizar decisión y clasificación según scoring unificado
-    resultado["decision"]       = clasificacion_unif["decision"]
-    resultado["clasificacion"]  = clasificacion_unif["clasificacion"]
-    # Preservar motivos originales pero agregar nuevo motivo de score
-    motivos_orig = resultado.get("motivos", [])
-    if motivos_orig and isinstance(motivos_orig, list):
-        resultado["motivos"] = motivos_orig + [clasificacion_unif["motivo"]]
-    else:
-        resultado["motivos"] = [clasificacion_unif["motivo"]]
+    # Umbral: solo COMPRA si score >= 60
+    if resultado["decision"] == "COMPRA" and score < 60:
+        resultado["decision"]      = "NO_OPERAR"
+        resultado["clasificacion"] = "DÉBIL"
+        # Preservar motivos originales + añadir score como contexto
+        motivos_orig = resultado.get("motivos", [])
+        resultado["motivos"] = motivos_orig + [f"Score insuficiente ({score}/100)"]
 
     # Preservar campos esperados por generar_reporte_completo
     if "entrada" not in resultado: resultado["entrada"]    = 0
@@ -541,10 +473,10 @@ def generar_reporte_completo(ticker, precios, volumenes=None, fechas=None, df=No
         dict con toda la información formateada
     """
     resultado = evaluar_con_scoring(precios, volumenes, fechas, df)
-
+    
     # ─── Precio en tiempo real ────────────────────────────────
     precio_rt = obtener_precio_tiempo_real(ticker)
-
+    
     if precio_rt:
         precio_mostrar   = precio_rt['precio']
         precio_hora      = precio_rt['hora']
@@ -559,7 +491,7 @@ def generar_reporte_completo(ticker, precios, volumenes=None, fechas=None, df=No
         precio_variacion = 0.0
         precio_anterior  = precio_mostrar
         precio_fuente    = 'semanal'
-
+    
     score       = resultado.get("setup_score", 0)
     score_max   = resultado.get("setup_max", 100)
     clasificacion = resultado.get("clasificacion", "N/A")
@@ -591,7 +523,7 @@ def generar_reporte_completo(ticker, precios, volumenes=None, fechas=None, df=No
         "fuerza_relativa":   fr_cat,
         "fr_diferencial":    fr_diff,
     }
-
+    
     # Si hay señal de compra
     if resultado["decision"] == "COMPRA":
         reporte.update({
@@ -603,11 +535,11 @@ def generar_reporte_completo(ticker, precios, volumenes=None, fechas=None, df=No
             "duracion_estimada": "6-24 meses",
             "maximo_26":         resultado.get("detalles", {}).get("maximo_26", 0),
         })
-
+    
     # Detalles técnicos
     reporte["detalles"] = resultado.get("detalles", {})
     reporte["motivos"]  = resultado.get("motivos", [])
-
+    
     return reporte
 
 
@@ -618,56 +550,56 @@ def generar_reporte_completo(ticker, precios, volumenes=None, fechas=None, df=No
 if __name__ == "__main__":
     print("🧪 Test sistema_trading_posicional.py")
     print("=" * 60)
-
+    
     # Simular tendencia alcista con consolidación y breakout
     import numpy as np
-
+    
     # 200 semanas tendencia alcista
     base = [100 + i*0.8 for i in range(200)]
-
+    
     # 26 semanas consolidando
     consolidacion = [base[-1] + np.random.uniform(-3, 3) for _ in range(26)]
-
+    
     # Breakout
     breakout = [consolidacion[-1] + i*2 for i in range(5)]
-
+    
     precios_test = base + consolidacion + breakout
     volumenes_test = [1000000 + np.random.uniform(-200000, 400000) for _ in range(len(precios_test))]
     # Volumen mayor en breakout
     volumenes_test[-5:] = [v * 2 for v in volumenes_test[-5:]]
-
-    print("\n📊 Datos simulados:")
+    
+    print(f"\n📊 Datos simulados:")
     print(f"   Total semanas: {len(precios_test)}")
     print(f"   Precio actual: {precios_test[-1]:.2f}")
     print(f"   Precio hace 26 semanas: {precios_test[-26]:.2f}")
     print(f"   Precio hace 200 semanas: {precios_test[-200]:.2f}")
-
-    print("\n🔍 Evaluando señal...")
+    
+    print(f"\n🔍 Evaluando señal...")
     resultado = evaluar_entrada_posicional(precios_test, volumenes_test)
-
-    print("\n🎯 RESULTADO:")
+    
+    print(f"\n🎯 RESULTADO:")
     print(f"   Decisión: {resultado['decision']}")
-
+    
     if resultado['decision'] == 'COMPRA':
         print(f"   Entrada: {resultado['entrada']:.2f}")
         print(f"   Stop: {resultado['stop']:.2f}")
         print(f"   Riesgo: {resultado['riesgo_pct']:.1f}%")
-        print("\n   Motivos:")
+        print(f"\n   Motivos:")
         for motivo in resultado['motivos']:
             print(f"   ✓ {motivo}")
     else:
-        print("\n   Motivos rechazo:")
+        print(f"\n   Motivos rechazo:")
         for motivo in resultado['motivos']:
             print(f"   ✗ {motivo}")
-
-    print("\n📋 Detalles:")
+    
+    print(f"\n📋 Detalles:")
     for k, v in resultado.get('detalles', {}).items():
         print(f"   {k}: {v}")
-
+    
     # Test scoring
-    print("\n📊 Test con scoring:")
+    print(f"\n📊 Test con scoring:")
     resultado_scoring = evaluar_con_scoring(precios_test, volumenes_test)
     print(f"   Score: {resultado_scoring['setup_score']}/{resultado_scoring['setup_max']}")
     print(f"   Clasificación: {resultado_scoring['clasificacion']}")
-
+    
     print("\n" + "=" * 60)

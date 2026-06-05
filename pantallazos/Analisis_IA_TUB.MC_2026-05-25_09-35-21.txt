@@ -1,0 +1,187 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: TUB.MC
+Fecha: 2026-05-25
+Hora: 09:35:21
+
+# 📊 ANÁLISIS TÉCNICO COMPLETO - TUB.MC
+**Período Analizado:** 20.04.26 - 25.05.26 | **Rango:** 2.7458€ - 3.0665€
+
+---
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Patrón Principal: Canal Descendente** 
+- **Tipo:** Cuña descendente (continuación bajista) - **Calidad:** Clara/Fuerte
+- **Coordenadas:** 
+  * Resistencia superior: desde **3.0665€** (20.04.26) hasta **2.98€** (25.05.26)
+  * Soporte inferior: desde **2.85€** (22.04.26) hasta **2.7458€** (25.05.26)
+- **Estado:** Completado y activado a la baja
+- **Implicación:** Continuación bajista con objetivo técnico en **2.65-2.70€**
+
+### **Patrón Secundario: Doble Techo**
+- **Tipo:** Patrón de reversión - **Calidad:** Moderada
+- **Coordenadas:** 
+  * Primer techo: **3.0665€** (20.04.26)
+  * Segundo techo: **3.04€** (23.04.26)
+  * Neckline: **2.85€**
+- **Estado:** Activado tras ruptura del soporte
+- **Implicación:** Objetivo mínimo en **2.63€** (proyección técnica)
+
+### **Formación Reciente: Martillo Invertido**
+- **Tipo:** Patrón de continuación bajista - **Calidad:** Débil
+- **Coordenadas:** **2.76€** (24.05.26)
+- **Estado:** Requiere confirmación bajista
+- **Implicación:** Posible continuación hacia **2.65€**
+
+---
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global:**
+- **Dirección:** Bajista fuerte en aceleración
+- **Estructura:** Máximos y mínimos decrecientes sistemáticos
+- **Fase del ciclo:** Markdown activo (distribución completada)
+
+### **Momentum y Fuerza:**
+- **RSI:** ~25-30 (zona de sobreventa extrema)
+- **⚠️ DIVERGENCIA ALCISTA DETECTADA:** Precio hace nuevos mínimos (**2.7458€**) pero RSI forma mínimo más alto que el anterior
+- **Velocidad:** Movimiento bajista acelerando peligrosamente
+
+### **Zonas Críticas:**
+
+**Resistencias (de menor a mayor):**
+1. **2.85€** - Fuerte (ex-soporte, múltiples toques, alta actividad)
+2. **2.95€** - Media (zona de congestión previa)
+3. **3.04€** - Fuerte (segundo techo del doble techo)
+4. **3.0665€** - Muy fuerte (máximo absoluto del período)
+
+**Soportes (de menor a mayor):**
+1. **2.65€** - Fuerte (objetivo técnico múltiple, confluencia)
+2. **2.70€** - Media (soporte psicológico)
+3. **2.7458€** - Débil (mínimo actual, recién formado)
+
+### **Volumen:**
+- **Comportamiento:** Creciente en movimientos bajistas (distribución activa)
+- **Picos significativos:** Mayor volumen en **2.85€** (ruptura confirmatoria)
+- **Divergencia:** No detectada - volumen confirma la presión vendedora
+
+---
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles:**
+- **MM20:** En **2.92€** aprox. - Precio muy por debajo, resistencia dinámica fuerte
+- **MM50:** En **3.15€** aprox. - Muy alejada, confirma tendencia bajista
+- **Relación:** Precio 6% por debajo de MM20, configuración muy bajista
+
+### **Confluencias Críticas:**
+- **2.65€ = Objetivo doble techo + Proyección cuña + Soporte histórico + Fibo 161.8%** → **ZONA SUPER CRÍTICA**
+- **2.85€ = Ex-soporte + MM20 potencial + Resistencia clave** → **Nivel decisivo para rebotes**
+
+### **Indicadores Complementarios:**
+- **MACD:** Histograma negativo creciente, cruce bajista confirmado
+- **Bollinger Bands:** Precio en banda inferior con expansión bajista
+- **ADX:** >30, tendencia bajista muy fuerte y sostenida
+
+### **Divergencias:**
+- **⚠️ RSI vs Precio:** DIVERGENCIA ALCISTA CONFIRMADA en mínimos recientes
+- **MACD vs Precio:** Sin divergencias (confirma debilidad)
+- **Volumen vs Precio:** Coherente (volumen alto en caídas = distribución real)
+
+---
+
+## 4. **Escenarios Probables**
+
+### **Escenario Bajista (Probabilidad: 75%)**
+**Desarrollo esperado:**
+1. Rebote técnico hasta **2.80-2.85€** (resistencia)
+2. Rechazo y continuación bajista
+3. Ruptura de **2.7458€** con volumen
+4. Aceleración hacia **2.65€**
+
+**Objetivos:**
+- **TP1:** **2.65€** (-3.5% desde actual)
+- **TP2:** **2.58€** (-6% desde actual)  
+- **TP3:** **2.50€** (-9% desde actual)
+
+**Activación:** Cierre diario por debajo de **2.74€**
+**Invalidación:** Recuperación sostenida por encima de **2.85€**
+
+### **Escenario Alcista (Probabilidad: 25%)**
+**Desarrollo esperado:**
+1. Rebote desde sobreventa extrema
+2. Ruptura de **2.85€** con volumen alto
+3. Recuperación hacia **2.95-3.00€**
+
+**Objetivos:**
+- **TP1:** **2.95€** (+7% desde actual)
+- **TP2:** **3.04€** (+10.5% desde actual)
+
+**Activación:** Cierre diario por encima de **2.85€** con volumen 2x promedio
+**Invalidación:** Nuevos mínimos por debajo de **2.70€**
+
+### **Niveles Decisivos:**
+1. **2.74€** - Confirmación bajista vs rebote técnico
+2. **2.85€** - Línea entre continuación bajista y reversión
+3. **2.65€** - Soporte crítico último
+4. **2.95€** - Confirmación de cambio de tendencia
+5. **2.70€** - Soporte psicológico clave
+
+---
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+### **Setup Bajista (PREFERIDO - 80% confianza):**
+- **Entrada:** **2.82€** en rebote + rechazo con volumen decreciente
+- **Stop Loss:** **2.89€** (2.5% riesgo - por encima resistencia clave)
+- **Take Profit 1:** **2.65€** (R:R 2.4:1) - Confluencia técnica múltiple
+- **Take Profit 2:** **2.58€** (R:R 3.4:1) - Extensión técnica
+- **Tamaño posición:** 2% capital máximo
+- **Confirmaciones necesarias:** 
+  * Rechazo en zona **2.80-2.85€**
+  * Volumen decreciente en rebote
+  * RSI no supere 40 en rebote
+
+### **Setup Alcista (Contrarian - Solo expertos):**
+- **Entrada:** **2.76€** + cierre por encima **2.85€**
+- **Stop Loss:** **2.68€** (3% riesgo)
+- **Take Profit:** **2.95€** (R:R 2.4:1) - Primera resistencia fuerte
+- **Condición CRÍTICA:** Solo entrar con volumen explosivo (>3x promedio) en ruptura **2.85€**
+- **Confirmaciones necesarias:**
+  * RSI supere 45 con fuerza
+  * Volumen excepcional
+  * Patrón de martillo o engulfing alcista
+
+### **Gestión de Riesgo:**
+- **Posición máxima:** 2% del capital (alta volatilidad)
+- **Stop tipo:** Fijo inicial, trailing después de TP1
+- **Gestión:** Escalar salida (50% en TP1, 30% en TP2, 20% trailing)
+- **Si va contra ti:** NO promediar - cortar pérdidas rápido
+
+---
+
+## ⚠️ **ALERTAS CRÍTICAS**
+
+### **TRAMPA POTENCIAL DETECTADA:**
+- **Bear Trap posible** en **2.65€** por confluencia técnica extrema y divergencia RSI
+- La sobreventa extrema + divergencia alcista puede generar rebote violento
+- **Gestionar exposición bajista** cerca de **2.65€**
+
+### **SEÑAL DE ALARMA:**
+- Divergencia alcista RSI vs precio es **señal temprana** de posible suelo
+- Si volumen aumenta significativamente en **2.65-2.70€**, **CONSIDERAR CIERRE** posiciones bajistas
+
+**Setup bajista mantiene preferencia por momentum bajista dominante, pero vigilar señales de reversión intensamente.**
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

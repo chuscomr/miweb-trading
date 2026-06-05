@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: TUB.MC
+Fecha: 2026-05-18
+Hora: 14:05:24
+
+# 📊 ANÁLISIS TÉCNICO TUB.MC - Zona Crítica de Soporte
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Patrones de Reversión Identificados:**
+
+**🔴 Doble Techo (COMPLETADO - ALTA CALIDAD)**
+- **Coordenadas**: Primer techo ~**4.10€** (11.06.25) | Segundo techo ~**4.12€** (11.07.25)
+- **Línea de cuello**: **3.90€** 
+- **Estado**: Activado con ruptura violenta en enero 2026
+- **Implicación**: Patrón bajista ejecutado, objetivo teórico alcanzado en **2.68€**
+
+**🟡 Posible Martillo/Doji (EN FORMACIÓN - CALIDAD MEDIA)**
+- **Zona**: **2.65-2.75€** (abril 2026)
+- **Características**: Mecha inferior larga, rechazo desde mínimos históricos
+- **Estado**: Requiere confirmación con cierre por encima de **2.90€**
+
+### **Patrones de Continuación:**
+
+**🔵 Canal Bajista (ACTIVO)**
+- **Resistencia dinámica**: MM20 (naranja) actuando como techo dinámico
+- **Soporte**: Zona **2.65-2.70€** (múltiples toques)
+- **Estado**: Precio consolidando en zona baja del canal
+
+---
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global:**
+- **Dirección**: Bajista fuerte desde octubre 2025
+- **Estructura**: Serie clara de máximos y mínimos decrecientes
+- **Fase del ciclo**: Transición markdown → posible acumulación en **2.65-2.75€**
+
+### **Momentum y Fuerza:**
+- **RSI**: Aproximadamente en zona 35-40 (recuperando desde sobreventa)
+- **🚨 DIVERGENCIA ALCISTA DETECTADA**: Precio hizo nuevos mínimos en abril 2026, pero RSI no confirmó (mínimo más alto)
+- **Velocidad**: Momentum bajista desacelerando significativamente
+
+### **Zonas Críticas:**
+
+**Soportes (Calidad decreciente):**
+1. **2.65€** - FUERTE (múltiples toques, mínimo histórico reciente)
+2. **2.72€** - MEDIO (consolidación intermedia)
+3. **2.85€** - DÉBIL (soporte roto, ahora resistencia)
+
+**Resistencias (Calidad creciente):**
+1. **2.90€** - MEDIO (confluencia con MM20)
+2. **3.10€** - FUERTE (resistencia horizontal + MM50 violeta)
+3. **3.35€** - FUERTE (zona de consolidación previa)
+4. **3.50€** - MUY FUERTE (máximo local diciembre 2025)
+
+### **Volumen:**
+- **Comportamiento**: Picos significativos durante caídas (distribución)
+- **Estado actual**: Volumen decreciente (posible agotamiento vendedor)
+- **Señal clave**: Último rebote con volumen moderadamente creciente
+
+---
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles:**
+- **MM20 (naranja)**: Resistencia dinámica en **~2.95€**, pendiente bajista
+- **MM50 (violeta)**: Resistencia fuerte en **~3.10€**
+- **MM200 (azul)**: Resistencia mayor en **~3.35€**
+- **Relación**: Precio muy por debajo de todas las MM (setup bajista)
+
+### **Confluencias Críticas:**
+1. **2.65€** = Mínimo histórico + Soporte horizontal múltiple + Zona sobreventa RSI → **ZONA CRÍTICA DE REVERSIÓN**
+2. **3.10€** = MM50 + Resistencia horizontal + Fibo 38.2% retroceso → **RESISTENCIA CLAVE**
+3. **2.90€** = MM20 + Break-even zona actual → **PRIMERA RESISTENCIA RELEVANTE**
+
+### **Indicadores Complementarios:**
+- **MACD**: Histograma mostrando divergencia alcista (reducción momentum bajista)
+- **RSI**: Divergencia alcista confirmada - señal de posible suelo
+- **Volumen**: Patrón de agotamiento vendedor visible
+
+### **Divergencias Confirmadas:**
+- **🟢 RSI vs Precio (ALCISTA)**: Precio nuevos mínimos abril 2026, RSI mínimo más alto
+- **🟢 Volumen vs Precio**: Caídas recientes con volumen decreciente (debilidad bajista)
+
+---
+
+## 4. **Escenarios Probables**
+
+### **Escenario Rebote Técnico (Probabilidad: 65%)**
+- **Desarrollo**: Rebote desde **2.65€** hacia **2.90-3.10€**
+- **Objetivos**: 
+  - TP1: **2.90€** (MM20, +9% desde 2.65€)
+  - TP2: **3.10€** (MM50, +17% desde 2.65€)
+  - TP3: **3.35€** (MM200, +26% desde 2.65€)
+- **Activación**: Cierre diario > **2.75€** con volumen
+- **Invalidación**: Ruptura decidida < **2.60€**
+
+### **Escenario Continuación Bajista (Probabilidad: 35%)**
+- **Desarrollo**: Ruptura **2.65€** → nuevos mínimos históricos
+- **Objetivos**:
+  - TP1: **2.45€** (-7% desde 2.65€)
+  - TP2: **2.25€** (-15% desde 2.65€)
+- **Activación**: Cierre < **2.60€** con volumen alto
+- **Invalidación**: Recuperación sostenida > **2.85€**
+
+### **Niveles Decisivos:**
+1. **2.65€** - Soporte crítico absoluto
+2. **2.75€** - Confirmación rebote técnico
+3. **2.90€** - Primera resistencia real (MM20)
+4. **3.10€** - Resistencia mayor (cambio de tendencia intermedia)
+5. **2.60€** - Ruptura confirma colapso adicional
+
+---
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+### **Setup Alcista (PREFERIDO - 65% probabilidad):**
+- **Entrada**: **2.68€** + cierre diario por encima con volumen >0.4M
+- **Stop Loss**: **2.58€** (justificación: por debajo soporte crítico)
+- **Take Profit 1**: **2.90€** (R:R 2.2:1) - Test MM20 y resistencia psicológica
+- **Take Profit 2**: **3.10€** (R:R 4.2:1) - MM50 y resistencia horizontal fuerte
+- **Tamaño posición**: 1.5% del capital máximo
+- **Confirmaciones necesarias**: Volumen >400k acciones + cierre >2.75€
+
+### **Setup Bajista (Defensivo):**
+- **Entrada**: **2.58€** + ruptura con volumen alto
+- **Stop Loss**: **2.72€** (justificación: recuperación del soporte crítico)
+- **Take Profit**: **2.45€** (R:R 1.3:1) - Proyección extensión bajista
+- **Condición CRÍTICA**: Solo entrar con volumen >600k acciones
+- **Confirmaciones necesarias**: Cierre decidido <2.60€ durante 2 sesiones
+
+### **Gestión de Riesgo:**
+- **Tamaño posición máximo**: 2% del capital total
+- **Tipo de stop**: Fijo inicialmente, trailing a partir del primer TP
+- **Gestión multi-nivel**: Realizar 50% beneficios en TP1, stop a break-even
+- **Si el mercado va en contra**: Reducir posición a la mitad en -50% del stop
+
+---
+
+## 🚨 **ALERTAS CRÍTICAS**
+
+### **⚠️ TRAMPA POTENCIAL DETECTADA:**
+**Posible Bull Trap** si el rebote no supera decisivamente **2.90€**. Un rechazo desde MM20 con volumen bajo sería señal de continuación bajista.
+
+### **🎯 SETUP PREFERIDO:**
+**REBOTE TÉCNICO** - La confluencia de divergencia alcista RSI + soporte histórico múltiple + agotamiento vendedor ofrece una oportunidad R:R atractiva con riesgo controlado.
+
+**Ratio Riesgo/Recompensa del setup preferido: 4.2:1**
+
+---
+*Análisis válido para operativa de corto-medio plazo. Revisar niveles críticos diariamente.*
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

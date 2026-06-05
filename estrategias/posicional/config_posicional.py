@@ -65,8 +65,8 @@ DURACION_OBJETIVO_SEMANAS = 52
 # 🔍 FILTROS DE CALIDAD
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-MIN_VOLATILIDAD_PCT       = 20.0       # Mínimo 20% anual (antes 18%)
-MAX_VOLATILIDAD_PCT       = 60.0       # NUEVO: máximo 60% (filtra SLR, GRF erráticos)
+MIN_VOLATILIDAD_PCT       = 15.0       # Bajado de 20% → recupera RED, ENG, MAP, NTGY
+MAX_VOLATILIDAD_PCT       = 60.0       # Máximo 60% (filtra SLR, GRF erráticos)
 MIN_VOLUMEN_MEDIO_DIARIO  = 2_000_000
 MIN_CAPITALIZACION        = 0
 MIN_MESES_TENDENCIA_ALCISTA = 6
@@ -136,6 +136,32 @@ MERCADO_CONTINUO = CONTINUO_GRUPO_1 + CONTINUO_GRUPO_2 + CONTINUO_GRUPO_3
 # Valores selectos (alta capitalización y liquidez)
 # Se filtrarán automáticamente según criterios
 UNIVERSO_POSICIONAL = IBEX_35
+
+# ── Continuo líquido para posicional ──────────────────────────
+# Criterios de inclusión: liquidez > 2M€/día, historial > 200 semanas,
+# negocio estable con tendencias largas posibles.
+# Excluidos: DIA (reestructuración), OHLA (deuda), ATRY/HBX (recientes),
+#            CIRSA (ilíquido), RLIA (micro-cap), MVC (micro-cap)
+CONTINUO_LIQUIDO = [
+    "CAF.MC",    # Trenes — industrial sólido, tendencias largas
+    "CIE.MC",    # Automoción — líder europeo, buena liquidez
+    "VID.MC",    # Vidrala — defensivo, tendencias muy limpias
+    "VIS.MC",    # Viscofan — defensivo, líder mundial, baja correlación
+    "FAE.MC",    # Faes Farma — farmacéutica estable
+    "MEL.MC",    # Meliá — turismo, ciclos largos claros
+    "EBROM.MC",  # Ebro Foods — alimentación defensiva
+    "ENO.MC",    # Elecnor — infraestructuras, tendencias lentas y limpias
+    "GRE.MC",    # Grenergy — renovables en tendencia estructural
+    "TUB.MC",    # Tubacex — industrial cíclico, breakouts claros
+    "PSG.MC",    # Prosegur — servicios, estable
+    "DOM.MC",    # Global Dominion — tecnología/servicios
+    "R4.MC",     # Renta 4 — financiero, correlación baja vs bancos
+]
+
+# Universo ampliado = IBEX 35 + Mercado Continuo completo
+# 35 + 31 = 66 valores — los filtros del sistema (volatilidad, histórico,
+# tendencia) hacen la selección natural. No filtrar a mano.
+UNIVERSO_POSICIONAL_AMPLIADO = list(dict.fromkeys(IBEX_35 + MERCADO_CONTINUO))
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🎨 CONFIGURACIÓN WEB

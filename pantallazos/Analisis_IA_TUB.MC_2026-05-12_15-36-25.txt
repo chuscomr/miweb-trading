@@ -1,0 +1,154 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: TUB.MC
+Fecha: 2026-05-12
+Hora: 15:36:25
+
+# Análisis Técnico TUB.MC - Zona Mayo 2025 - Mayo 2026
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Doble Techo (Completado - CALIDAD: Fuerte)**
+- **Coordenadas**: 
+  * Primer techo: **4.35€** (julio 2025)
+  * Segundo techo: **4.10€** (agosto 2025)
+  * Línea de cuello: **3.55€**
+- **Estado**: **ACTIVADO** - La ruptura de 3.55€ en noviembre 2025 confirmó el patrón
+- **Implicación**: Objetivo teórico calculado en **2.75€** (distancia techo-cuello proyectada)
+
+### **Canal Bajista (En Desarrollo - CALIDAD: Clara)**
+- **Resistencia dinámica**: Línea que conecta máximos desde agosto 2025
+- **Soporte dinámico**: MM200 (azul) actuando como piso hasta marzo 2026
+- **Estado**: **RUPTURA BAJISTA** en marzo 2026 - Canal roto a la baja
+- **Implicación**: Acelera la tendencia bajista hacia niveles inferiores
+
+### **Martillo Potencial (En Formación - CALIDAD: Débil)**
+- **Ubicación**: Zona **2.85-2.90€** (abril 2026)
+- **Estado**: Requiere confirmación alcista en siguientes sesiones
+- **Implicación**: Posible reversión temporal si se confirma con volumen
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global: BAJISTA FUERTE**
+- **Estructura**: Máximos y mínimos decrecientes desde julio 2025
+- **Fase del ciclo**: **MARKDOWN** - Distribución completada, ahora en fase de declive
+- **Velocidad**: **ACELERANDO** - Pendiente bajista se intensifica desde marzo 2026
+
+### **Momentum y Fuerza:**
+- **RSI**: Aproximadamente **35-40** - Zona neutral tirando a sobreventa
+- **DIVERGENCIA CRÍTICA DETECTADA**: En febrero 2026, precio marcó nuevos mínimos pero RSI formó mínimo más alto - **DIVERGENCIA ALCISTA**
+- **Velocidad**: Desacelerando en zona actual, posible agotamiento vendedor
+
+### **Zonas Críticas:**
+
+**RESISTENCIAS (de menor a mayor):**
+1. **3.15€** - FUERTE (ex-soporte roto, ahora resistencia + MM200)
+2. **3.40€** - MEDIA (línea de cuello del doble techo)
+3. **3.70€** - FUERTE (confluencia MM50 + múltiples rechazos)
+4. **4.10€** - FUERTE (segundo techo del patrón)
+
+**SOPORTES (de menor a mayor):**
+1. **2.75€** - FUERTE (objetivo teórico doble techo + soporte histórico 2022)
+2. **2.85€** - MEDIO (mínimo actual + posible martillo)
+3. **3.00€** - MEDIO (nivel psicológico + rebotes anteriores)
+
+### **Volumen:**
+- **Comportamiento**: Picos significativos en **rupturas bajistas** (noviembre 2025, marzo 2026)
+- **Señal clave**: Volumen alto en caídas, bajo en rebotes = **DISTRIBUCIÓN ACTIVA**
+- **Zona actual**: Volumen moderado, sugiere posible pausa en la venta
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles:**
+- **MM20 (naranja)**: Precio muy por debajo, actuará como **resistencia dinámica**
+- **MM50 (violeta)**: En **3.70€** aproximadamente - Resistencia crítica
+- **MM200 (azul)**: **ROTA A LA BAJA** en marzo 2026 - Señal muy bajista
+- **Configuración**: Todas las MM en orden bajista (20<50<200)
+
+### **Confluencias Críticas:**
+1. **2.75€** = Soporte histórico + Objetivo doble techo + Fibo 78.6% → **ZONA MUY FUERTE**
+2. **3.15€** = Ex-soporte + MM200 + Zona de alto volumen → **RESISTENCIA CRÍTICA**
+3. **3.70€** = MM50 + Resistencia múltiple + Zona distribución → **TECHO DURO**
+
+### **Divergencias:**
+- **RSI vs Precio (ALCISTA)**: Confirmada en febrero 2026 - Sugiere posible suelo técnico
+- **Volumen vs Precio**: Caídas recientes con menor volumen = Posible agotamiento vendedor
+
+## 4. **Escenarios Probables**
+
+### **Escenario Bajista (Probabilidad: 65%)**
+**Desarrollo esperado:**
+1. Rebote técnico hasta **3.00-3.15€**
+2. Rechazo en resistencia y nueva caída
+3. Ruptura de **2.85€** con volumen
+4. Aceleración hacia **2.75€** y posteriormente **2.50€**
+
+**Objetivos bajistas:**
+- **TP1**: 2.75€ (objetivo doble techo)
+- **TP2**: 2.50€ (extensión Fibonacci 127%)
+- **TP3**: 2.30€ (soporte histórico 2020)
+
+**Activación**: Ruptura de **2.85€** con volumen >0.4M
+**Invalidación**: Recuperación sostenida por encima de **3.15€**
+
+### **Escenario Alcista (Probabilidad: 35%)**
+**Desarrollo esperado:**
+1. Confirmación del martillo con volumen alto
+2. Ruptura de **3.00€** como primera señal
+3. Superación de **3.15€** confirmaría reversión
+4. Objetivo en **3.70€** (MM50)
+
+**Objetivos alcistas:**
+- **TP1**: 3.15€ (primera resistencia mayor)
+- **TP2**: 3.40€ (línea de cuello)
+- **TP3**: 3.70€ (MM50)
+
+**Activación**: Cierre por encima de **3.00€** con volumen >0.5M
+**Invalidación**: Ruptura de **2.75€**
+
+### **Niveles Decisivos:**
+1. **2.85€** - Soporte inmediato crítico
+2. **3.00€** - Nivel psicológico clave
+3. **3.15€** - Resistencia mayor (ex-soporte)
+4. **2.75€** - Soporte histórico fuerte
+5. **3.40€** - Línea de cuello del doble techo
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+### **Setup Bajista (PREFERIDO - 65% probabilidad):**
+- **Entrada**: **2.98€** en rebote + rechazo con volumen bajo
+- **Stop Loss**: **3.18€** (por encima de resistencia crítica) - Riesgo: 6.7%
+- **Take Profit 1**: **2.75€** (R:R 3.4:1) - Objetivo doble techo
+- **Take Profit 2**: **2.50€** (R:R 7.2:1) - Extensión Fibonacci
+- **Tamaño posición**: **2% del capital máximo**
+- **Confirmaciones necesarias**: Volumen bajo en rebote + rechazo en 3.00€
+
+### **Setup Alcista (Contrarian - 35% probabilidad):**
+- **Entrada**: **2.88€** SOLO si se confirma martillo con volumen >0.5M
+- **Stop Loss**: **2.73€** (por debajo de soporte histórico) - Riesgo: 5.2%
+- **Take Profit**: **3.15€** (R:R 5.2:1) - Primera resistencia mayor
+- **Condición CRÍTICA**: Solo entrar con **volumen excepcional (>0.6M) y cierre en máximos**
+- **Confirmaciones necesarias**: Martillo confirmado + RSI >45 + ruptura 3.00€
+
+### **Gestión de Riesgo:**
+- **Tamaño máximo**: 2% del capital por operación
+- **Tipo de stop**: **Fijo** - No usar trailing hasta superar primer objetivo
+- **Gestión multi-nivel**: Cerrar 50% en TP1, dejar correr 50% hacia TP2
+- **Si va en contra**: **NO promediar** - Respetar stops religiosamente
+
+### **⚠️ ADVERTENCIA CRÍTICA:**
+La ruptura de la MM200 es una señal **MUY BAJISTA**. Cualquier rebote debe tratarse como **BEAR TRAP** hasta demostrar lo contrario con volumen excepcional. La divergencia alcista del RSI ofrece esperanza, pero requiere confirmación contundente.
+
+**PREFERENCIA**: **SETUP BAJISTA** - La estructura técnica favorece claramente más caída hacia 2.75€.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

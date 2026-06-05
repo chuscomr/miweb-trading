@@ -1,0 +1,111 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: IBE.MC
+Fecha: 2026-05-12
+Hora: 15:21:45
+
+## Análisis Técnico IBE.MC (Período: 06.05.25 - 12.05.26)
+
+### 1. **Patrones Chartistas Detectados**
+
+**Canal Alcista Principal (Muy Claro):**
+- **Tipo**: Canal alcista bien definido desde mayo 2025
+- **Soporte inferior**: Línea que conecta mínimos en ~13.5€ (mayo), ~15.5€ (septiembre) y ~16.8€ (diciembre)
+- **Resistencia superior**: Línea que conecta máximos en ~16€ (julio), ~18€ (octubre) y ~20.5€ (febrero-marzo 2026)
+- **Amplitud**: Aproximadamente 3-4€ de rango
+
+**Triángulo de Continuación (Marzo-Abril 2026):**
+- **Ubicación**: Entre 19€ y 20.5€
+- **Características**: Compresión de volatilidad antes del movimiento final
+- **Resolución**: Ruptura bajista hacia los 19.5€
+
+**Patrón de Doble Techo (Febrero-Marzo 2026):**
+- **Primer techo**: ~20.5€ (febrero)
+- **Segundo techo**: ~20.8€ (marzo) - máximo absoluto del período
+- **Neckline**: ~19€
+- **Estado**: Activado con la caída posterior
+
+### 2. **Análisis de Contexto**
+
+**Tendencia General**: 
+- **Alcista estructural** hasta marzo 2026 (+38% desde mínimos)
+- **Corrección técnica** en curso desde máximos de 20.8€
+
+**Momentum**:
+- **RSI**: Muestra divergencia bajista en máximos (precio sube, RSI no confirma)
+- **Momentum perdiendo fuerza** en la zona de resistencia 20-21€
+
+**Zonas Críticas**:
+- **Resistencia mayor**: 20.50€-20.88€ (máximos históricos del período)
+- **Resistencia secundaria**: 19.66€ (nivel de consolidación)
+- **Soporte inmediato**: 18.50€-19€
+- **Soporte crítico**: 17.14€ (línea inferior del canal)
+
+**Volumen**: Se observan picos de volumen en reversiones importantes, especialmente en máximos.
+
+### 3. **Señales Técnicas**
+
+**Medias Móviles**:
+- **MM20** (naranja): Actuando como resistencia dinámica tras el giro
+- **MM50** (violeta): Soporte dinámico en ~18.5€
+- **MM200** (azul): Tendencia alcista intacta, soporte lejano en ~17€
+
+**RSI**:
+- **Divergencia bajista confirmada** en máximos
+- **Nivel actual**: ~45-50 (zona neutral con sesgo bajista)
+
+**Confluencias Importantes**:
+- **19€**: Confluencia de MM50 + soporte horizontal + neckline doble techo
+- **17.14€**: Soporte canal + MM200 + zona de valor
+
+### 4. **Escenarios Probables**
+
+**Escenario Bajista (Probabilidad: 65%)**
+- **Desarrollo**: Continuación de la corrección hacia la parte baja del canal
+- **Objetivos**: 18.50€ → 17.14€ (soporte canal)
+- **Activación**: Pérdida sostenida de 19€
+- **Extensión máxima**: Hasta 16.50€ si pierde el canal
+
+**Escenario Alcista (Probabilidad: 35%)**
+- **Desarrollo**: Recuperación desde soportes actuales
+- **Condición**: Recuperación sostenida por encima de 19.66€
+- **Objetivos**: Retorno a resistencias 20.50€-21€
+- **Confirmación**: Volumen creciente en recuperación
+
+**Niveles Clave a Vigilar**:
+- **19€**: Nivel decisivo (quiebre confirma bajista)
+- **17.14€**: Soporte crítico del canal
+- **19.66€**: Resistencia para recuperación alcista
+
+### 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**Recomendacionesde Trading**
+
+**Setup Bajista (Preferido):**
+- **Entrada**: Venta en 19.40€-19.50€ (rebote técnico)
+- **Stop Loss**: 20.10€ (por encima de resistencia)
+- **Take Profit 1**: 18.50€ (R:R 1:1.5)
+- **Take Profit 2**: 17.14€ (R:R 1:3.8)
+
+**Setup Alcista (Contrarian):**
+- **Entrada**: Compra en 17.00€-17.20€ (soporte canal)
+- **Stop Loss**: 16.40€ 
+- **Take Profit**: 19€ (R:R 1:2.3)
+- **Condición**: Solo con señales de reversión (martillo, volumen)
+
+**Gestión de Riesgo**:
+- **Posición máxima**: 2% del capital por operación
+- **Seguimiento**: Stop dinámico siguiendo MM20 en operaciones alcistas
+- **Confirmación**: Esperar cierre diario para validar rupturas
+
+**Nota**: El mercado está en una corrección técnica saludable tras un rally significativo. La estructura alcista se mantiene mientras respete el canal ascendente.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

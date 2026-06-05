@@ -3,13 +3,17 @@
  * CLASE PRINCIPAL - GESTIÓN DEL GRÁFICO DE INDICADORES
  * Maneja la descarga de datos, renderizado del gráfico y actualización de paneles
  */
+
+// Variables globales para el gráfico
+let _ultimoResumenRaw = null;  // guardar datos crudos para recalcular
+
 class GraficoIndicadores {
     constructor() {
         this.chart = document.getElementById('grafico');
         this.tipoGrafico = 'velas'; // 'velas' o 'linea'
         this.ultimosDatos = null;
 
-        this.initEventos();
+        // NO llamar initEventos aquí - se llama desde DOMContentLoaded
     }
 
     /**
@@ -159,6 +163,12 @@ class GraficoIndicadores {
      * Obtener indicadores seleccionados
      */
     obtenerIndicadoresSeleccionados() {
+        // Nuevo sistema: leer desde el array global selectedIndicadores (si existe)
+        if (typeof window.selectedIndicadores !== 'undefined' && Array.isArray(window.selectedIndicadores)) {
+            return window.selectedIndicadores;
+        }
+        
+        // Fallback: sistema antiguo con checkboxes
         const indicadores = [];
         document.querySelectorAll('input[type=checkbox]:checked').forEach(cb => {
             indicadores.push(cb.value);
@@ -716,7 +726,7 @@ class GraficoIndicadores {
         const tieneOBV = indicadores.includes('OBV');
         const tieneMFI = indicadores.includes('MFI');
         const tieneADX = indicadores.includes('ADX');
-        const tieneATR = indicadores.includes('ATR');
+        const tieneATR = indicadores.includes('ATR_BARRAS'); // Panel de barras, no overlay
 
         const GAP = 0.01;
         const pVolumen = tieneVolumen ? 0.16 : 0;
@@ -894,21 +904,53 @@ class GraficoIndicadores {
         }
 
         // ===========================
-        // ATR (Average True Range)
-        // ===========================
-        if (indicadores.includes('ATR') && data.data[0].ATR !== undefined) {
+        // ATR (Average True Range) - Panel independiente con barras
+        // ===========================================================
+        if (indicadores.includes('ATR_BARRAS') && data.data[0].ATR !== undefined) {
             let yaxisName = 'y7';  // Panel dedicado para ATR
+            
+            // Calcular porcentajes para cada punto
+            const atrData = data.data.map(d => {
+                const atr = d.ATR || 0;
+                const close = d.Close || 1;
+                const pct = close > 0 ? (atr / close) * 100 : 0;
+                return { atr: atr, pct: pct };
+            });
             
             traces.push({
                 x: fechas,
-                y: data.data.map(d => d.ATR),
+                y: atrData.map(d => d.atr),
+                type: 'bar',
+                name: 'ATR',
+                marker: { color: '#8b5cf6', opacity: 0.7 },
+                xaxis: 'x',
+                yaxis: yaxisName,
+                customdata: atrData.map(d => d.pct),
+                hovertemplate: '<b>ATR</b><br>%{y:.4f} (%{customdata:.2f}%)<extra></extra>'
+            });
+        }
+
+        // ATR overlay (línea en gráfico principal)
+        if (indicadores.includes('ATR') && data.data[0].ATR !== undefined) {
+            // Calcular porcentajes
+            const atrData = data.data.map(d => {
+                const atr = d.ATR || 0;
+                const close = d.Close || 1;
+                const pct = close > 0 ? (atr / close) * 100 : 0;
+                return { atr: atr, pct: pct };
+            });
+            
+            traces.push({
+                x: fechas,
+                y: atrData.map(d => d.atr),
                 type: 'scatter',
                 mode: 'lines',
                 name: 'ATR',
-                line: { color: '#8b5cf6', width: 2 },
+                line: { color: '#8b5cf6', width: 1.5, dash: 'dot' },
                 xaxis: 'x',
-                yaxis: yaxisName,
-                hovertemplate: '<b>ATR</b><br>%{y:.4f}<extra></extra>'
+                yaxis: 'y',
+                customdata: atrData.map(d => d.pct),
+                hovertemplate: '<b>ATR</b><br>%{y:.4f} (%{customdata:.2f}%)<extra></extra>'
             });
         }
 
@@ -1182,6 +1224,13 @@ class GraficoIndicadores {
             // ── CONFIGURAR PANEL ÚLTIMA VELA DINÁMICO ────────────────
             configurarPanelUltimaVela();
 
+            // ── CARGAR EVENTOS DEL CALENDARIO ────────────────────────
+            if (typeof cargarEventosCalendario === 'function' && data.ticker) {
+                cargarEventosCalendario(data.ticker).catch(err => {
+                    console.warn('No se pudieron cargar eventos del calendario:', err);
+                });
+            }
+
             // ── Listener eraseshape (único, registrado una vez) ──────
             if (!window._listenersRegistrados) {
                 window._listenersRegistrados = true;
@@ -1224,15 +1273,16 @@ class GraficoIndicadores {
             if (!window._crosshairOverlayRegistrado) {
                 window._crosshairOverlayRegistrado = true;
 
-                const parent = gdEl.parentElement;
-                // Garantizar contenedor posicionado para el overlay absoluto
-                if (parent && getComputedStyle(parent).position === 'static') {
-                    parent.style.position = 'relative';
+                // NO tocar parent — el overlay se posiciona respecto al propio #grafico
+                // que ya tiene position:relative por Plotly
+                const posicionado = getComputedStyle(gdEl).position;
+                if (posicionado === 'static') {
+                    gdEl.style.position = 'relative';
                 }
 
                 // Crear etiqueta una sola vez
                 let etiqueta = document.getElementById('precio-cursor-overlay');
-                if (!etiqueta && parent) {
+                if (!etiqueta) {
                     etiqueta = document.createElement('div');
                     etiqueta.id = 'precio-cursor-overlay';
                     etiqueta.style.cssText = [
@@ -1251,7 +1301,7 @@ class GraficoIndicadores {
                         'white-space:nowrap',
                         'box-shadow:0 1px 3px rgba(0,0,0,0.2)'
                     ].join(';');
-                    parent.appendChild(etiqueta);
+                    gdEl.appendChild(etiqueta);
                 }
 
                 // Convierte pixel Y (relativo a #grafico) a precio
@@ -2704,6 +2754,145 @@ ${data.analisis}
         
         contenido.innerHTML = html;
     }
+
+    /**
+     * Carga eventos próximos del ticker (v86)
+     */
+    async cargarEventos(ticker, dias = 30) {
+        const panelEventos = document.getElementById('eventos-proximos');
+        const cardEventos = document.getElementById('card-eventos');
+        
+        console.log('📅 cargarEventos() llamada:', { ticker, dias });
+        
+        if (!panelEventos || !cardEventos) {
+            console.warn('⚠️ No se encontró panel o card de eventos');
+            return;
+        }
+        
+        try {
+            console.log(`🔍 Fetching /indicadores/eventos/${ticker}?dias=${dias}`);
+            const response = await fetch(`/indicadores/eventos/${ticker}?dias=${dias}`);
+            const eventos = await response.json();
+            
+            console.log('📦 Eventos recibidos:', eventos);
+            
+            if (eventos.error) {
+                console.error('❌ Error en eventos:', eventos.error);
+                cardEventos.style.display = 'none';
+                return;
+            }
+            
+            // Si no hay eventos, mostrar mensaje informativo
+            if (!eventos.tiene_eventos) {
+                console.log('ℹ️ No hay eventos próximos — mostrando mensaje informativo');
+                cardEventos.style.display = 'block';
+                panelEventos.innerHTML = `
+                    <div style="background:#f0fdf4;padding:12px;border-radius:6px;border-left:3px solid #22c55e;">
+                        <p style="margin:0;font-size:0.85rem;color:#166534;font-weight:600;">
+                            ✅ Sin eventos en próximos 30 días
+                        </p>
+                        <p style="margin:4px 0 0 0;font-size:0.75rem;color:#15803d;">
+                            Dividendos, resultados y eventos macro
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Mostrar card y construir HTML
+            console.log('✅ Mostrando eventos');
+            cardEventos.style.display = 'block';
+            let html = '';
+            
+            // Dividendo
+            if (eventos.dividendo && eventos.dividendo.tiene_dividendo) {
+                const div = eventos.dividendo;
+                const fecha = div.fecha_ex ? new Date(div.fecha_ex).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                }) : 'Próximamente';
+                
+                const importeStr = div.importe ? `${div.importe.toFixed(2)}€` : '—';
+                const yieldStr = div.yield_aprox ? `${div.yield_aprox.toFixed(2)}%` : '—';
+                
+                // Formatear días de forma más clara
+                let diasStr = '';
+                let diasBadgeClass = '';
+                if (div.dias_hasta !== null && div.dias_hasta !== undefined) {
+                    if (div.dias_hasta === 0) {
+                        diasStr = 'HOY';
+                        diasBadgeClass = 'background:#dc2626;color:white;';
+                    } else if (div.dias_hasta === 1) {
+                        diasStr = 'MAÑANA';
+                        diasBadgeClass = 'background:#ea580c;color:white;';
+                    } else if (div.dias_hasta <= 3) {
+                        diasStr = `En ${div.dias_hasta} días`;
+                        diasBadgeClass = 'background:#f59e0b;color:white;';
+                    } else if (div.dias_hasta <= 7) {
+                        diasStr = `En ${div.dias_hasta} días`;
+                        diasBadgeClass = 'background:#fcd34d;color:#92400e;';
+                    } else if (div.dias_hasta <= 14) {
+                        diasStr = `En ${div.dias_hasta} días`;
+                        diasBadgeClass = 'background:#fef3c7;color:#78350f;';
+                    } else {
+                        diasStr = `En ${div.dias_hasta} días`;
+                        diasBadgeClass = 'background:#f0fdf4;color:#166534;';
+                    }
+                }
+                
+                const bgColor = div.advertir_entrada ? '#fee2e2' : '#fef3c7';
+                const borderColor = div.advertir_entrada ? '#dc2626' : '#f59e0b';
+                
+                html += `
+                    <div style="background:${bgColor};padding:12px;border-radius:8px;border-left:4px solid ${borderColor};margin-bottom:10px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                            <span style="font-weight:700;font-size:0.9rem;">💰 Dividendo</span>
+                            ${diasStr ? `<span style="font-size:0.75rem;font-weight:700;padding:3px 8px;border-radius:4px;${diasBadgeClass}">${diasStr}</span>` : ''}
+                        </div>
+                        <div style="font-size:0.85rem;color:#78350f;">
+                            <p style="margin:4px 0;"><span style="font-weight:600;">Importe:</span> ${importeStr}</p>
+                            <p style="margin:4px 0;"><span style="font-weight:600;">Yield:</span> ${yieldStr}</p>
+                            <p style="margin:4px 0;"><span style="font-weight:600;">Fecha ex:</span> ${fecha}</p>
+                        </div>
+                        ${div.advertir_entrada ? `
+                            <div style="margin-top:8px;padding:8px;background:#fef2f2;border-radius:4px;">
+                                <p style="margin:0;font-size:0.75rem;color:#991b1b;font-weight:600;">
+                                    ${div.razon_advertencia || '⚠️ Dividendo próximo — gap esperado en apertura'}
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Earnings (Fase 2 - placeholder)
+            if (eventos.earnings) {
+                html += `
+                    <div style="background:#fef3c7;padding:10px;border-radius:6px;margin-bottom:8px;">
+                        <span style="font-weight:700;">📊 Resultados: </span>
+                        <span style="color:#78350f;font-size:0.85rem;">Próximamente</span>
+                    </div>
+                `;
+            }
+            
+            // Eventos macro (Fase 3 - placeholder)
+            if (eventos.macro && eventos.macro.length > 0) {
+                html += `
+                    <div style="background:#f0f9ff;padding:10px;border-radius:6px;">
+                        <span style="font-weight:700;">🌍 Macro: </span>
+                        <span style="color:#0c4a6e;font-size:0.85rem;">Próximamente</span>
+                    </div>
+                `;
+            }
+            
+            panelEventos.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Error cargando eventos:', error);
+            cardEventos.style.display = 'none';
+        }
+    }
 }
 // ============================================================================
 // FIN DE LA CLASE - FUNCIONES GLOBALES
@@ -2712,10 +2901,16 @@ ${data.analisis}
 // ===========================
 // INICIALIZACIÓN
 // ===========================
-const grafico = new GraficoIndicadores();
-window.grafico = grafico; // exponer globalmente para el escáner
+let grafico = null;  // Declarar pero no instanciar todavía
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Instanciar DESPUÉS de que el DOM esté listo
+    grafico = new GraficoIndicadores();
+    window.grafico = grafico; // exponer globalmente para el escáner
+    
+    // Inicializar eventos DESPUÉS de instanciar
+    grafico.initEventos();
+    
     // Scope global del módulo — estado de escala logarítmica
     window._escalaLog = false;
     window._escalaLogManual = false; // false = usar default automático por timeframe
@@ -2877,7 +3072,6 @@ const PESOS_SISTEMA = {
 };
 
 let _sistemaActivo = 'swing';
-let _ultimoResumenRaw = null;  // guardar datos crudos para recalcular
 
 function recalcularConSistema(sistema) {
     _sistemaActivo = sistema;
@@ -3569,6 +3763,120 @@ function actualizarPanelUltimaVela(info, esUltima) {
 // ============================================================================
 // FUNCIÓN PARA GUARDAR ANÁLISIS DE IA EN SERVIDOR
 // ============================================================================
+
+// ══════════════════════════════════════════════════════════════
+// CALENDARIO DE EVENTOS - Carga eventos próximos en el sidebar
+// ══════════════════════════════════════════════════════════════
+async function cargarEventosCalendario(ticker) {
+    const card = document.getElementById('eventos-calendario-card');
+    const contenedor = document.getElementById('eventos-calendario');
+    
+    if (!card || !contenedor) return;
+    
+    try {
+        const response = await fetch(`/indicadores/eventos/${ticker}?dias=7`);
+        
+        if (!response.ok) {
+            card.style.display = 'none';
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Si no hay eventos, ocultar el panel
+        if (!data.eventos || data.eventos.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+        
+        // Mostrar el panel
+        card.style.display = 'block';
+        
+        // Construir HTML de eventos
+        let html = '';
+        
+        data.eventos.forEach(evento => {
+            const iconos = {
+                'dividendo': '💰',
+                'resultados': '📊',
+                'macro': '🌍'
+            };
+            const icono = iconos[evento.tipo] || '📅';
+            
+            const colores = {
+                'ALTO': { bg: '#fef2f2', borde: '#ef4444', texto: '#991b1b' },
+                'MEDIO': { bg: '#fffbeb', borde: '#f59e0b', texto: '#92400e' },
+                'BAJO': { bg: '#f0f9ff', borde: '#3b82f6', texto: '#1e40af' }
+            };
+            const color = colores[evento.impacto] || colores.BAJO;
+            
+            const fechaObj = new Date(evento.fecha);
+            const fechaStr = fechaObj.toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'short' 
+            });
+            
+            html += `
+                <div style="
+                    background: ${color.bg};
+                    border-left: 3px solid ${color.borde};
+                    padding: 8px 10px;
+                    border-radius: 4px;
+                    margin-bottom: 8px;
+                ">
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 4px;
+                    ">
+                        <span style="
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                            color: ${color.texto};
+                        ">
+                            ${icono} ${evento.descripcion}
+                        </span>
+                        <span style="
+                            font-size: 0.75rem;
+                            color: ${color.texto};
+                            opacity: 0.7;
+                            white-space: nowrap;
+                            margin-left: 8px;
+                        ">
+                            ${fechaStr} (${evento.dias_hasta}d)
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Si hay alerta, añadir mensaje destacado
+        if (data.tiene_alerta && data.mensaje_alerta) {
+            html = `
+                <div style="
+                    background: #fef3c7;
+                    border: 1px solid #f59e0b;
+                    padding: 8px 10px;
+                    border-radius: 6px;
+                    margin-bottom: 10px;
+                    font-size: 0.8rem;
+                    color: #92400e;
+                    font-weight: 600;
+                ">
+                    ⚠️ ${data.mensaje_alerta}
+                </div>
+            ` + html;
+        }
+        
+        contenedor.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error cargando eventos calendario:', error);
+        card.style.display = 'none';
+    }
+}
+
 
 function guardarAnalisisIA() {
     if (!window.ultimoAnalisisIA) {

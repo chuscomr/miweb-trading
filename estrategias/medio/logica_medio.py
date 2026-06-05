@@ -17,6 +17,66 @@ logger = logging.getLogger(__name__)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONSTANTES DE SCORING V2
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Estructura (0-5 puntos)
+ESTRUCTURA_MM50_MM200 = 2.0          # MM50 > MM200 (tendencia macro alcista)
+ESTRUCTURA_MM20_ASCENDENTE = 1.5     # MM20 con pendiente positiva
+ESTRUCTURA_MM20_BAJISTA = -1.0       # MM20 girando a la baja (penalización)
+ESTRUCTURA_MM50_ASCENDENTE = 1.0     # MM50 con pendiente positiva
+ESTRUCTURA_PRECIO_SOBRE_MM50 = 0.5   # Precio sobre MM50 (fortaleza)
+ESTRUCTURA_MAXIMOS_CRECIENTES = 0.5  # Máximos ascendentes (estructura intacta)
+ESTRUCTURA_MM = 20                   # Períodos de MM para estructura
+ESTRUCTURA_BAJO_MM = -0.5            # Penalización precio muy bajo MM
+ESTRUCTURA_LOOKBACK = 50             # Períodos lookback estructura
+
+# Timing (0-3 puntos)
+TIMING_PULLBACK_SUAVE = 1.5          # Corrección 5-15%
+TIMING_PULLBACK_PROFUNDO = 1.0       # Corrección 15-25%
+TIMING_PRECIO_CERCA_MM20 = 1.0       # Precio a 2-5% de MM20
+TIMING_PRECIO_SOBRE_MM20 = 0.5       # Precio sobre MM20 (señal prematura)
+TIMING_VELAS_COMPRESION = 0.5        # 3+ velas de rango reducido
+TIMING_PERFECTO_PUNTOS = 3.0         # Timing perfecto (máximo)
+TIMING_PERFECTO_MIN = -2.0           # % mínimo desde máximo (perfecto)
+TIMING_PERFECTO_MAX = -5.0           # % máximo desde máximo (perfecto)
+TIMING_PULLBACK_OPTIMO_PUNTOS = 2.0  # Pullback óptimo
+TIMING_PULLBACK_OPTIMO_MIN = -5.0    # % mínimo pullback óptimo
+TIMING_PULLBACK_OPTIMO_MAX = -15.0   # % máximo pullback óptimo
+TIMING_PULLBACK_VALIDO_PUNTOS = 1.0  # Pullback válido
+TIMING_PULLBACK_VALIDO_MIN = -15.0   # % mínimo pullback válido
+TIMING_SANO_PUNTOS = 0.5             # Pullback sano
+TIMING_SANO_MIN = -20.0              # % mínimo pullback sano
+TIMING_DETERIORO_PENALIZACION = -2.0 # Penalización por deterioro
+TIMING_DETERIORO_UMBRAL = -25.0      # % umbral deterioro
+TIMING_EXTENDIDO_PENALIZACION = -1.0 # Penalización precio extendido
+TIMING_EXTENDIDO_UMBRAL = 10.0       # % umbral extendido sobre MM
+TIMING_CERCA_SOPORTE_PUNTOS = 0.5    # Bonus cerca de soporte
+TIMING_CERCA_SOPORTE_UMBRAL = 3.0    # % distancia a soporte
+TIMING_MM = 5                        # Períodos MM corta para timing
+TIMING_CORTA = 5                     # MM corta (timing)
+TIMING_MEDIA = 8                     # MM media (timing)
+
+# Momentum (0-2 puntos)
+MOMENTUM_RSI_ZONA_COMPRA = 1.0       # RSI 35-50 (comprador sin sobrecompra)
+MOMENTUM_RSI_SOBREVENTA = 0.5        # RSI <35 (rebote probable)
+MOMENTUM_RSI_SOBREVENTA_PENALIZACION = -0.5  # RSI <25 (muy débil)
+MOMENTUM_RSI_PUNTOS = 1.0            # Puntos base RSI
+MOMENTUM_VOLUMEN_EXPANSION = 0.5     # Volumen creciente
+MOMENTUM_VOLUMEN_PUNTOS = 0.5        # Puntos base volumen
+MOMENTUM_VOLUMEN_RATIO = 1.2         # Ratio expansión volumen
+MOMENTUM_VOLUMEN_VENDEDOR_PENALIZACION = -0.5  # Volumen vendedor
+MOMENTUM_VOLUMEN_VENDEDOR_RATIO = 1.5  # Ratio volumen vendedor
+MOMENTUM_VELA_ALCISTA = 0.5          # Última vela verde
+MOMENTUM_VELA_REVERSION_PUNTOS = 0.5 # Vela de reversión
+MOMENTUM_VELA_REVERSION_RATIO = 2.0  # Ratio cuerpo/sombra reversión
+
+# Umbrales de validación
+SCORE_MIN_ESTRUCTURA = 2.0           # Mínimo en estructura para validar setup
+SCORE_MIN_TIMING = 0.5               # Mínimo en timing para validar setup
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🎯 SCORING PROFESIONAL V2 — Sistema de componentes
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -90,7 +150,7 @@ def calcular_score_medio_v2(precios, tendencia, pullback, df=None):
         dist_mm50 = (precio - mm50) / mm50 * 100
         # Ya no penalizamos por estar extendido (era incorrectamente castigador)
         if dist_mm50 < -2:  # Bajo soporte principal
-            estructura_score += ESTRUCTURA_BAJO_MM50
+            estructura_score += ESTRUCTURA_BAJO_MM
 
     # 1.5 Máximos crecientes (estructura alcista)
     if len(precios) >= 20:
@@ -99,10 +159,10 @@ def calcular_score_medio_v2(precios, tendencia, pullback, df=None):
         if max_reciente > max_anterior:
             estructura_score += ESTRUCTURA_MAXIMOS_CRECIENTES
 
-    # Bonus base: Si llegamos aquí (MM50>MM200 válido), sumar pequeño bonus
-    # Esto evita que estructuras sólidas caigan a 3.0 por requisitos muy estrictos
-    if estructura_score >= 2.5:
-        estructura_score += 0.5  # Bonus por estructura base válida
+    # Bonus base: estructura macro sólida (MM50>MM200 confirmado)
+    # No depende del score acumulado — es una recompensa por tener la base correcta
+    if mm50_sobre_mm200 and estructura_score >= 1.5:
+        estructura_score += 0.5
 
     # Cap estructura entre 0-5
     estructura_score = max(0, min(5, estructura_score))
@@ -131,18 +191,22 @@ def calcular_score_medio_v2(precios, tendencia, pullback, df=None):
             elif dist_mm20 > TIMING_EXTENDIDO_UMBRAL:
                 timing_score += TIMING_EXTENDIDO_PENALIZACION
         else:  # MM20 plana o bajando
-            # Bajo MM20 con momentum roto = peligro
-            if dist_mm20 < 0:
-                timing_score += TIMING_MM20_ROTA_PENALIZACION
+            # Solo penalizar si precio está claramente bajo MM20 con MM20 bajando
+            # -8% = deterioro real; menos de eso es pullback normal
+            if dist_mm20 < -8:
+                timing_score += TIMING_DETERIORO_PENALIZACION
 
     # 2.2 Calidad del pullback
+    # retroceso_pct es POSITIVO (% caída desde máximos): 5% = corrección del 5%
     retroceso = pullback.get("retroceso_pct", 0)
-    if TIMING_PULLBACK_OPTIMO_MIN <= retroceso <= TIMING_PULLBACK_OPTIMO_MAX:
+    if 5.0 <= retroceso <= 15.0:       # Pullback óptimo: 5-15%
         timing_score += TIMING_PULLBACK_OPTIMO_PUNTOS
-    elif TIMING_PULLBACK_VALIDO_MIN <= retroceso < TIMING_PULLBACK_OPTIMO_MIN:
+    elif 15.0 < retroceso <= 25.0:     # Pullback válido pero profundo: 15-25%
         timing_score += TIMING_PULLBACK_VALIDO_PUNTOS
-    elif retroceso > TIMING_PULLBACK_PROFUNDO:
-        timing_score += TIMING_PULLBACK_PROFUNDO_PENALIZACION
+    elif retroceso > 25.0:             # Deterioro real: > 25%
+        timing_score += TIMING_DETERIORO_PENALIZACION
+    elif retroceso < 2.0:              # Casi sin retroceso: precio extendido
+        timing_score += TIMING_EXTENDIDO_PENALIZACION
 
     # 2.3 Proximidad a soporte previo (mínimo 10 semanas)
     if df is not None and len(df) >= 10:
@@ -171,7 +235,7 @@ def calcular_score_medio_v2(precios, tendencia, pullback, df=None):
             rsi_val = round(rsi_series.iloc[-1], 1) if not pd.isna(rsi_series.iloc[-1]) else None
 
             if rsi_val is not None:
-                if RSI_MIN_PULLBACK <= rsi_val <= RSI_MAX_PULLBACK:
+                if 40 <= rsi_val <= 55:
                     momentum_score += MOMENTUM_RSI_PUNTOS
                 elif rsi_val < MOMENTUM_RSI_SOBREVENTA:
                     momentum_score += MOMENTUM_RSI_SOBREVENTA_PENALIZACION
@@ -375,12 +439,15 @@ def detectar_tendencia_semanal(precios):
     mm50_sobre_mm200 = (mm50 is not None and mm200 is not None and mm50 > mm200)
 
     # Determinar tendencia — estructura alcista aunque precio esté en pullback bajo MM20
-    # Clave: durante un pullback válido el precio PUEDE estar bajo MM20
-    # Lo que importa es la estructura macro: MM20↑ + MM50 > MM200
-    if pendiente_mm20 > 0 and mm50_sobre_mm200:
-        tendencia = "ALCISTA"   # estructura alcista, precio puede estar en pullback
+    # Clave: durante un pullback válido el precio PUEDE estar bajo MM20 con MM20 bajando
+    # Lo que importa es la estructura macro: MM50 > MM200
+    if mm50_sobre_mm200:
+        if pendiente_mm20 > 0:
+            tendencia = "ALCISTA"    # estructura alcista con momentum corto plazo
+        else:
+            tendencia = "ALCISTA"    # pullback con estructura macro intacta
     elif precio < mm20 and pendiente_mm20 < 0:
-        tendencia = "BAJISTA"
+        tendencia = "BAJISTA"        # estructura macro rota (MM50 < MM200) + MM20 bajando
     else:
         tendencia = "NEUTRAL"
 
@@ -657,7 +724,7 @@ def calcular_score_medio(precios, tendencia, pullback, df=None):
         try:
             rsi_series = calcular_rsi(pd.Series(precios), periodo=14)
             rsi_val = round(rsi_series.iloc[-1], 1) if not pd.isna(rsi_series.iloc[-1]) else None
-            if rsi_val is not None and RSI_MIN_PULLBACK <= rsi_val <= RSI_MAX_PULLBACK:
+            if rsi_val is not None and 40 <= rsi_val <= 55:
                 score += 1.5
         except Exception as _e:
             logger.debug(f'logica_medio cálculo RSI ignorado: {_e}')
@@ -1018,8 +1085,9 @@ class MedioPlazo:
         # ── Construir motivos completos (siempre, compra o no) ────────────────
         motivos = []
 
-        # 1. Tendencia macro
-        tendencia_ok = (tendencia_str == "ALCISTA")
+        # 1. Tendencia macro — criterio: MM50 > MM200 (estructura macro)
+        # La MM20 con pendiente negativa es pullback válido, no tendencia bajista
+        tendencia_ok = mm50_sobre_mm200
         if mm200 > 0:
             motivos.append({
                 "ok":    tendencia_ok,

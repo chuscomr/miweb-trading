@@ -25,7 +25,8 @@ class CarteraLogica:
             precio_actual = self._obtener_precio_actual(pos.get("ticker", ""), entrada)
 
         pnl_eur = round((precio_actual - entrada) * acciones, 2)
-        pnl_R   = round((precio_actual - entrada) / R_unit, 2) if R_unit > 0 else None
+        # P&L en R = P&L_euros / Riesgo_total (no por acción)
+        pnl_R   = round(pnl_eur / riesgo_ini, 2) if riesgo_ini > 0 else None
 
         # Duración
         try:

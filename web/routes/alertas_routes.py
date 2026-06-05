@@ -49,17 +49,46 @@ def _sanitizar(obj):
 
 
 # ─────────────────────────────────────────────────────────────
-# PANEL PRINCIPAL (HTML)
+# PANEL PRINCIPAL (HTML) + ALERTAS DE CARTERA (v89.2)
 # ─────────────────────────────────────────────────────────────
 
 @alertas_bp.route("/", methods=["GET"])
 def panel():
-    activas    = _db.obtener_activas()
+    """
+    Panel de alertas:
+    - Alertas técnicas (BD): activas y disparadas
+    - Alertas de cartera: stop en peligro, trailing, etc.
+    """
+    # Alertas técnicas (existentes)
+    activas = _db.obtener_activas()
     disparadas = _db.obtener_disparadas(limit=20)
+    
+    # Alertas de cartera (v89.2)
+    alertas_cartera = []
+    try:
+        from cartera.cartera_db import CarteraDB
+        from cartera.cartera_logica import CarteraLogica
+        from alertas.alertas_cartera import detectar_alertas_posiciones
+        
+        cartera_db = CarteraDB()
+        logica = CarteraLogica()
+        
+        posiciones = cartera_db.obtener_posiciones_abiertas()
+        posiciones_enriquecidas = [
+            logica.calcular_metricas_posicion(p)
+            for p in posiciones
+        ]
+        
+        alertas_cartera = detectar_alertas_posiciones(posiciones_enriquecidas)
+    except Exception as e:
+        logger.warning(f"Error detectando alertas de cartera: {e}")
+        alertas_cartera = []
+    
     return render_template(
         "alertas.html",
-        activas    = activas,
-        disparadas = disparadas,
+        activas=activas,
+        disparadas=disparadas,
+        alertas_cartera=alertas_cartera,
     )
 
 

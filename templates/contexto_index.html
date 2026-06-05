@@ -278,6 +278,23 @@ a.back:hover { background:rgba(255,255,255,0.9); }
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
+     CALENDARIO DE DIVIDENDOS (v86.1)
+══════════════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-title">📅 Calendario de Dividendos</div>
+    <div class="card-subtitle">Dividendos próximos IBEX35 y Mercado Continuo · Próximos 30 días</div>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="btn-primary" id="btn-dividendos" onclick="cargarDividendos()">💰 Ver dividendos</button>
+        <span id="dividendos-count" style="font-size:.82rem;color:#94a3b8;"></span>
+    </div>
+
+    <div class="spinner" id="div-spinner" style="display:none;"><div class="spinner-ring"></div>Cargando dividendos...</div>
+    <div class="error-box" id="div-error"></div>
+    <div id="div-tabla" style="display:none;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
      BLOQUE 4 — ANALYTICS: TRACKING DE RESULTADOS
 ══════════════════════════════════════════════════════════ -->
 <div class="card">
@@ -528,6 +545,32 @@ async function cargarNoticias() {
         }
 
         document.getElementById('noticias-count').textContent = noticias.length + ' noticias';
+        
+        // v87.1 — Helper para badges de eventos
+        const renderEventoBadge = (evento) => {
+            if (!evento) return '';
+            const impactoEmoji = {
+                'POSITIVO': '🟢',
+                'NEGATIVO': '🔴',
+                'NEUTRAL': '⚪'
+            }[evento.impacto] || '';
+            
+            return `
+                <span class="evento-badge" style="background:${evento.tipo_color}20;color:${evento.tipo_color};border:1px solid ${evento.tipo_color}40;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;margin-right:6px;">
+                    ${evento.tipo_emoji} ${evento.tipo}
+                </span>
+                <span style="font-size:.7rem;color:#64748b;">${impactoEmoji} ${evento.impacto}</span>
+            `;
+        };
+        
+        // v87.1 — Helper para tickers mencionados
+        const renderTickers = (tickers) => {
+            if (!tickers || tickers.length === 0) return '';
+            return tickers.map(t => 
+                `<span style="background:#e0e7ff;color:#4338ca;padding:1px 6px;border-radius:3px;font-size:.7rem;font-weight:600;margin-right:4px;">${t}</span>`
+            ).join('');
+        };
+        
         document.getElementById('not-lista').innerHTML = noticias.map(n => `
             <div class="noticia-item">
                 <div class="noticia-titulo">
@@ -537,6 +580,12 @@ async function cargarNoticias() {
                     <span class="noticia-fuente">${n.fuente}</span>
                     ${n.fecha ? ' · ' + n.fecha : ''}
                 </div>
+                ${n.evento ? `
+                    <div style="margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+                        ${renderEventoBadge(n.evento)}
+                        ${renderTickers(n.evento.tickers)}
+                    </div>
+                ` : ''}
             </div>`).join('');
         document.getElementById('not-lista').style.display = 'block';
         btn.textContent = '↺ Actualizar';
@@ -1284,6 +1333,119 @@ document.addEventListener('DOMContentLoaded', () => {
     const m = document.getElementById('modalDefFund');
     if (m) m.addEventListener('click', e => { if (e.target === m) cerrarDefFund(); });
 });
+
+// ══════════════════════════════════════════════════════════
+// CALENDARIO DE DIVIDENDOS (v86.1)
+// ══════════════════════════════════════════════════════════
+
+async function cargarDividendos() {
+    const spinner = document.getElementById('div-spinner');
+    const error = document.getElementById('div-error');
+    const tabla = document.getElementById('div-tabla');
+    const count = document.getElementById('dividendos-count');
+    const btn = document.getElementById('btn-dividendos');
+    
+    spinner.style.display = 'block';
+    error.style.display = 'none';
+    tabla.style.display = 'none';
+    count.textContent = '';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/contexto/dividendos');
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        spinner.style.display = 'none';
+        
+        if (!data.dividendos || data.dividendos.length === 0) {
+            tabla.innerHTML = `
+                <div style="text-align:center;padding:40px;background:#f0fdf4;border-radius:10px;border:2px solid #bbf7d0;">
+                    <p style="font-size:1.1rem;color:#166534;font-weight:600;margin-bottom:8px;">✅ Sin dividendos próximos</p>
+                    <p style="font-size:0.9rem;color:#15803d;">No hay dividendos programados en los próximos 30 días</p>
+                </div>
+            `;
+            tabla.style.display = 'block';
+            return;
+        }
+        
+        // Construir tabla
+        let html = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+                    <thead>
+                        <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:12px;text-align:left;font-weight:700;color:#475569;">Ticker</th>
+                            <th style="padding:12px;text-align:left;font-weight:700;color:#475569;">Empresa</th>
+                            <th style="padding:12px;text-align:right;font-weight:700;color:#475569;">Fecha Ex</th>
+                            <th style="padding:12px;text-align:right;font-weight:700;color:#475569;">Días</th>
+                            <th style="padding:12px;text-align:right;font-weight:700;color:#475569;">Importe</th>
+                            <th style="padding:12px;text-align:right;font-weight:700;color:#475569;">Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        data.dividendos.forEach((div, idx) => {
+            const rowBg = idx % 2 === 0 ? '#ffffff' : '#fafbfc';
+            let diasBadge = '';
+            let diasBadgeStyle = '';
+            
+            if (div.dias_hasta === 0) {
+                diasBadge = 'HOY';
+                diasBadgeStyle = 'background:#dc2626;color:white;';
+            } else if (div.dias_hasta === 1) {
+                diasBadge = 'MAÑANA';
+                diasBadgeStyle = 'background:#ea580c;color:white;';
+            } else if (div.dias_hasta <= 3) {
+                diasBadge = div.dias_hasta + 'd';
+                diasBadgeStyle = 'background:#f59e0b;color:white;';
+            } else if (div.dias_hasta <= 7) {
+                diasBadge = div.dias_hasta + 'd';
+                diasBadgeStyle = 'background:#fcd34d;color:#92400e;';
+            } else if (div.dias_hasta <= 14) {
+                diasBadge = div.dias_hasta + 'd';
+                diasBadgeStyle = 'background:#fef3c7;color:#78350f;';
+            } else {
+                diasBadge = div.dias_hasta + 'd';
+                diasBadgeStyle = 'background:#f0fdf4;color:#166534;';
+            }
+            
+            html += `
+                <tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:12px;font-weight:600;color:#1e293b;">${div.ticker}</td>
+                    <td style="padding:12px;color:#475569;">${div.nombre || '—'}</td>
+                    <td style="padding:12px;text-align:right;color:#475569;">${div.fecha_ex || '—'}</td>
+                    <td style="padding:12px;text-align:right;">
+                        <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;${diasBadgeStyle}">${diasBadge}</span>
+                    </td>
+                    <td style="padding:12px;text-align:right;font-weight:600;color:#1e293b;">${div.importe ? div.importe.toFixed(2) + '€' : '—'}</td>
+                    <td style="padding:12px;text-align:right;font-weight:600;color:#8b5cf6;">${div.yield_aprox ? div.yield_aprox.toFixed(2) + '%' : '—'}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        tabla.innerHTML = html;
+        tabla.style.display = 'block';
+        count.textContent = `${data.dividendos.length} dividendo${data.dividendos.length !== 1 ? 's' : ''} próximo${data.dividendos.length !== 1 ? 's' : ''}`;
+        
+    } catch (err) {
+        spinner.style.display = 'none';
+        error.textContent = `❌ Error: ${err.message}`;
+        error.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+    }
+}
 </script>
 
 </body>

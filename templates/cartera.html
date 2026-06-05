@@ -20,6 +20,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 /* HEADER */
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
 .header h1{font-size:1.5em;font-weight:700;color:#0f172a;}
+.btn-alertas{background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;
+             padding:9px 18px;border-radius:10px;font-size:0.9em;font-weight:600;
+             cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+             text-decoration:none;position:relative;}
+.btn-alertas:hover{opacity:0.9;}
+.badge-alertas{position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;
+               border-radius:50%;width:20px;height:20px;font-size:0.7em;
+               display:flex;align-items:center;justify-content:center;font-weight:700;
+               border:2px solid white;}
+.btn-trailing-all{background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;
+                  padding:9px 18px;border-radius:10px;font-size:0.9em;font-weight:600;
+                  cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-trailing-all:hover{opacity:0.9;}
 .btn-nueva{background:linear-gradient(135deg,#667eea,#764ba2);color:white;
            padding:9px 20px;border-radius:10px;text-decoration:none;
            font-size:0.9em;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
@@ -82,6 +95,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 
 /* BOTONES */
 .pos-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+.btn-trailing{background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;
+             padding:7px 16px;border-radius:8px;font-size:0.85em;font-weight:600;
+             cursor:pointer;}
+.btn-trailing:hover{opacity:0.9;}
 .btn-edit{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;
           padding:7px 16px;border-radius:8px;font-size:0.85em;font-weight:600;
           text-decoration:none;cursor:pointer;}
@@ -137,6 +154,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
             IBEX {{ contexto_mercado.estado }}
         </span>
         {% endif %}
+        <a href="{{ url_for('cartera.dashboard_riesgo') }}" class="btn btn-outline-primary" style="margin-right:10px;">
+            📊 Dashboard Riesgo
+        </a>
+        <form action="/cartera/trailing/todas" method="POST" style="display:inline;margin-right:10px;">
+            <button type="submit" class="btn-trailing-all" title="Aplicar trailing automático a todas las posiciones">
+                🎯 Trailing a Todas
+            </button>
+        </form>
         <a href="/cartera/nueva" class="btn-nueva">＋ Nueva posición</a>
     </div>
 </div>
@@ -199,6 +224,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
             {% else %}<div class="val" style="opacity:.6">—</div>{% endif %}
         </div>
     </div>
+
+    <!-- ACCIONES POR EMPRESA -->
+    {% if posiciones %}
+    <div style="margin-top:12px; padding:10px 16px; border-radius:8px;
+                background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+        <div style="font-size:11px; opacity:0.75; margin-bottom:8px;">Acciones por empresa</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px 18px;">
+            {% set ns = namespace(ticker_vistos=[]) %}
+            {% for p in posiciones | sort(attribute='ticker') %}
+                {% if p.ticker not in ns.ticker_vistos %}
+                    {% set ns.ticker_vistos = ns.ticker_vistos + [p.ticker] %}
+                    {% set total_acciones = posiciones | selectattr('ticker','eq',p.ticker) | sum(attribute='acciones') %}
+                    <span style="font-size:0.82em; font-weight:600; white-space:nowrap;">
+                        {{ p.ticker.replace('.MC','') }}:
+                        <span style="font-weight:400; opacity:0.9;">{{ total_acciones | int }}</span>
+                    </span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- DRAWDOWN OPERATIVO -->
     {% set dd = resumen.drawdown_actual_pct | default(0) %}
@@ -458,6 +504,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
     {% endif %}
 
     <div class="pos-btns">
+        <form action="/cartera/trailing/{{ p.id }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn-trailing" title="Aplicar trailing automático (breakeven +1R, profit lock +3R)">
+                🎯 Trailing
+            </button>
+        </form>
         <a href="/cartera/editar/{{ p.id }}" class="btn-edit">✏️ Editar</a>
         <a href="/cartera/cerrar/{{ p.id }}" class="btn-close">Cerrar ✕</a>
     </div>

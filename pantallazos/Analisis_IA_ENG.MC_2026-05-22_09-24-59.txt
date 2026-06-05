@@ -1,0 +1,201 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: ENG.MC
+Fecha: 2026-05-22
+Hora: 09:24:59
+
+# ANÁLISIS TÉCNICO PROFESIONAL - ENG.MC
+
+**Período Analizado:** 06.02.26 - 22.05.26  
+**Rango de Precio:** 13.70€ - 17.49€  
+**Precio Actual:** ~17.25€
+
+---
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Patrón Principal: Canal Alcista de Largo Plazo**
+- **Tipo:** Canal ascendente con breakout explosivo
+- **Calidad:** Perfecto - 5 toques confirmados
+- **Formación:** 06.02.26 (13.70€) hasta 23.03.26 (14.30€)
+- **Estado:** **BREAKOUT CONFIRMADO** el 23.03.26
+- **Implicaciones:** Fuertemente alcista
+
+### **Patrón de Aceleración: Gap de Ruptura**
+- **Tipo:** Gap alcista explosivo
+- **Coordenadas:** 23.03.26 - salto de **14.35€ a 15.55€** (gap de 1.20€)
+- **Estado:** Sin cerrar - señal de fortaleza extrema
+- **Implicación:** Cambio de carácter del valor
+
+### **Patrón Actual: Bandera Alcista**
+- **Tipo:** Consolidación en bandera tras impulso
+- **Formación:** 25.03.26 - presente (16.80€ - 17.45€)
+- **Calidad:** Clara - consolidación ordenada con volumen decreciente
+- **Estado:** En formación, cerca de resolución
+- **Objetivo proyectado:** **18.65€** (medida del mástil)
+
+---
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global: ALCISTA FUERTE**
+- **Dirección:** Alcista explosiva desde marzo
+- **Fuerza:** Muy fuerte - +26% en 2 meses
+- **Estructura:** Serie perfecta de máximos y mínimos crecientes
+- **Fase:** Markup agresivo tras breakout de acumulación
+
+### **Momentum y Fuerza**
+- **RSI:** ~75 (zona sobrecompra, pero sostenible en tendencia fuerte)
+- **Divergencias:** NINGUNA detectada - momentum alineado con precio
+- **Velocidad:** Acelerando - pendiente cada vez más pronunciada
+- **Impulsos:** 3 ondas alcistas claras: +13%, +21%, +8%
+
+### **Zonas Críticas**
+
+**Resistencias (menor a mayor):**
+1. **17.49€** - Máximo histórico actual (FUERTE - techo psicológico)
+2. **18.00€** - Número redondo (MEDIO)
+3. **18.65€** - Objetivo bandera (FUERTE - proyección técnica)
+
+**Soportes (mayor a menor):**
+1. **16.80€** - Base bandera actual (FUERTE - múltiples toques)
+2. **16.25€** - Mínimo del 28.03.26 (MEDIO)
+3. **15.55€** - Base del gap (MUY FUERTE - zona de no retorno)
+4. **14.35€** - Breakout original (CRÍTICO)
+
+### **Volumen**
+- **Comportamiento:** Explosivo en breakout, decreciente normal en bandera
+- **Picos significativos:** 23.03.26 (breakout) y 25.03.26 (confirmación)
+- **Patrón:** Volumen alto en impulsos, bajo en correcciones (SALUDABLE)
+- **Sin divergencias:** Subidas acompañadas de volumen
+
+---
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles**
+- **MM20:** ~16.90€ - Precio claramente por encima (alcista)
+- **MM50:** ~15.80€ - Soporte dinámico fuerte
+- **MM200:** ~14.20€ - Muy por debajo, confirmando tendencia mayor
+- **Configuración:** Perfectamente alineadas (MM20 > MM50 > MM200)
+
+### **Confluencias Críticas**
+- **16.80€** = Base bandera + Retroceso Fibo 38.2% + MM20 → **ZONA MUY FUERTE**
+- **15.55€** = Base gap + MM50 + Fibo 61.8% → **SOPORTE CRÍTICO**
+- **17.49€** = Resistencia histórica + Bollinger superior → **ZONA DECISIVA**
+
+### **Indicadores Complementarios**
+- **MACD:** En zona positiva, histograma ligeramente decreciente (normal en consolidación)
+- **Bollinger Bands:** Precio en banda superior, sin compresión excesiva
+- **ADX:** Estimado >30 - tendencia fuerte y sostenible
+
+### **Divergencias**
+- **RSI vs Precio:** ✅ SIN DIVERGENCIAS (fortaleza confirmada)
+- **MACD vs Precio:** ✅ ALINEADO
+- **Volumen vs Precio:** ✅ CORRELACIÓN POSITIVA
+
+---
+
+## 4. **Escenarios Probables**
+
+### **Escenario Alcista (Probabilidad: 75%)**
+**Desarrollo esperado:**
+1. Cierre definitivo sobre **17.50€**
+2. Extensión hacia **18.00€** (resistencia psicológica)
+3. Consolidación breve y ataque a **18.65€** (objetivo bandera)
+4. Posible extensión hasta **19.20€** (proyección 1.618 Fibo)
+
+**Activación:** Cierre diario > **17.50€** con volumen >1.2M
+**Invalidación:** Pérdida de **16.80€** con volumen alto
+
+### **Escenario Correctivo (Probabilidad: 25%)**
+**Desarrollo esperado:**
+1. Rechazo en **17.49€** por tercera vez
+2. Retroceso hacia **16.80€** - **16.25€**
+3. Posible testeo de **15.55€** (soporte crítico)
+4. Rebote técnico desde soportes clave
+
+**Activación:** Cierre < **16.80€** en dos sesiones consecutivas
+**Invalidación:** Ruptura alcista inmediata > **17.60€**
+
+### **Niveles Decisivos a Vigilar**
+1. **17.49€** - Resistencia histórica (ruptura = continuidad alcista)
+2. **16.80€** - Soporte bandera (pérdida = corrección iniciada)
+3. **15.55€** - Base gap (LÍNEA EN LA ARENA)
+4. **18.00€** - Número redondo (zona de toma de beneficios)
+5. **18.65€** - Objetivo técnico principal
+
+---
+
+## 5.
+
+───────────────────────────────────────────────────────────────
+💡 RECOMENDACIONES
+───────────────────────────────────────────────────────────────
+
+**RecomendacionesOperativas**
+
+### **Setup Alcista (Preferido - 75% probabilidad)**
+
+**Entrada:** **17.52€** + cierre diario confirmado por encima con volumen >1M
+**Stop Loss:** **16.75€** (4.4% riesgo - por debajo soporte bandera)
+**Take Profit 1:** **18.00€** (R:R 1:1.6) - Número redondo, toma parcial 50%
+**Take Profit 2:** **18.65€** (R:R 1:3.7) - Objetivo bandera completo
+**Take Profit 3:** **19.20€** (R:R 1:5.5) - Extensión fibonacci
+
+**Tamaño posición:** 3% del capital (alta probabilidad)
+**Confirmaciones necesarias:**
+- Volumen breakout >1.2M acciones
+- Cierre en máximos de sesión
+- Sin rechazo inmediato al día siguiente
+
+### **Setup Correctivo (Contrarian - 25% probabilidad)**
+
+**Entrada:** **16.20€** + señal de agotamiento bajista (martillo/envolvente alcista)
+**Stop Loss:** **15.50€** (4.3% riesgo - por debajo del gap)
+**Take Profit:** **17.00€** (R:R 1:1.9) - Retorno a zona de valor
+**Condición CRÍTICA:** Solo entrar con **RSI <40** + **patrón de reversión confirmado**
+
+**Confirmaciones necesarias:**
+- Patrón candlestick de reversión
+- Divergencia alcista en RSI
+- Volumen de capitulación previo
+
+### **Gestión de Riesgo**
+
+**Posición Máxima:** 3% del capital total
+**Tipo de Stop:** 
+- Stop fijo inicial
+- Trailing stop a BE tras +2%
+- Trailing stop a 50% ganancia tras TP1
+
+**Gestión Multi-nivel:**
+- Entrada escalonada: 60% en breakout, 40% en retesteo
+- Salida escalonada: 50% en TP1, 30% en TP2, 20% en TP3
+
+**Si el mercado va contra ti:**
+- NO promediar a la baja
+- Respetar stops religiosamente  
+- Reevaluar setup si se pierden 2 operaciones consecutivas
+
+---
+
+## **⚠️ ALERTAS CRÍTICAS**
+
+### **BULL TRAP POTENCIAL EN 17.49€**
+- **Señal de alarma:** Si hay ruptura con volumen <800K
+- **Confirmación trampa:** Reversión inmediata bajo 17.30€
+- **Acción:** Salida inmediata y espera nuevo setup
+
+### **NIVEL DE NO RETORNO: 15.55€**
+- **Pérdida de este nivel = cambio de estructura completa**
+- **Implicaría retorno a canal original 13.70€-14.30€**
+- **Probabilidad actual: <5%**
+
+**RECOMENDACIÓN PRINCIPAL:** Setup alcista con **excelente** relación riesgo/beneficio. Estructura técnica impecable sugiere continuidad del movimiento hacia **18.65€** como objetivo principal.
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

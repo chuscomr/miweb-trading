@@ -1,11 +1,15 @@
 # web/routes/cartera_routes.py
-from flask import Blueprint, request, redirect, url_for, render_template, current_app, jsonify
+from flask import Blueprint, request, redirect, url_for, render_template, current_app, jsonify, flash
 from datetime import datetime, date
 from core.universos import normalizar_ticker, get_nombre, IBEX35, CONTINUO
 from cartera.cartera_db import CarteraDB
 from cartera.cartera_logica import CarteraLogica
 from core.contexto_mercado import evaluar_contexto_ibex
+from analytics.integrador import registrar_apertura, registrar_cierre
+import logging
 
+
+logger = logging.getLogger(__name__)
 cartera_bp = Blueprint("cartera", __name__, url_prefix="/cartera")
 _db     = CarteraDB()
 _logica = CarteraLogica()
@@ -32,6 +36,7 @@ def ver_cartera():
         cache    = _get_cache()
         contexto = evaluar_contexto_ibex(cache)
         pos, resumen, cfg = _resumen_completo()
+        
         return render_template("cartera.html",
             posiciones       = pos,
             resumen          = resumen,
@@ -81,12 +86,66 @@ def nueva_guardar():
 
         if not ticker or precio_entrada <= 0 or acciones <= 0:
             raise ValueError("Datos incompletos")
+        
+        # ─────────────────────────────────────────────────────────
+        # v88.1 — VALIDACIÓN DE RISK MANAGER (MODO ADVERTENCIA)
+        # Avisa pero NO bloquea — el usuario decide
+        # ─────────────────────────────────────────────────────────
+        from cartera.risk_manager import RiskManager
+        
+        cfg = _db.get_config()
+        capital = float(cfg.get("capital_total") or 30000)
+        
+        # Calcular riesgo y tamaño de la posición
+        R_unit = (precio_entrada - stop_inicial) if stop_inicial else 0
+        riesgo_eur = R_unit * acciones if R_unit > 0 else 0
+        tamano_eur = precio_entrada * acciones
+        
+        # Obtener posiciones abiertas actuales
+        posiciones_abiertas = _db.obtener_posiciones_abiertas()
+        
+        # Validar con Risk Manager
+        rm = RiskManager(capital=capital)
+        validacion = rm.validar_nueva_posicion(
+            ticker=ticker,
+            riesgo_eur=riesgo_eur,
+            tamano_eur=tamano_eur,
+            posiciones_abiertas=posiciones_abiertas
+        )
+        
+        # Mostrar advertencias pero SIEMPRE continuar
+        if not validacion['aprobada']:
+            flash(f"⚠️ ADVERTENCIA: {validacion['razon']}", 'warning')
+            logger.warning(f"⚠️ Advertencia Risk Manager: {ticker} - {validacion['razon']}")
+        
+        for alerta in validacion.get('alertas', []):
+            flash(alerta, 'info')
+        # ─────────────────────────────────────────────────────────
 
         cache    = _get_cache()
         contexto = evaluar_contexto_ibex(cache)
         estado   = contexto.get("estado", "TRANSICION") if contexto else "TRANSICION"
 
-        _db.agregar_posicion(
+        # 1. Registrar en Analytics PRIMERO
+        analytics_id = None
+        try:
+            analytics_id = registrar_apertura(
+                ticker=ticker,
+                sistema=sistema,
+                tipo_setup=score_nivel or "MANUAL",
+                precio_entrada=precio_entrada,
+                stop=stop_inicial or 0,
+                contexto_mercado=estado,
+                score_fundamental=None,
+                notas=notas
+            )
+            logger.info(f"✅ Analytics: trade_id={analytics_id} para {ticker}")
+        except Exception as e:
+            logger.warning(f"⚠️ Analytics falló (continuando): {e}")
+            # Continuar sin analytics_id
+
+        # 2. Crear posición en cartera
+        pid = _db.agregar_posicion(
             ticker        = ticker,
             nombre        = f.get("nombre") or get_nombre(ticker) or ticker.replace(".MC",""),
             sistema       = sistema,
@@ -99,9 +158,13 @@ def nueva_guardar():
             contexto_ibex = estado,
             es_excepcion  = es_excepcion,
             notas         = notas,
+            analytics_id  = analytics_id,
         )
+        logger.info(f"✅ Posición creada: pid={pid}, analytics_id={analytics_id}")
+        
         return redirect(url_for("cartera.ver_cartera"))
-    except Exception:
+    except Exception as e:
+        logger.error(f"❌ Error creando posición: {e}", exc_info=True)
         return redirect(url_for("cartera.nueva_form"))
 
 
@@ -184,6 +247,61 @@ def cerrar_guardar(pid):
     motivo_cierre = f.get("motivo_cierre", "Manual")
 
     pos = _db.obtener_posicion_por_id(pid)
+    if not pos:
+        logger.error(f"❌ Posición {pid} no encontrada")
+        return redirect(url_for("cartera.ver_cartera"))
+
+    # Calcular R
+    r_final = None
+    entrada  = float(pos.get("precio_entrada", 0))
+    stop_ini = float(pos.get("stop_inicial") or pos.get("stop_actual") or entrada)
+    R_unit   = entrada - stop_ini
+    if R_unit > 0:
+        r_final = round((precio_cierre - entrada) / R_unit, 2)
+
+    # 1. Cerrar en BD cartera
+    _db.cerrar_posicion(pid, fecha_cierre, precio_cierre, motivo_cierre, r_final)
+    
+    # 2. Actualizar Analytics si existe analytics_id
+    analytics_id = pos.get("analytics_id")
+    if analytics_id:
+        try:
+            registrar_cierre(
+                trade_id=analytics_id,
+                precio_salida=precio_cierre,
+                precio_entrada=entrada,
+                stop=stop_ini,
+                tipo_salida=motivo_cierre,
+                r_multiple=r_final
+            )
+            logger.info(f"✅ Analytics actualizado: trade_id={analytics_id}, R={r_final}")
+        except Exception as e:
+            logger.warning(f"⚠️ Error actualizando Analytics: {e}")
+    else:
+        logger.info(f"ℹ️ Posición {pid} sin analytics_id (posición antigua, OK)")
+    
+    return redirect(url_for("cartera.ver_cartera"))
+
+
+# ── EDITAR TRADE CERRADO ────────────────────────────────────────
+
+@cartera_bp.route("/editar-cerrado/<int:pid>", methods=["GET"])
+def editar_cerrado_form(pid):
+    pos = _db.obtener_posicion_por_id(pid)
+    if not pos or pos.get("estado") != "CERRADA":
+        return redirect(url_for("cartera.historial"))
+    return render_template("cartera_editar_cerrado.html", pos=pos)
+
+@cartera_bp.route("/editar-cerrado/<int:pid>", methods=["POST"])
+def editar_cerrado_guardar(pid):
+    f             = request.form
+    fecha_cierre  = f.get("fecha_cierre", "")
+    precio_cierre = float(f.get("precio_cierre") or 0)
+    motivo_cierre = f.get("motivo_cierre", "Manual")
+    notas         = f.get("notas") or None
+
+    # Recalcular R si se cambia precio_cierre
+    pos    = _db.obtener_posicion_por_id(pid)
     r_final = None
     if pos:
         entrada  = float(pos.get("precio_entrada", 0))
@@ -192,8 +310,8 @@ def cerrar_guardar(pid):
         if R_unit > 0:
             r_final = round((precio_cierre - entrada) / R_unit, 2)
 
-    _db.cerrar_posicion(pid, fecha_cierre, precio_cierre, motivo_cierre, r_final)
-    return redirect(url_for("cartera.ver_cartera"))
+    _db.actualizar_posicion_cerrada(pid, fecha_cierre, precio_cierre, motivo_cierre, r_final, notas)
+    return redirect(url_for("cartera.historial"))
 
 
 # ── HISTORIAL ──────────────────────────────────────────────────
@@ -276,6 +394,116 @@ def config_guardar():
                   "riesgo_swing_pct", "riesgo_medio_pct", "riesgo_posicional_pct"]:
         if f.get(clave):
             _db.set_config(clave, f.get(clave))
+    return redirect(url_for("cartera.ver_cartera"))
+
+
+# ── DASHBOARD DE RIESGO (v88.1) ────────────────────────────────
+
+@cartera_bp.route("/riesgo", methods=["GET"])
+def dashboard_riesgo():
+    """Vista de exposición por sector y límites de riesgo."""
+    from cartera.risk_manager import RiskManager
+    
+    cfg = _db.get_config()
+    capital = float(cfg.get("capital_total") or 30000)
+    
+    posiciones = _db.obtener_posiciones_abiertas()
+    logica = CarteraLogica()
+    
+    # Enriquecer posiciones con métricas
+    posiciones_enriquecidas = [
+        logica.calcular_metricas_posicion(p) 
+        for p in posiciones
+    ]
+    
+    # Obtener exposición detallada
+    rm = RiskManager(capital=capital)
+    exposicion = rm.obtener_exposicion_detallada(posiciones_enriquecidas)
+    
+    return render_template(
+        "cartera_riesgo.html",
+        exposicion=exposicion,
+        posiciones=posiciones_enriquecidas,
+        config=cfg
+    )
+
+
+# ── TRAILING STOPS AUTOMÁTICO (v88.2) ──────────────────────────
+
+@cartera_bp.route("/trailing/<int:pid>", methods=["POST"])
+def aplicar_trailing_auto(pid):
+    """Aplica trailing stop automático a una posición."""
+    from cartera.trailing_stops import get_trailing_stop_manager
+    
+    pos = _db.obtener_posicion_por_id(pid)
+    if not pos:
+        flash("Posición no encontrada", "error")
+        return redirect(url_for("cartera.ver_cartera"))
+    
+    # Enriquecer con precio actual
+    logica = CarteraLogica()
+    pos_enriquecida = logica.calcular_metricas_posicion(pos)
+    
+    # Calcular nuevo stop
+    tsm = get_trailing_stop_manager()
+    nuevo_stop, nueva_fase = tsm.calcular_nuevo_stop(
+        precio_entrada=float(pos_enriquecida['precio_entrada']),
+        stop_inicial=float(pos_enriquecida['stop_inicial'] or 0),
+        stop_actual=float(pos_enriquecida['stop_actual'] or pos_enriquecida['stop_inicial'] or 0),
+        precio_actual=float(pos_enriquecida['precio_actual']),
+        fase_actual=pos.get('fase', 'INICIAL')
+    )
+    
+    # Verificar si hay cambio
+    stop_previo = float(pos_enriquecida['stop_actual'] or pos_enriquecida['stop_inicial'] or 0)
+    if abs(nuevo_stop - stop_previo) < 0.01:
+        flash(f"ℹ️ {pos['ticker'].replace('.MC', '')}: Stop ya está ajustado ({nuevo_stop:.2f}€)", "info")
+    else:
+        # Aplicar cambio
+        _db.actualizar_stop_fase(pid, nuevo_stop, nueva_fase)
+        flash(f"✅ {pos['ticker'].replace('.MC', '')}: Stop → {nuevo_stop:.2f}€ (Fase: {nueva_fase})", "success")
+        logger.info(f"Trailing aplicado: {pos['ticker']} stop {stop_previo:.2f} → {nuevo_stop:.2f}, fase {nueva_fase}")
+    
+    return redirect(url_for("cartera.ver_cartera"))
+
+
+@cartera_bp.route("/trailing/todas", methods=["POST"])
+def aplicar_trailing_todas():
+    """Aplica trailing stop automático a TODAS las posiciones abiertas."""
+    from cartera.trailing_stops import get_trailing_stop_manager
+    
+    posiciones = _db.obtener_posiciones_abiertas()
+    logica = CarteraLogica()
+    tsm = get_trailing_stop_manager()
+    
+    cambios = 0
+    sin_cambios = 0
+    
+    for pos in posiciones:
+        pos_enriquecida = logica.calcular_metricas_posicion(pos)
+        
+        nuevo_stop, nueva_fase = tsm.calcular_nuevo_stop(
+            precio_entrada=float(pos_enriquecida['precio_entrada']),
+            stop_inicial=float(pos_enriquecida['stop_inicial'] or 0),
+            stop_actual=float(pos_enriquecida['stop_actual'] or pos_enriquecida['stop_inicial'] or 0),
+            precio_actual=float(pos_enriquecida['precio_actual']),
+            fase_actual=pos.get('fase', 'INICIAL')
+        )
+        
+        stop_previo = float(pos_enriquecida['stop_actual'] or pos_enriquecida['stop_inicial'] or 0)
+        
+        if abs(nuevo_stop - stop_previo) >= 0.01:
+            _db.actualizar_stop_fase(pos['id'], nuevo_stop, nueva_fase)
+            cambios += 1
+            logger.info(f"Trailing: {pos['ticker']} {stop_previo:.2f} → {nuevo_stop:.2f}, fase {nueva_fase}")
+        else:
+            sin_cambios += 1
+    
+    if cambios > 0:
+        flash(f"✅ Trailing aplicado a {cambios} posición(es)", "success")
+    if sin_cambios > 0:
+        flash(f"ℹ️ {sin_cambios} posición(es) sin cambios", "info")
+    
     return redirect(url_for("cartera.ver_cartera"))
 
 

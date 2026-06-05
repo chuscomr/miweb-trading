@@ -229,6 +229,18 @@
                     <div class="stat-value" style="color: #28a745;">{{ compras|length }}</div>
                 </div>
                 <div class="stat">
+                    <div class="stat-label">Watchlist A ⭐</div>
+                    <div class="stat-value" style="color: #7c3aed;">
+                        {{ watchlist | selectattr("nivel_watchlist", "equalto", "A") | list | length if watchlist else 0 }}
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Watchlist B</div>
+                    <div class="stat-value" style="color: #64748b;">
+                        {{ watchlist | selectattr("nivel_watchlist", "equalto", "B") | list | length if watchlist else 0 }}
+                    </div>
+                </div>
+                <div class="stat">
                     <div class="stat-label">En Espera</div>
                     <div class="stat-value" style="color: #ffc107;">{{ esperas|length }}</div>
                 </div>
@@ -249,7 +261,13 @@
                 {% for valor in compras %}
                 <div class="valor-card valor-compra">
                     <div class="valor-header">
-                        <span class="valor-ticker">{{ valor.nombre }}</span>
+                        <span class="valor-ticker">{{ valor.nombre }}
+                            {% if valor.mercado == 'CONTINUO' %}
+                            <span style="font-size:.68em;font-weight:600;background:#ede9fe;
+                                         color:#5b21b6;padding:1px 6px;border-radius:4px;
+                                         margin-left:4px;vertical-align:middle;">CONTINUO</span>
+                            {% endif %}
+                        </span>
                         <span class="valor-precio">{{ valor.precio|round(2) }}€</span>
                     </div>
 
@@ -292,6 +310,15 @@
                     </div>
 
                     <div class="valor-motivo">{{ valor.motivo }}</div>
+                    <div style="margin-top:10px;">
+                        <button onclick="abrirAnalisisPos('{{ valor.ticker }}')"
+                                style="font-size:.78em;padding:5px 14px;
+                                       background:linear-gradient(135deg,#1e3c72,#2a5298);
+                                       color:white;border:none;border-radius:6px;
+                                       cursor:pointer;font-weight:600;">
+                            🔍 Analizar
+                        </button>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -324,6 +351,211 @@
             </div>
         </div>
         {% endif %}
+
+        {% if watchlist %}
+        {% set wl_a = watchlist | selectattr("nivel_watchlist", "equalto", "A") | list %}
+        {% set wl_b = watchlist | selectattr("nivel_watchlist", "equalto", "B") | list %}
+
+        <div class="section">
+            <h2>👁️ Watchlist Posicional — Esperando Breakout ({{ watchlist|length }})</h2>
+            <p style="font-size:.85em;color:#64748b;margin-bottom:16px;line-height:1.5;">
+                Valores con <strong>tendencia alcista confirmada</strong>, score ≥ 50, bloqueados únicamente por falta de breakout.
+                <strong style="color:#7c3aed;">Watchlist A</strong> (score ≥ 65) son candidatos prioritarios.
+                <strong style="color:#475569;">Watchlist B</strong> (score 50-64) son candidatos secundarios.
+            </p>
+
+            <!-- Resumen niveles -->
+            <div style="display:flex;gap:10px;margin-bottom:18px;">
+                <div style="flex:1;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(124,58,237,0.05));
+                            border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:12px 16px;text-align:center;">
+                    <div style="font-size:.7rem;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+                        ⭐ Watchlist A — Score ≥ 65
+                    </div>
+                    <div style="font-size:1.8rem;font-weight:900;color:#7c3aed;">{{ wl_a|length }}</div>
+                    <div style="font-size:.72rem;color:#94a3b8;margin-top:2px;">candidatos prioritarios</div>
+                </div>
+                <div style="flex:1;background:rgba(71,85,105,0.06);
+                            border:1px solid rgba(71,85,105,0.2);border-radius:8px;padding:12px 16px;text-align:center;">
+                    <div style="font-size:.7rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+                        Watchlist B — Score 50-64
+                    </div>
+                    <div style="font-size:1.8rem;font-weight:900;color:#475569;">{{ wl_b|length }}</div>
+                    <div style="font-size:.72rem;color:#94a3b8;margin-top:2px;">candidatos secundarios</div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:.85em;">
+                    <thead>
+                        <tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0;">
+                            <th style="text-align:left;padding:10px 12px;color:#475569;font-weight:700;">#</th>
+                            <th style="text-align:left;padding:10px 12px;color:#475569;font-weight:700;">Valor</th>
+                            <th style="text-align:center;padding:10px 12px;color:#475569;font-weight:700;">Nivel</th>
+                            <th style="text-align:right;padding:10px 12px;color:#475569;font-weight:700;">Score</th>
+                            <th style="text-align:right;padding:10px 12px;color:#475569;font-weight:700;">Precio</th>
+                            <th style="text-align:right;padding:10px 12px;color:#475569;font-weight:700;">Máx. 26sem</th>
+                            <th style="text-align:right;padding:10px 12px;color:#475569;font-weight:700;">Distancia</th>
+                            <th style="text-align:center;padding:10px 12px;color:#475569;font-weight:700;">F. Relativa</th>
+                            <th style="text-align:center;padding:10px 12px;color:#475569;font-weight:700;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in watchlist %}
+                        {% set sc = v.score %}
+                        {% set sc_color = '#16a34a' if sc >= 80 else '#7c3aed' if sc >= 65 else '#f59e0b' if sc >= 50 else '#dc2626' %}
+                        {% set dist = v.distancia_bk_pct %}
+                        {% set dist_color = '#16a34a' if dist <= 2 else '#f59e0b' if dist <= 5 else '#64748b' %}
+                        {% set is_a = v.nivel_watchlist == 'A' %}
+                        <tr style="border-bottom:1px solid #f1f5f9;{% if is_a %}background:rgba(124,58,237,0.02);{% endif %}"
+                            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='{% if is_a %}rgba(124,58,237,0.02){% endif %}'">
+                            <td style="padding:10px 12px;color:#94a3b8;font-size:.8em;">{{ loop.index }}</td>
+                            <td style="padding:10px 12px;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <strong style="color:#1e293b;font-size:1em;">{{ v.nombre }}</strong>
+                                    {% if v.mercado == 'CONTINUO' %}
+                                    <span style="font-size:.65em;font-weight:600;background:#ede9fe;
+                                                 color:#5b21b6;padding:1px 5px;border-radius:3px;">MC</span>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:.75em;color:#94a3b8;margin-top:2px;">{{ v.ticker }}</div>
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;">
+                                {% if is_a %}
+                                <span style="font-size:.72em;font-weight:800;background:#ede9fe;
+                                             color:#7c3aed;padding:3px 8px;border-radius:4px;">⭐ A</span>
+                                {% else %}
+                                <span style="font-size:.72em;font-weight:600;background:#f1f5f9;
+                                             color:#64748b;padding:3px 8px;border-radius:4px;">B</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:10px 12px;text-align:right;">
+                                <span style="font-weight:800;color:{{ sc_color }};font-size:1em;">{{ sc }}</span>
+                                <div style="width:50px;height:4px;background:#e2e8f0;border-radius:2px;
+                                            margin:3px 0 0 auto;overflow:hidden;">
+                                    <div style="height:100%;width:{{ sc }}%;background:{{ sc_color }};border-radius:2px;"></div>
+                                </div>
+                            </td>
+                            <td style="padding:10px 12px;text-align:right;font-weight:600;color:#334155;">
+                                {{ "%.2f"|format(v.precio) }}€
+                            </td>
+                            <td style="padding:10px 12px;text-align:right;color:#64748b;">
+                                {% if v.maximo_26 %}{{ "%.2f"|format(v.maximo_26) }}€{% else %}—{% endif %}
+                            </td>
+                            <td style="padding:10px 12px;text-align:right;">
+                                <span style="font-weight:700;color:{{ dist_color }};">
+                                    {% if dist <= 0.1 %}🔥 &lt;0.1%
+                                    {% else %}-{{ "%.1f"|format(dist) }}%{% endif %}
+                                </span>
+                                {% if dist <= 2 %}<div style="font-size:.7em;color:#16a34a;font-weight:600;">MUY CERCA</div>
+                                {% elif dist <= 5 %}<div style="font-size:.7em;color:#f59e0b;font-weight:600;">CERCA</div>
+                                {% endif %}
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;">
+                                {% if v.fuerza_relativa == 'LIDERA' %}
+                                <span style="color:#16a34a;font-weight:700;font-size:.8em;">↑ LIDERA</span>
+                                {% elif v.fuerza_relativa == 'NEUTRAL' %}
+                                <span style="color:#64748b;font-size:.8em;">= NEUTRAL</span>
+                                {% elif v.fuerza_relativa == 'DÉBIL' %}
+                                <span style="color:#dc2626;font-size:.8em;">↓ DÉBIL</span>
+                                {% else %}
+                                <span style="color:#94a3b8;font-size:.8em;">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;">
+                                <button onclick="abrirAnalisisPos('{{ v.ticker }}')"
+                                        style="font-size:.72em;padding:4px 10px;
+                                               background:rgba(30,60,114,0.15);
+                                               color:#1e3c72;border:1px solid #1e3c72;
+                                               border-radius:5px;cursor:pointer;font-weight:600;">
+                                    🔍
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:12px;padding:10px 14px;background:#f0fdf4;border-radius:8px;
+                        border-left:3px solid #16a34a;font-size:.8em;color:#166534;">
+                💡 <strong>Cómo usar esta lista:</strong>
+                Activa una alerta cuando el valor supere su máximo de 26 semanas con volumen 1.5x.
+                Prioriza Watchlist A. Verde = menos del 2% del breakout.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if auditoria %}
+        <div class="section">
+            <h2>🔍 Auditoría de Rechazos</h2>
+
+            <!-- Resumen numérico -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+                <div style="background:#f8fafc;border-radius:8px;padding:14px;text-align:center;">
+                    <div style="font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Analizados</div>
+                    <div style="font-size:1.6em;font-weight:700;color:#1e3c72;">{{ auditoria.total_analizados }}</div>
+                </div>
+                <div style="background:#d4edda;border-radius:8px;padding:14px;text-align:center;">
+                    <div style="font-size:11px;color:#155724;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Señales COMPRA</div>
+                    <div style="font-size:1.6em;font-weight:700;color:#28a745;">{{ auditoria.total_señales }}</div>
+                </div>
+                <div style="background:#fff3cd;border-radius:8px;padding:14px;text-align:center;">
+                    <div style="font-size:11px;color:#856404;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Rechazados</div>
+                    <div style="font-size:1.6em;font-weight:700;color:#856404;">{{ auditoria.total_rechazados }}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:14px;text-align:center;">
+                    <div style="font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Tasa conversión</div>
+                    <div style="font-size:1.6em;font-weight:700;color:#1e3c72;">{{ auditoria.tasa_conversion }}%</div>
+                </div>
+            </div>
+
+            <!-- Cuello de botella -->
+            {% if auditoria.cuello_botella %}
+            <div style="background:#fee2e2;border-left:4px solid #dc2626;border-radius:0 8px 8px 0;
+                        padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.3em;">🚧</span>
+                <div>
+                    <div style="font-weight:700;color:#991b1b;font-size:.9em;">Cuello de botella principal</div>
+                    <div style="color:#7f1d1d;font-size:.85em;">
+                        <strong>{{ auditoria.cuello_botella.label }}</strong>
+                        — {{ auditoria.cuello_botella.n }} valores rechazados
+                        ({{ auditoria.cuello_botella.pct }}% del universo)
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Barras de motivos -->
+            <div style="margin-bottom:16px;">
+                <div style="font-size:.8em;font-weight:700;color:#475569;text-transform:uppercase;
+                            letter-spacing:.5px;margin-bottom:10px;">Distribución de motivos de rechazo</div>
+                {% for m in auditoria.motivos %}
+                <div style="margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                        <span style="font-size:.82em;color:#334155;">{{ m.label }}</span>
+                        <span style="font-size:.82em;font-weight:700;color:#1e3c72;">
+                            {{ m.n }} ({{ m.pct }}%)
+                        </span>
+                    </div>
+                    <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                        {% set bar_color = '#dc2626' if m.pct >= 30 else '#f59e0b' if m.pct >= 15 else '#3b82f6' %}
+                        <div style="height:100%;width:{{ [m.pct * 2, 100]|min }}%;
+                                    background:{{ bar_color }};border-radius:4px;
+                                    transition:width .6s ease;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% endif %}
     </div>
+
+<script>
+function abrirAnalisisPos(ticker) {
+    window.open('/posicional/analizar?ticker=' + encodeURIComponent(ticker), '_blank');
+}
+</script>
+
 </body>
 </html>
