@@ -175,7 +175,7 @@ Lista los 3-5 niveles MÁS importantes a vigilar con sus implicaciones
         print(f"🤖 Llamando a Claude Vision API para analizar {ticker}...")
 
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5",
             max_tokens=4096,  # Aumentado para análisis más detallado
             messages=[
                 {

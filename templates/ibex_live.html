@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercado Live — MiWeb Trading</title>
+    <style>
+        /* ═══════════════════════════════════════════════
+           VARIABLES Y RESET
+        ═══════════════════════════════════════════════ */
+        :root {
+            --bg:        #0d1117;
+            --bg-card:   #161b22;
+            --bg-row:    #1a1f28;
+            --bg-hover:  #1f2633;
+            --border:    #30363d;
+            --text:      #e6edf3;
+            --text-muted:#8b949e;
+            --green:     #3fb950;
+            --green-bg:  rgba(63,185,80,.12);
+            --red:       #f85149;
+            --red-bg:    rgba(248,81,73,.12);
+            --neutral:   #8b949e;
+            --accent:    #388bfd;
+            --gold:      #d29922;
+            --radius:    8px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════════
+           CABECERA
+        ═══════════════════════════════════════════════ */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .back-btn {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: background .15s;
+        }
+        .back-btn:hover { background: var(--bg-hover); }
+        .titulo { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+        .titulo span { color: var(--accent); }
+
+        .mercado-badge {
+            display: flex; align-items: center; gap: 7px;
+            font-size: 13px; font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        .mercado-badge.abierto { color: var(--green); border-color: var(--green); }
+        .mercado-badge.cerrado { color: var(--text-muted); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        .dot.pulse { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+        /* ═══════════════════════════════════════════════
+           SECCIÓN DE MERCADO (bloque repetible)
+        ═══════════════════════════════════════════════ */
+        .mercado-seccion {
+            margin-bottom: 8px;
+        }
+
+        /* Cabecera de sección */
+        .seccion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 20px 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        .seccion-titulo {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .seccion-titulo .badge-n {
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--border);
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Stats bar por sección */
+        .stats-bar {
+            background: var(--bg-card);
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-label { color: var(--text-muted); }
+        .stat-val   { font-weight: 700; }
+        .stat-val.verde   { color: var(--green); }
+        .stat-val.rojo    { color: var(--red); }
+        .stat-val.neutral { color: var(--text-muted); }
+
+        .update-info {
+            margin-left: auto;
+            color: var(--text-muted);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .progress-bar-wrap {
+            width: 70px; height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            width: 0%;
+            transition: width .5s linear;
+        }
+
+        /* Controles por sección */
+        .controles {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: var(--bg);
+        }
+        .busqueda {
+            padding: 6px 11px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            width: 180px;
+            outline: none;
+            transition: border-color .15s;
+        }
+        .busqueda:focus { border-color: var(--accent); }
+        .busqueda::placeholder { color: var(--text-muted); }
+
+        .filter-btns { display: flex; gap: 5px; }
+        .filter-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .filter-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .filter-btn.active         { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .filter-btn.verde.active   { background: var(--green);  border-color: var(--green); }
+        .filter-btn.rojo.active    { background: var(--red);    border-color: var(--red); }
+
+        /* ═══════════════════════════════════════════════
+           TABLA
+        ═══════════════════════════════════════════════ */
+        .table-wrap { overflow-x: auto; padding: 0 20px 16px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            padding: 8px 10px;
+            text-align: right;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+        thead th:first-child, thead th:nth-child(2) { text-align: left; }
+        thead th:hover { color: var(--text); }
+        thead th .sort-icon { margin-left: 3px; opacity: .5; font-size: 10px; }
+        thead th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(48,54,61,.5);
+            transition: background .1s;
+            cursor: pointer;
+        }
+        tbody tr:hover { background: var(--bg-hover); }
+        tbody tr:hover td:first-child::after { content: ' →'; color: var(--accent); font-size: 11px; }
+
+        /* Flash al actualizar */
+        tbody tr.flash-up   { animation: flashUp   .5s ease-out; }
+        tbody tr.flash-down { animation: flashDown  .5s ease-out; }
+        @keyframes flashUp   { from { background: var(--green-bg); } }
+        @keyframes flashDown { from { background: var(--red-bg); } }
+
+        td { padding: 8px 10px; text-align: right; white-space: nowrap; }
+        td:first-child { text-align: left; }
+        td:nth-child(2){ text-align: left; }
+
+        .ticker-cell  { font-weight: 700; font-family: monospace; font-size: 13px; color: var(--accent); }
+        .nombre-cell  { color: var(--text); max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+        .sector-cell  { color: var(--text-muted); font-size: 11px; }
+        .precio-cell  { font-weight: 700; font-size: 13.5px; }
+
+        .var-cell {
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .var-cell.up   { color: var(--green); background: var(--green-bg); }
+        .var-cell.down { color: var(--red);   background: var(--red-bg); }
+        .var-cell.flat { color: var(--text-muted); }
+
+        .vol-cell { color: var(--text-muted); font-size: 12px; }
+
+        /* Fila carga/vacío */
+        .loading-row td { text-align: center; padding: 30px; color: var(--text-muted); }
+        .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Separador entre secciones */
+        .seccion-sep {
+            height: 6px;
+            background: var(--border);
+            margin: 0 0 0 0;
+        }
+
+        /* Error */
+        .error-msg {
+            background: rgba(248,81,73,.1);
+            border: 1px solid var(--red);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: var(--red);
+            font-size: 13px;
+            margin: 10px 20px;
+            display: none;
+        }
+        .error-msg.visible { display: block; }
+
+        /* ═══════════════════════════════════════════════
+           TEMA CLARO
+        ═══════════════════════════════════════════════ */
+        body.tema-claro {
+            --bg:        #f5f7fa;
+            --bg-card:   #ffffff;
+            --bg-row:    #ffffff;
+            --bg-hover:  #f0f4f8;
+            --border:    #d1d9e0;
+            --text:      #1a1f2e;
+            --text-muted:#6b7280;
+            --green:     #16a34a;
+            --green-bg:  rgba(22,163,74,.12);
+            --red:       #dc2626;
+            --red-bg:    rgba(220,38,38,.12);
+            --accent:    #2563eb;
+        }
+        body.tema-claro table { border-color: var(--border); }
+        body.tema-claro thead th { background: #f8fafc; }
+
+        /* Botón tema */
+        .btn-tema {
+            padding: 5px 11px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .btn-tema:hover { background: var(--bg-hover); color: var(--text); }
+
+        /* ═══════════════════════════════════════════════
+           FILAS DESTACADAS (colores persistentes)
+        ═══════════════════════════════════════════════ */
+        tbody tr.dest-naranja  { background: rgba(251,146,60,.18) !important; }
+        tbody tr.dest-verde    { background: rgba(74,222,128,.18) !important; }
+        tbody tr.dest-amarillo { background: rgba(250,204,21,.18) !important; }
+        tbody tr.dest-azul     { background: rgba(96,165,250,.18) !important; }
+        tbody tr.dest-rosa     { background: rgba(244,114,182,.18) !important; }
+        tbody tr.dest-gris     { background: rgba(148,163,184,.15) !important; }
+
+        tbody tr.dest-naranja:hover  { background: rgba(251,146,60,.28) !important; }
+        tbody tr.dest-verde:hover    { background: rgba(74,222,128,.28) !important; }
+        tbody tr.dest-amarillo:hover { background: rgba(250,204,21,.28) !important; }
+        tbody tr.dest-azul:hover     { background: rgba(96,165,250,.28) !important; }
+        tbody tr.dest-rosa:hover     { background: rgba(244,114,182,.28) !important; }
+        tbody tr.dest-gris:hover     { background: rgba(148,163,184,.25) !important; }
+
+        /* ═══════════════════════════════════════════════
+           MENÚ CONTEXTUAL
+        ═══════════════════════════════════════════════ */
+        .ctx-menu {
+            position: fixed;
+            z-index: 9999;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+            padding: 6px;
+            min-width: 180px;
+            display: none;
+        }
+        .ctx-menu.visible { display: block; }
+
+        .ctx-titulo {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 4px 8px 6px;
+        }
+        .ctx-colores {
+            display: flex;
+            gap: 6px;
+            padding: 4px 8px 8px;
+        }
+        .ctx-color-btn {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform .1s, border-color .1s;
+        }
+        .ctx-color-btn:hover { transform: scale(1.2); border-color: var(--text); }
+        .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+        .ctx-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            transition: background .1s;
+        }
+        .ctx-item:hover { background: var(--bg-hover); }
+        .ctx-item.danger { color: var(--red); }
+
+        @media (max-width: 768px) {
+            .header { padding: 10px 12px; }
+            .table-wrap { padding: 0 8px 12px; }
+            .controles, .seccion-header, .stats-bar { padding-left: 12px; padding-right: 12px; }
+            .col-sector, .col-apertura { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ══ CABECERA GLOBAL ═══════════════════════════════════ -->
+    <div class="header">
+        <div class="header-left">
+            <a class="back-btn" href="/">← Hub</a>
+            <div class="titulo">Mercado <span>Live</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-tema" id="btn-tema" onclick="toggleTema()" title="Cambiar tema">🌙 Oscuro</button>
+            <div id="mercado-badge" class="mercado-badge cerrado">
+                <span class="dot" id="dot-estado"></span>
+                <span id="txt-mercado">Verificando...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="error-msg" id="error-msg">
+        ⚠️ Error al conectar con el servidor. Reintentando...
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SECCIÓN 1 — IBEX 35
+    ════════════════════════════════════════════════════════ -->
+    <div class="mercado-seccion" id="seccion-ibex">
+
+        <div class="seccion-header">
+            <div class="seccion-titulo">
+                🔵 IBEX 35
+                <span class="badge-n">35 valores</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted)">
+                <span>▲ <strong class="stat-val verde" id="ibex-subidas">—</strong></span>
+                <span>▼ <strong class="stat-val rojo"  id="ibex-bajadas">—</strong></span>
+                <span>— <strong class="stat-val neutral" id="ibex-planas">—</strong></span>
+                <span>Mejor: <strong class="stat-val verde" id="ibex-mejor">—</strong></span>
+                <span>Peor: <strong  class="stat-val rojo"  id="ibex-peor">—</strong></span>
+            </div>
+        </div>
+
+        <div class="controles">
+            <input class="busqueda" id="busqueda-ibex" type="text"
+                   placeholder="🔍 Buscar IBEX..." oninput="renderTabla('ibex')">
+            <div class="filter-btns">
+                <button class="filter-btn active" onclick="setFiltro('ibex',this,'todos')">Todos</button>
+                <button class="filter-btn verde"  onclick="setFiltro('ibex',this,'subidas')">▲ Subidas</button>
+                <button class="filter-btn rojo"   onclick="setFiltro('ibex',this,'bajadas')">▼ Bajadas</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table id="tabla-ibex">
+                <thead><tr>
+                    <th onclick="ordenarPor('ibex','ticker')"  >Ticker  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','nombre')"  >Nombre  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','sector')"  class="col-sector">Sector<span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','precio')"  >Último  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','apertura')" class="col-apertura">Apertura<span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','maximo')"  >Máximo  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','minimo')"  >Mínimo  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','var_abs')" >Var. €  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','var_pct')" >% Var   <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('ibex','volumen')" >Volumen <span class="sort-icon">↕</span></th>
+                </tr></thead>
+                <tbody id="cuerpo-ibex">
+                    <tr class="loading-row"><td colspan="10"><span class="spinner"></span>Cargando IBEX 35...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="seccion-sep"></div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SECCIÓN 2 — MERCADO CONTINUO
+    ════════════════════════════════════════════════════════ -->
+    <div class="mercado-seccion" id="seccion-continuo">
+
+        <div class="seccion-header">
+            <div class="seccion-titulo">
+                🟣 Mercado Continuo
+                <span class="badge-n">31 valores</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted)">
+                <span>▲ <strong class="stat-val verde" id="cont-subidas">—</strong></span>
+                <span>▼ <strong class="stat-val rojo"  id="cont-bajadas">—</strong></span>
+                <span>— <strong class="stat-val neutral" id="cont-planas">—</strong></span>
+                <span>Mejor: <strong class="stat-val verde" id="cont-mejor">—</strong></span>
+                <span>Peor: <strong  class="stat-val rojo"  id="cont-peor">—</strong></span>
+            </div>
+        </div>
+
+        <div class="controles">
+            <input class="busqueda" id="busqueda-continuo" type="text"
+                   placeholder="🔍 Buscar Continuo..." oninput="renderTabla('continuo')">
+            <div class="filter-btns">
+                <button class="filter-btn active" onclick="setFiltro('continuo',this,'todos')">Todos</button>
+                <button class="filter-btn verde"  onclick="setFiltro('continuo',this,'subidas')">▲ Subidas</button>
+                <button class="filter-btn rojo"   onclick="setFiltro('continuo',this,'bajadas')">▼ Bajadas</button>
+            </div>
+        </div>
+
+        <!-- Barra de refresco global (solo en Continuo para no duplicar) -->
+        <div class="stats-bar" style="padding-top:6px;padding-bottom:6px;">
+            <div class="update-info" style="margin-left:0">
+                <span style="color:var(--text-muted)">Última actualización:</span>
+                <strong id="hora-update">—</strong>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <span id="contador-txt" style="min-width:30px;color:var(--text-muted)">—</span>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table id="tabla-continuo">
+                <thead><tr>
+                    <th onclick="ordenarPor('continuo','ticker')"  >Ticker  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','nombre')"  >Nombre  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','sector')"  class="col-sector">Sector<span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','precio')"  >Último  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','apertura')" class="col-apertura">Apertura<span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','maximo')"  >Máximo  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','minimo')"  >Mínimo  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','var_abs')" >Var. €  <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','var_pct')" >% Var   <span class="sort-icon">↕</span></th>
+                    <th onclick="ordenarPor('continuo','volumen')" >Volumen <span class="sort-icon">↕</span></th>
+                </tr></thead>
+                <tbody id="cuerpo-continuo">
+                    <tr class="loading-row"><td colspan="10"><span class="spinner"></span>Cargando Mercado Continuo...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══ MENÚ CONTEXTUAL ═══════════════════════════════════ -->
+    <div class="ctx-menu" id="ctx-menu">
+        <div class="ctx-titulo" id="ctx-ticker-label">Destacar fila</div>
+        <div class="ctx-colores">
+            <div class="ctx-color-btn" style="background:#fb923c" title="Naranja"   onclick="destacarFila('dest-naranja')"></div>
+            <div class="ctx-color-btn" style="background:#4ade80" title="Verde"     onclick="destacarFila('dest-verde')"></div>
+            <div class="ctx-color-btn" style="background:#facc15" title="Amarillo"  onclick="destacarFila('dest-amarillo')"></div>
+            <div class="ctx-color-btn" style="background:#60a5fa" title="Azul"      onclick="destacarFila('dest-azul')"></div>
+            <div class="ctx-color-btn" style="background:#f472b6" title="Rosa"      onclick="destacarFila('dest-rosa')"></div>
+            <div class="ctx-color-btn" style="background:#94a3b8" title="Gris"      onclick="destacarFila('dest-gris')"></div>
+        </div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item danger" onclick="quitarDestacado()">✕ Quitar destacado</div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item" onclick="abrirIndicadores()">📈 Ver gráfico</div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════
+    // ESTADO (separado por mercado)
+    // ═══════════════════════════════════════════════
+    const estado = {
+        ibex:     { datos: [], filtro: "todos", col: "var_pct", dir: -1, prevPrecios: {} },
+        continuo: { datos: [], filtro: "todos", col: "var_pct", dir: -1, prevPrecios: {} },
+    };
+
+    let intervalId  = null;
+    let cuentaAtras = 0;
+    let cargando    = false;
+    const INTERVALO = 30;
+
+    // ═══════════════════════════════════════════════
+    // FETCH
+    // ═══════════════════════════════════════════════
+    async function cargarDatos() {
+        if (cargando) return;
+        cargando = true;
+        try {
+            const res  = await fetch("/ibex-live/api/datos");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+
+            document.getElementById("error-msg").classList.remove("visible");
+            actualizarBadgeMercado(json.mercado_abierto);
+            document.getElementById("hora-update").textContent = json.hora_actualizacion;
+
+            // IBEX
+            estado.ibex.datos = json.ibex.datos || [];
+            actualizarResumen("ibex", json.ibex.resumen);
+            renderTabla("ibex");
+
+            // Continuo
+            estado.continuo.datos = json.continuo.datos || [];
+            actualizarResumen("continuo", json.continuo.resumen);
+            renderTabla("continuo");
+
+        } catch (err) {
+            console.error("Error fetch Mercado Live:", err);
+            document.getElementById("error-msg").classList.add("visible");
+        } finally {
+            cargando = false;
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // RENDER TABLA
+    // ═══════════════════════════════════════════════
+    function renderTabla(mercado) {
+        const s     = estado[mercado];
+        const busq  = document.getElementById(`busqueda-${mercado}`).value.toLowerCase();
+        let filas   = [...s.datos];
+
+        if (s.filtro === "subidas") filas = filas.filter(d => (d.var_pct ?? 0) > 0);
+        if (s.filtro === "bajadas") filas = filas.filter(d => (d.var_pct ?? 0) < 0);
+
+        if (busq) {
+            filas = filas.filter(d =>
+                d.ticker.toLowerCase().includes(busq) ||
+                (d.nombre || "").toLowerCase().includes(busq) ||
+                (d.sector || "").toLowerCase().includes(busq)
+            );
+        }
+
+        filas.sort((a, b) => {
+            const va = a[s.col] ?? (typeof a[s.col] === "string" ? "" : -Infinity);
+            const vb = b[s.col] ?? (typeof b[s.col] === "string" ? "" : -Infinity);
+            if (typeof va === "string") return va.localeCompare(vb) * s.dir;
+            return (va - vb) * s.dir;
+        });
+
+        const tbody = document.getElementById(`cuerpo-${mercado}`);
+        tbody.innerHTML = "";
+
+        if (filas.length === 0) {
+            tbody.innerHTML = `<tr class="loading-row"><td colspan="10">Sin resultados</td></tr>`;
+            return;
+        }
+
+        filas.forEach(d => {
+            const tr  = document.createElement("tr");
+            tr.dataset.ticker = d.ticker;
+            tr.title  = `Ver gráfico de ${d.nombre || d.ticker} en Indicadores`;
+
+            const vp       = d.var_pct;
+            const claseVar = vp === null ? "flat" : vp > 0 ? "up" : vp < 0 ? "down" : "flat";
+            const signo    = vp !== null && vp > 0 ? "+" : "";
+            const signoAbs = d.var_abs !== null && d.var_abs > 0 ? "+" : "";
+
+            // Flash si el precio cambió respecto al ciclo anterior
+            const prev = s.prevPrecios[d.ticker];
+            if (prev !== undefined && d.precio !== null) {
+                if      (d.precio > prev) tr.classList.add("flash-up");
+                else if (d.precio < prev) tr.classList.add("flash-down");
+            }
+            if (d.precio !== null) s.prevPrecios[d.ticker] = d.precio;
+
+            // Click izquierdo → abrir indicadores (todos los valores incluido el índice)
+            tr.addEventListener("click", () => {
+                const tickerUrl = d.es_indice ? "^IBEX" : d.ticker;
+                window.open(`/indicadores/?ticker=${encodeURIComponent(tickerUrl)}`, "_blank");
+            });
+
+            const tickerLabel = d.es_indice ? "IBEX 35" : d.ticker.replace(".MC","");
+            tr.innerHTML = `
+                <td><span class="ticker-cell">${tickerLabel}</span></td>
+                <td><span class="nombre-cell">${d.nombre || "—"}</span></td>
+                <td class="sector-cell col-sector">${d.sector || "—"}</td>
+                <td class="precio-cell">${fmt(d.precio, 3)}</td>
+                <td class="col-apertura">${fmt(d.apertura, 3)}</td>
+                <td>${fmt(d.maximo, 3)}</td>
+                <td>${fmt(d.minimo, 3)}</td>
+                <td>${d.var_abs !== null ? signoAbs + fmt(d.var_abs, 3) : "—"}</td>
+                <td><span class="var-cell ${claseVar}">
+                    ${vp !== null ? signo + vp.toFixed(2) + " %" : "—"}
+                </span></td>
+                <td class="vol-cell">${fmtVol(d.volumen)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        setTimeout(() => {
+            document.querySelectorAll(`#cuerpo-${mercado} .flash-up, #cuerpo-${mercado} .flash-down`)
+                .forEach(el => el.classList.remove("flash-up","flash-down"));
+        }, 600);
+
+        // Restaurar colores de destacado tras re-render
+        if (typeof aplicarDestacados === "function") aplicarDestacados(mercado);
+    }
+
+    // ═══════════════════════════════════════════════
+    // HELPERS FORMATO
+    // ═══════════════════════════════════════════════
+    function fmt(val, dec = 2) {
+        if (val === null || val === undefined) return "—";
+        return val.toLocaleString("es-ES", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    }
+    function fmtVol(val) {
+        if (!val) return "—";
+        if (val >= 1_000_000) return (val / 1_000_000).toFixed(2) + " M";
+        if (val >= 1_000)     return (val / 1_000).toFixed(0) + " K";
+        return val.toLocaleString("es-ES");
+    }
+    function fmtTicker(t) { return t.replace(".MC",""); }
+
+    // ═══════════════════════════════════════════════
+    // RESUMEN STATS
+    // ═══════════════════════════════════════════════
+    function actualizarResumen(mercado, r) {
+        if (!r) return;
+        const pfx = mercado === "ibex" ? "ibex" : "cont";
+        document.getElementById(`${pfx}-subidas`).textContent = r.subidas ?? "—";
+        document.getElementById(`${pfx}-bajadas`).textContent = r.bajadas ?? "—";
+        document.getElementById(`${pfx}-planas`).textContent  = r.planas  ?? "—";
+        document.getElementById(`${pfx}-mejor`).textContent   = r.mejor
+            ? `${fmtTicker(r.mejor.ticker)} (${r.mejor.var_pct > 0 ? "+" : ""}${r.mejor.var_pct.toFixed(2)}%)`
+            : "—";
+        document.getElementById(`${pfx}-peor`).textContent    = r.peor
+            ? `${fmtTicker(r.peor.ticker)} (${r.peor.var_pct.toFixed(2)}%)`
+            : "—";
+    }
+
+    // ═══════════════════════════════════════════════
+    // BADGE MERCADO
+    // ═══════════════════════════════════════════════
+    function actualizarBadgeMercado(abierto) {
+        const badge = document.getElementById("mercado-badge");
+        const dot   = document.getElementById("dot-estado");
+        const txt   = document.getElementById("txt-mercado");
+        if (abierto) {
+            badge.className = "mercado-badge abierto";
+            dot.classList.add("pulse");
+            txt.textContent = "Mercado abierto";
+        } else {
+            badge.className = "mercado-badge cerrado";
+            dot.classList.remove("pulse");
+            txt.textContent = "Mercado cerrado";
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // ORDENACIÓN
+    // ═══════════════════════════════════════════════
+    const COLS = ["ticker","nombre","sector","precio","apertura","maximo","minimo","var_abs","var_pct","volumen"];
+
+    function ordenarPor(mercado, col) {
+        const s = estado[mercado];
+        s.dir = (s.col === col) ? s.dir * -1 : (["ticker","nombre","sector"].includes(col) ? 1 : -1);
+        s.col = col;
+
+        const tabla = document.getElementById(`tabla-${mercado}`);
+        tabla.querySelectorAll("thead th").forEach((th, i) => {
+            th.classList.remove("sorted");
+            th.querySelector(".sort-icon").textContent = "↕";
+            if (i === COLS.indexOf(col)) {
+                th.classList.add("sorted");
+                th.querySelector(".sort-icon").textContent = s.dir === -1 ? "↓" : "↑";
+            }
+        });
+        renderTabla(mercado);
+    }
+
+    // ═══════════════════════════════════════════════
+    // FILTROS
+    // ═══════════════════════════════════════════════
+    function setFiltro(mercado, btn, filtro) {
+        estado[mercado].filtro = filtro;
+        btn.closest(".filter-btns").querySelectorAll(".filter-btn")
+            .forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderTabla(mercado);
+    }
+
+    // ═══════════════════════════════════════════════
+    // CUENTA ATRÁS
+    // ═══════════════════════════════════════════════
+    function iniciarCuentaAtras() {
+        cuentaAtras = INTERVALO;
+        const fill  = document.getElementById("progress-fill");
+        const txt   = document.getElementById("contador-txt");
+
+        clearInterval(intervalId);
+        intervalId = setInterval(() => {
+            cuentaAtras--;
+            fill.style.width = ((INTERVALO - cuentaAtras) / INTERVALO * 100) + "%";
+            txt.textContent  = cuentaAtras + "s";
+
+            if (cuentaAtras <= 0) {
+                clearInterval(intervalId);
+                fill.style.width = "0%";
+                cargarDatos().then(iniciarCuentaAtras);
+            }
+        }, 1000);
+    }
+
+    // ═══════════════════════════════════════════════
+    // ARRANQUE
+    // ═══════════════════════════════════════════════
+    document.addEventListener("DOMContentLoaded", () => {
+        // Restaurar tema guardado
+        if (localStorage.getItem("miweb-tema") === "claro") activarTemaClaro();
+        // Restaurar destacados guardados
+        destacados = JSON.parse(localStorage.getItem("miweb-destacados") || "{}");
+        cargarDatos().then(iniciarCuentaAtras);
+    });
+
+    // ═══════════════════════════════════════════════
+    // TEMA CLARO / OSCURO
+    // ═══════════════════════════════════════════════
+    function activarTemaClaro() {
+        document.body.classList.add("tema-claro");
+        document.getElementById("btn-tema").textContent = "☀️ Claro";
+        localStorage.setItem("miweb-tema", "claro");
+    }
+    function activarTemaOscuro() {
+        document.body.classList.remove("tema-claro");
+        document.getElementById("btn-tema").textContent = "🌙 Oscuro";
+        localStorage.setItem("miweb-tema", "oscuro");
+    }
+    function toggleTema() {
+        if (document.body.classList.contains("tema-claro")) activarTemaOscuro();
+        else activarTemaClaro();
+    }
+
+    // ═══════════════════════════════════════════════
+    // DESTACADO DE FILAS (click derecho)
+    // ═══════════════════════════════════════════════
+    let destacados  = {};   // { "SAN.MC": "dest-naranja", ... }
+    let ctxTicker   = null; // ticker sobre el que se abrió el menú
+
+    const CLASES_DEST = ["dest-naranja","dest-verde","dest-amarillo","dest-azul","dest-rosa","dest-gris"];
+
+    // Aplicar destacados al renderizar tabla
+    function aplicarDestacados(mercado) {
+        const tbody = document.getElementById(`cuerpo-${mercado}`);
+        tbody.querySelectorAll("tr[data-ticker]").forEach(tr => {
+            const t = tr.dataset.ticker;
+            CLASES_DEST.forEach(c => tr.classList.remove(c));
+            if (destacados[t]) tr.classList.add(destacados[t]);
+        });
+    }
+
+    // Menú contextual — abrir con click derecho
+    document.addEventListener("contextmenu", e => {
+        const tr = e.target.closest("tr[data-ticker]");
+        if (!tr) return;
+        e.preventDefault();
+        ctxTicker = tr.dataset.ticker;
+
+        const label = tr.querySelector(".ticker-cell")?.textContent || ctxTicker;
+        document.getElementById("ctx-ticker-label").textContent = `★ Destacar: ${label}`;
+
+        const menu = document.getElementById("ctx-menu");
+        menu.classList.add("visible");
+
+        // Posicionar sin salirse de la pantalla
+        const x = Math.min(e.clientX, window.innerWidth  - 200);
+        const y = Math.min(e.clientY, window.innerHeight - 180);
+        menu.style.left = x + "px";
+        menu.style.top  = y + "px";
+    });
+
+    // Cerrar menú al hacer click fuera
+    document.addEventListener("click", e => {
+        if (!e.target.closest("#ctx-menu")) {
+            document.getElementById("ctx-menu").classList.remove("visible");
+        }
+    });
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape") document.getElementById("ctx-menu").classList.remove("visible");
+    });
+
+    function destacarFila(clase) {
+        if (!ctxTicker) return;
+        destacados[ctxTicker] = clase;
+        localStorage.setItem("miweb-destacados", JSON.stringify(destacados));
+        aplicarDestacados("ibex");
+        aplicarDestacados("continuo");
+        document.getElementById("ctx-menu").classList.remove("visible");
+    }
+
+    function quitarDestacado() {
+        if (!ctxTicker) return;
+        delete destacados[ctxTicker];
+        localStorage.setItem("miweb-destacados", JSON.stringify(destacados));
+        aplicarDestacados("ibex");
+        aplicarDestacados("continuo");
+        document.getElementById("ctx-menu").classList.remove("visible");
+    }
+
+    function abrirIndicadores() {
+        if (!ctxTicker) return;
+        window.open(`/indicadores/?ticker=${encodeURIComponent(ctxTicker)}`, "_blank");
+        document.getElementById("ctx-menu").classList.remove("visible");
+    }
+    </script>
+</body>
+</html>

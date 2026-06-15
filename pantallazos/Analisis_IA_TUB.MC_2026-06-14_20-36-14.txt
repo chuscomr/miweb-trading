@@ -1,0 +1,281 @@
+═══════════════════════════════════════════════════════════════
+ ANÁLISIS TÉCNICO CON IA - Claude Vision
+═══════════════════════════════════════════════════════════════
+
+Ticker: TUB.MC
+Fecha: 2026-06-14
+Hora: 20:36:14
+
+# ANÁLISIS TÉCNICO PROFESIONAL: TUB.MC
+
+## 1. **Patrones Chartistas Detectados**
+
+### **Patrón Principal: Falling Wedge (Cuña Descendente) - COMPLETO Y ROTO**
+- **Tipo**: Patrón de reversión alcista
+- **Calidad**: Claro/Bueno
+- **Formación**: 
+  * Inicio: 17.04.26 desde **3.30€**
+  * Mínimo: 20.05.26 en **2.72€**
+  * Línea superior (resistencia bajista): descendente desde 3.30€ a 3.15€
+  * Línea inferior (soporte bajista): descendente desde 2.85€ a 2.72€
+- **Estado**: **ACTIVADO** - Rotura alcista confirmada el 28.05.26 al superar **3.00€**
+- **Volumen**: Incremento visible durante la rotura (señal positiva)
+- **Implicación**: Proyección alcista de +0.58€ desde punto de rotura → Objetivo técnico **3.58€**
+
+### **Patrón Secundario: Pullback Post-Rotura**
+- **Tipo**: Retroceso técnico a zona de rotura
+- **Calidad**: Perfecto (testeo de soporte en antigua resistencia)
+- **Coordenadas**: 
+  * Rotura inicial: 28.05.26 en **3.18€**
+  * Pullback: 02-05.06.26 tocando zona **2.95-3.00€**
+  * Rebote confirmado: 05.06.26 desde **2.88€**
+- **Estado**: Completado con éxito
+- **Implicación**: Confirmación de la validez de la rotura alcista
+
+### **Estructura de Velas Reciente**
+- **Martillo alcista**: 20.05.26 en mínimo **2.72€** (mecha inferior larga + cierre superior)
+- **Velas envolventes alcistas**: 28.05.26 durante la rotura del wedge
+- **Doji indeciso**: 02.06.26 en **3.00€** marcando inicio del pullback
+
+---
+
+## 2. **Análisis de Contexto**
+
+### **Tendencia Global:**
+- **Dirección**: Transición de bajista a alcista
+- **Fuerza**: Moderada-Fuerte (recuperación de -17.5% desde mínimos)
+- **Estructura**: 
+  * Serie de mínimos decrecientes rota: 2.72€ → 2.88€ (último mínimo SUPERIOR)
+  * Máximos crecientes: 3.18€ → 3.30€ → proyección a 3.42€
+- **Fase del ciclo**: **Markup temprano** (salida de acumulación)
+  * Acumulación ocurrió entre 2.72€-2.95€ (20.05-28.05)
+  * Transición confirmada con rotura volumétrica del wedge
+
+### **Momentum y Fuerza:**
+- **RSI estimado**: ~55-60 (zona neutral-alcista)
+  * Salió de sobreventa (<30) durante mínimos de mayo
+  * Actualmente en fase de fortalecimiento
+  * **DIVERGENCIA ALCISTA CRÍTICA**: Precio hizo mínimo en 2.72€ mientras RSI marcó mínimo superior (señal anticipada de reversión)
+- **Velocidad**: Acelerando desde el 20.05.26
+  * Primera fase: +8% en 3 sesiones (20-23.05)
+  * Segunda fase: +13% en 5 sesiones (23-28.05)
+  * Consolidación: pullback saludable -6% (28.05-05.06)
+  * Reanudación: +10% en última semana
+
+### **Zonas Críticas:**
+
+**SOPORTES (de mayor a menor importancia):**
+1. **2.95-3.00€** - **CALIDAD: FUERTE**
+   * Antigua resistencia del wedge (ahora soporte)
+   * 3 toques durante pullback (02-05.06)
+   * Zona psicológica de números redondos
+   * Confluencia con MM20
+
+2. **2.85-2.88€** - **CALIDAD: MEDIO-FUERTE**
+   * Mínimo del pullback reciente (05.06)
+   * Línea inferior del wedge roto
+   * 2 toques previos (23.04 y 07.05)
+
+3. **2.72€** - **CALIDAD: FUERTE**
+   * Mínimo absoluto del período
+   * Volumen de capitulación visible
+   * Martillo alcista de reversión
+   * Base de la estructura alcista actual
+
+**RESISTENCIAS (de menor a mayor):**
+1. **3.20-3.25€** - **CALIDAD: MEDIO**
+   * Resistencia inmediata (máximos 08-10.06)
+   * Línea superior del canal alcista emergente
+   * 2 toques recientes con rechazos menores
+
+2. **3.35-3.42€** - **CALIDAD: FUERTE**
+   * Máximos históricos del período analizado
+   * Zona de congestión (múltiples toques en abril)
+   * Resistencia psicológica importante
+   * **Zona objetivo del wedge (3.30€) + extensión**
+
+3. **3.55-3.60€** - **CALIDAD: MEDIO**
+   * Proyección técnica del falling wedge
+   * Nivel de Fibonacci 161.8% desde mínimo 2.72€
+   * Sin historia de precio reciente (exploración)
+
+### **Volumen:**
+- **Comportamiento reciente**: Patrón ideal de reversión alcista
+  * **Decreciente** durante la formación del wedge (17.04-20.05) → compresión
+  * **PICO SIGNIFICATIVO** en rotura del 28.05 → convicción compradora
+  * Volumen moderado-bajo durante pullback (saludable)
+  * **Incremento renovado** en reanudación alcista (05-12.06)
+
+- **Picos críticos identificados**:
+  * 20.05.26 en **2.72€**: Volumen de capitulación (último vendedor agotado)
+  * 28.05.26 en **3.15€**: Volumen de rotura 2.5x superior a media → ACUMULACIÓN institucional
+  * 05.06.26 en **2.88€**: Volumen defensa del pullback → soporte confirmado
+
+- **Divergencias precio/volumen**: 
+  * ✅ **POSITIVA**: Subida desde 2.72€ acompañada de volumen creciente (validez del movimiento)
+  * ⚠️ **ALERTA**: Ligera disminución volumétrica en últimas sesiones (necesita confirmación)
+
+---
+
+## 3. **Señales Técnicas Avanzadas**
+
+### **Medias Móviles:**
+- **MM20 (naranja)**: **~3.05€** 
+  * Precio ENCIMA desde 28.05.26
+  * Actuando como **soporte dinámico** durante pullback
+  * Pendiente girando a positiva (+15° aprox)
+  * Cruce alcista sobre MM50 completado
+
+- **MM50 (violeta)**: **~3.15€**
+  * Precio batalló esta zona 28.05-02.06
+  * Actualmente cotizando ENCIMA (**señal alcista**)
+  * Comienza aplanamiento (fin de tendencia bajista previa)
+  * **Resistencia dinámica** inmediata si retrocede
+
+- **MM200 (azul)**: **~3.45-3.50€** (estimado)
+  * MUY por encima del precio actual
+  * Objetivo de medio plazo
+  * Pendiente aún negativa (mercado bajista previo de largo plazo)
+
+- **Configuración actual**: Golden Cross en formación (MM20 > MM50)
+  * **Señal alcista de medio plazo**
+  * Falta que MM50 cruce MM200 (proceso de meses)
+
+### **Confluencias Críticas:**
+
+#### **ZONA 1: 2.95-3.00€ = SOPORTE TRIPLE CONFLUENCIA ⭐⭐⭐**
+- ✓ Resistencia rota del falling wedge (flip a soporte)
+- ✓ MM20 actuando como colchón dinámico
+- ✓ Pullback testado 3 veces sin romper
+- ✓ Nivel psicológico (número redondo)
+- **Implicación**: Zona MUY fuerte para entradas alcistas con stop ajustado
+
+#### **ZONA 2: 3.15-3.20€ = RESISTENCIA DOBLE CONFLUENCIA ⭐⭐**
+- ✓ MM50 actuando como techo dinámico
+- ✓ Máximos recientes 08-10.06
+- ✓ 38.2% Fibonacci desde 2.72€ a 3.42€
+- **Implicación**: Rotura con volumen abre paso a 3.35€+
+
+#### **ZONA 3: 3.35-3.42€ = RESISTENCIA CUÁDRUPLE CONFLUENCIA ⭐⭐⭐⭐**
+- ✓ Máximos históricos del gráfico (abril)
+- ✓ Objetivo proyección falling wedge (3.30€ + margen)
+- ✓ 61.8% Fibonacci retroceso de toda la caída previa
+- ✓ Zona de distribución antigua (abril) con múltiples rechazos
+- **Implicación**: Barrera CRÍTICA - ruptura confirma cambio de tendencia mayor
+
+### **Indicadores Complementarios:**
+
+**MACD (estimado por acción precio):**
+- Cruce alcista visible desde ~23.05.26
+- Histograma **creciente y positivo**
+- Líneas MACD y señal divergiendo al alza
+- **Señal**: Momentum alcista establecido
+
+**Bollinger Bands:**
+- **Compresión extrema** durante mínimos 2.72€ (20.05)
+- **Expansión alcista** desde rotura del wedge
+- Precio transitando **banda superior** (fortaleza)
+- Banda media (MM20) coincide con soporte 3.00€
+- **Advertencia**: Posible sobreextensión si alcanza >3.35€ sin consolidar
+
+**ADX (estimado):**
+- Probablemente **>25 y creciendo** desde 28.05
+- Transición de mercado lateral (ADX<20 en wedge) a tendencia establecida
+- **Señal**: Tendencia alcista con fuerza genuina
+
+### **Divergencias Detectadas:**
+
+✅ **DIVERGENCIA ALCISTA RSI (CONFIRMADA)**
+- **Fecha**: 12-20.05.26
+- **Detalle**: Precio marcó mínimo en 2.72€, pero RSI hizo mínimo superior respecto a mínimos anteriores de abril
+- **Implicación**: Anticipó reversión alcista (señal temprana validada)
+
+✅ **CONVERGENCIA VOLUMEN-PRECIO (POSITIVA)**
+- **Patrón**: Falling wedge con volumen decreciente + rotura con volumen creciente
+- **Implicación**: Validación técnica perfecta del patrón
+
+⚠️ **POSIBLE DIVERGENCIA MENOR FORMÁNDOSE**
+- **Observación**: Últimos máximos (10-12.06) con volumen ligeramente menor
+- **Estado**: Requiere confirmación
+- **Implicación**: Podría señalar consolidación temporal antes de siguiente impulso
+
+---
+
+## 4. **Escenarios Probables**
+
+### **Escenario Alcista (Probabilidad: 70%)**
+
+**Desarrollo esperado:**
+1. **Fase 1 (actual)**: Consolidación en rango **3.10-3.25€** durante 3-5 sesiones
+   - Absorción de resistencia MM50 y techo 3.20€
+   - Volumen estable-bajo (digestión del impulso previo)
+   
+2. **Fase 2**: Rotura alcista con volumen >media de **3.25€**
+   - Confirmación con cierre diario **>3.27€**
+   - Pullback rápido a 3.20-3.22€ (nuevo soporte)
+   
+3. **Fase 3**: Impulso hasta zona **3.35-3.42€**
+   - Testeo de máximos históricos
+   - Posible rechazo inicial con consolidación lateral
+   
+4. **Fase 4** (extensión): Si rompe 3.42€ con volumen → objetivo **3.55-3.60€**
+
+**Objetivos alcistas:**
+- **TP1**: **3.28€** (+2.5% desde 3.20€) - Rotura confirmada resistencia inmediata
+- **TP2**: **3.40€** (+6.3%) - Centro de zona de resistencia histórica
+- **TP3**: **3.58€** (+12%) - Proyección técnica falling wedge completada
+
+**Activación:**
+- Rotura **sostenida >3.25€** con cierre diario
+- Volumen en rotura **>1.5x media de 20 días**
+- RSI manteniendo **>55** sin entrar en sobrecompra extrema
+
+**Invalidación:**
+- Pérdida de **2.95€** con cierre diario por debajo
+- Formación de máximo descendente **<3.15€**
+- Volumen vendedor masivo (>3x media) en caída
+
+---
+
+### **Escenario Bajista (Probabilidad: 30%)**
+
+**Desarrollo esperado:**
+1. **Fase 1**: Rechazo en zona **3.20-3.25€** con volumen vendedor
+   - Formación de vela de reversión (estrella fugaz, envolvente bajista)
+   - Pérdida de MM50 como soporte
+   
+2. **Fase 2**: Quiebre de soporte **2.95-3.00€**
+   - Pullback fallido (bear trap si recupera rápido)
+   - Aceleración bajista hacia 2.85€
+   
+3. **Fase 3**: Testeo de **2.72€** (mínimo previo)
+   - Posible extensión a **2.60-2.65€** (proyección wedge fallido)
+
+**Objetivos bajistas:**
+- **TP1**: **2.88€** (-8% desde 3.15€) - Soporte pullback roto
+- **TP2**: **2.75€** (-12.7%) - Zona de mínimo previo
+- **TP3**: **2.60€** (-17.5%) - Extensión bajista proyectada
+
+**Activación:**
+- Pérdida de **2.95€** con **cierre diario <2.93€**
+- Rotura bajista de MM20 con aumento de volumen
+- RSI cayendo **<45** con pendiente pronunciada
+
+**Invalidación:**
+- Recuperación inmediata **>3.00€** tras falso quiebre (bull trap para bajistas)
+- Formación de mínimo ascendente **>2.88€**
+- Volumen comprador defensivo masivo en 2.95€
+
+---
+
+### **Niveles Decisivos a Vigilar:**
+
+1. **3.20-3.25€** → Resistencia inmediata - Decide continuación alcista vs consolidación
+2. **2.95-3.00€** → Soporte crítico - Pérdida invalida estructura alcista
+3. **3.40€** → Resistencia histó
+
+
+
+═══════════════════════════════════════════════════════════════
+ Generado con MiWeb v85.4 - Análisis IA
+═══════════════════════════════════════════════════════════════

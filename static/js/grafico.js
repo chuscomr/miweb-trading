@@ -1153,12 +1153,6 @@ class GraficoIndicadores {
             };
         }
 
-        layout.newshape = {
-            line: { color: '#3b82f6', width: 2, dash: 'solid' },
-            fillcolor: 'rgba(59, 130, 246, 0.1)',
-            opacity: 0.8,
-            layer: 'above'
-        };
         layout.modebar = {
             orientation: 'v',
             bgcolor: 'rgba(255,255,255,0.8)'
@@ -1170,6 +1164,17 @@ class GraficoIndicadores {
         layout.shapes = shapes;
         layout.annotations = annotations;
 
+        // Estilo por defecto para nuevas formas dibujadas por el usuario
+        layout.newshape = {
+            line: {
+                color: '#f59e0b',   // Naranja — visible sobre fondo oscuro/claro
+                width: 2,
+                dash: 'solid'
+            },
+            fillcolor: 'rgba(245,158,11,0.08)',
+            opacity: 1
+        };
+
         // Configuración de la barra de herramientas
         const config = {
             displaylogo: false,
@@ -1177,10 +1182,12 @@ class GraficoIndicadores {
             displayModeBar: true,
             scrollZoom: true,
             modeBarButtonsToAdd: [
-                'drawline',
-                'drawrect',
-                'drawopenpath',
-                'eraseshape',
+                'drawline',          // Línea de tendencia (2 puntos)
+                'drawopenpath',      // Trazado libre / canal manual
+                'drawclosedpath',    // Forma cerrada libre
+                'drawcircle',        // Círculo / elipse
+                'drawrect',          // Rectángulo / zona de precio
+                'eraseshape',        // Borrar forma individual
                 {
                     name: 'Limpiar dibujos',
                     title: 'Limpiar todos los dibujos',

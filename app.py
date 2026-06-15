@@ -43,7 +43,7 @@ logging.basicConfig(
 )
 logging.getLogger("werkzeug").setLevel(logging.WARNING)  # menos ruido HTTP
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from flask_caching import Cache
 
 from contexto_bp import contexto_bp
@@ -61,6 +61,7 @@ from web.routes.posicional_routes import posicional_bp
 # ════════════════════════════════════════════════════════════════
 # 3️⃣  BLUEPRINTS
 # ════════════════════════════════════════════════════════════════
+from web.routes.ibex_live_routes import ibex_live_bp
 from web.routes.swing_routes import swing_bp
 
 
@@ -93,6 +94,7 @@ application.register_blueprint(analisis_bp)     # /analisis/
 application.register_blueprint(alertas_bp)      # /alertas/
 application.register_blueprint(indicadores_bp)  # /indicadores/
 application.register_blueprint(grafico_pro_bp)  # /grafico-pro/
+application.register_blueprint(ibex_live_bp)    # /ibex-live/
 application.register_blueprint(contexto_bp)     # /contexto/
 application.register_blueprint(analizar_zona_bp)
 application.register_blueprint(guardar_analisis_bp)  # /api/analizar_zona
@@ -100,7 +102,53 @@ application.register_blueprint(guardar_analisis_bp)  # /api/analizar_zona
 print(">>> APP.PY CARGADO <<<")
 
 # ════════════════════════════════════════════════════════════════
-# 7️⃣  RUTAS RAÍZ (no pertenecen a ningún blueprint)
+# 7️⃣  LOGIN GLOBAL
+# ════════════════════════════════════════════════════════════════
+
+@application.before_request
+def check_login():
+    """Protege toda la web. Solo activo si ADMIN_PASSWORD está en el entorno."""
+    # Sin ADMIN_PASSWORD definida → entorno local, acceso libre
+    if not os.environ.get("ADMIN_PASSWORD"):
+        return None
+    if request.path.startswith("/static"):
+        return None
+    if request.path in ("/login", "/logout"):
+        return None
+    if not session.get("logged_in"):
+        return redirect(url_for("login_view"))
+    return None
+
+
+@application.route("/login", methods=["GET", "POST"])
+def login_view():
+    # Sin ADMIN_PASSWORD → redirigir directo al hub
+    if not os.environ.get("ADMIN_PASSWORD"):
+        return redirect(url_for("inicio"))
+    if session.get("logged_in"):
+        return redirect(url_for("inicio"))
+    error = None
+    if request.method == "POST":
+        user = request.form.get("username", "").strip()
+        pwd  = request.form.get("password", "").strip()
+        valid_user = os.environ.get("ADMIN_USER", "admin")
+        valid_pwd  = os.environ.get("ADMIN_PASSWORD")
+        if user == valid_user and pwd == valid_pwd:
+            session["logged_in"] = True
+            session.permanent = True
+            return redirect(request.args.get("next") or url_for("inicio"))
+        error = "Usuario o contraseña incorrectos"
+    return render_template("login.html", error=error)
+
+
+@application.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_view"))
+
+
+# ════════════════════════════════════════════════════════════════
+# 8️⃣  RUTAS RAÍZ (no pertenecen a ningún blueprint)
 # ════════════════════════════════════════════════════════════════
 
 @application.route("/", methods=["GET"])
@@ -493,13 +541,14 @@ def guardar_pantallazo():
 
 
 # ════════════════════════════════════════════════════════════════
-# 8️⃣  ARRANQUE LOCAL
+# 9️⃣  ARRANQUE LOCAL
 # ════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     print("\n" + "=" * 65)
     print("🚀  MiWeb — servidor Flask")
     print("=" * 65)
     print("  /                        ← Hub principal")
+    print("  /ibex-live/              ← IBEX 35 Live")
     print("  /swing/                  ← Swing Trading")
     print("  /medio/                  ← Medio Plazo")
     print("  /posicional/             ← Posicional")
@@ -517,3 +566,54 @@ if __name__ == "__main__":
     print("=" * 65 + "\n")
     port = int(os.environ.get("PORT", 5001))
     application.run(host="0.0.0.0", port=port, debug=os.environ.get("FLASK_DEBUG","0")=="1")
+
+
+@application.route("/debug/datos/<path:ticker>")
+def debug_datos(ticker):
+    """Ruta temporal de diagnóstico — ver qué datos devuelve cada fuente."""
+    from datetime import datetime, timedelta
+    import yfinance as yf
+    from core.data_provider import _descargar_diario
+
+    resultado = {}
+
+    # 1 — yfinance directo
+    try:
+        fecha_fin    = datetime.now()
+        fecha_inicio = fecha_fin - timedelta(days=365)
+        df_yf = yf.download(
+            ticker,
+            start=fecha_inicio.strftime("%Y-%m-%d"),
+            end=fecha_fin.strftime("%Y-%m-%d"),
+            progress=False, auto_adjust=True
+        )
+        if df_yf.empty:
+            resultado["yfinance"] = "VACIO"
+        else:
+            close = df_yf["Close"].iloc[-1]
+            cierre = float(close.values[0] if hasattr(close, "values") else close)
+            resultado["yfinance"] = {
+                "filas":         len(df_yf),
+                "primera":       str(df_yf.index[0].date()),
+                "ultima":        str(df_yf.index[-1].date()),
+                "ultimo_cierre": round(cierre, 3)
+            }
+    except Exception as e:
+        resultado["yfinance"] = f"ERROR: {e}"
+
+    # 2 — data_provider completo (con fallbacks EODHD/FMP)
+    try:
+        df_dp = _descargar_diario(ticker, periodo_anos=1.0)
+        if df_dp is None or df_dp.empty:
+            resultado["data_provider"] = "VACIO"
+        else:
+            resultado["data_provider"] = {
+                "filas":         len(df_dp),
+                "primera":       str(df_dp.index[0].date()),
+                "ultima":        str(df_dp.index[-1].date()),
+                "ultimo_cierre": round(float(df_dp["Close"].iloc[-1]), 3)
+            }
+    except Exception as e:
+        resultado["data_provider"] = f"ERROR: {e}"
+
+    return jsonify(resultado)

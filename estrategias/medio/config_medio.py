@@ -54,11 +54,12 @@ TIER_1_RIESGO_PCT = 1.0    # riesgo completo
 TIER_2_RIESGO_PCT = 0.5    # riesgo reducido
 
 # RSI — Umbrales para pullback
-RSI_MIN_PULLBACK = 30      # RSI mínimo para pullback sano
-RSI_MAX_PULLBACK = 60      # RSI máximo para pullback (no sobrecomprado)
+RSI_MIN_PULLBACK = 40      # RSI mínimo para pullback sano (zona óptima 40-55)
+RSI_MAX_PULLBACK = 55      # RSI máximo para pullback (zona óptima 40-55)
 
 # Timing — Penalizaciones adicionales
-TIMING_PULLBACK_PROFUNDO_PENALIZACION = -1.0  # Penalización pullback muy profundo
+TIMING_DETERIORO_PENALIZACION = -2.0          # Penalización retroceso >25% (deterioro real)
+TIMING_EXTENDIDO_PENALIZACION = -1.0          # Penalización retroceso <2% (precio extendido)
 
 # Backtest
 CAPITAL_INICIAL       = 50_000

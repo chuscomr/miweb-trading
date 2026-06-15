@@ -2780,6 +2780,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('glosario') === '1') {
       setTimeout(() => abrirDefiniciones(), 100);
     }
+
+    // ── Autoload ticker desde URL (?ticker=SAN.MC) — usado desde IBEX Live ──
+    const tickerParam = urlParams.get('ticker');
+    if (tickerParam) {
+      // Esperar a que window.grafico esté listo (máx 5s)
+      let intentos = 0;
+      const autocargar = setInterval(() => {
+        intentos++;
+        if (typeof abrirTickerDesdeScanner === 'function' && window.grafico) {
+          clearInterval(autocargar);
+          abrirTickerDesdeScanner(tickerParam.toUpperCase());
+        }
+        if (intentos > 50) clearInterval(autocargar); // timeout 5s
+      }, 100);
+    }
   });
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarAlertasModal(); });
