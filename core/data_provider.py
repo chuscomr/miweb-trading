@@ -153,7 +153,7 @@ def _vela_hoy_yf(ticker: str, ultima: date) -> pd.DataFrame | None:
     """Vela de hoy desde yfinance. Devuelve DataFrame 1 fila o None."""
     try:
         # Usar 5d para asegurar que capturamos hoy aunque sea lunes
-        vela = yf.Ticker(ticker).history(period="5d", interval="1d")
+        vela = yf.Ticker(ticker).history(period="5d", interval="1d", auto_adjust=False)
         if vela.empty:
             return None
         if vela.index.tz is not None:
@@ -187,7 +187,7 @@ def _completar_con_hoy(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
             return df
 
         # Descargar las últimas 5 velas y añadir las que faltan
-        vela = yf.Ticker(ticker).history(period="5d", interval="1d")
+        vela = yf.Ticker(ticker).history(period="5d", interval="1d", auto_adjust=False)
         if vela.empty:
             return df
         # Normalizar MultiIndex y nombres de columnas
@@ -260,6 +260,7 @@ def _desde_yfinance(ticker: str, fecha_inicio: datetime, fecha_fin: datetime) ->
                 start=fecha_inicio.strftime("%Y-%m-%d"),
                 end=fecha_fin_yf.strftime("%Y-%m-%d"),
                 interval="1d",
+                auto_adjust=False,
             )
             if df is None or df.empty:
                 logger.warning(f"⚠️  yfinance sin datos para {ticker}")
@@ -467,7 +468,7 @@ def get_precio_rt(ticker: str) -> dict | None:
 
     # Fallback yfinance
     try:
-        df_d = yf.Ticker(ticker).history(period="5d", interval="1d")
+        df_d = yf.Ticker(ticker).history(period="5d", interval="1d", auto_adjust=False)
         if df_d is not None and not df_d.empty:
             if df_d.index.tz is not None:
                 df_d.index = df_d.index.tz_localize(None)
